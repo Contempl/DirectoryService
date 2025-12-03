@@ -5,14 +5,14 @@ namespace DirectoryService.Domain.Entities;
 public class Location
 {
     private Location(Guid id,Name name, string address, Timezone timezone, 
-        bool isActive, IEnumerable<Department> departments, DateTime createdAt, DateTime? updatedAt)
+        bool isActive, DepartmentLocation departmentLocations, DateTime createdAt, DateTime? updatedAt)
     {
         Id = id;
         Name = name;
         Address = address;
         Timezone = timezone;
         IsActive = isActive;
-        Departments = departments.ToList();
+        DepartmentLocations = departmentLocations;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         
@@ -21,7 +21,7 @@ public class Location
 
     public Name Name { get; private set; }
 
-    public List<Department> Departments { get; set; }
+    public DepartmentLocation DepartmentLocations { get; set; }
 
     public string Address { get; private set; }
 
@@ -34,9 +34,9 @@ public class Location
     public DateTime? UpdatedAt { get; private set; }
 
     public static Result<Location> Create(Name name, string address, Timezone timezone, 
-        bool isActive, IEnumerable<Department> departments)
+        bool isActive, DepartmentLocation departmentLocations)
     {
-        if (!departments.Any())
+        if (!departmentLocations.DepartmentIds.Any())
             return Result.Failure<Location>("Department list is empty");
         
         var id = Guid.NewGuid();
@@ -48,7 +48,7 @@ public class Location
             address, 
             timezone, 
             true, 
-            departments, 
+            departmentLocations, 
             createdAt, 
             null);
     }

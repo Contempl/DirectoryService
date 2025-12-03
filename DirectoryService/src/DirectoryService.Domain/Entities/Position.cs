@@ -8,6 +8,7 @@ public class Position
         Name name, 
         string description,
         bool IsActive,
+        DepartmentPosition departmentPositions,
         DateTime createdAt, 
         DateTime? updatedAt)
     {
@@ -25,19 +26,23 @@ public class Position
 
     public bool IsActive { get; set; }
 
+    public DepartmentPosition DepartmentPositions { get; set; }
+
     public DateTime CreatedAt { get; private set; }
 
     public DateTime? UpdatedAt { get; private set; }
 
 
-    public static Result<Position> Create(Name name, string description)
+    public static Result<Position> Create(Name name, string description, DepartmentPosition departmentPositions)
     {
         if (string.IsNullOrWhiteSpace(description) || description.Length > 1000)
             return Result.Failure<Position>("Description cannot be empty and must be less than 1000 characters");
         
+        if (!departmentPositions.DepartmentIds.Any())
+            return Result.Failure<Position>("Positions must have at least one department");
         
         var id = Guid.NewGuid();
         var createdAt = DateTime.UtcNow;
-        return new Position(id, name, description, true, createdAt, null);
+        return new Position(id, name, description, true, departmentPositions, createdAt, null);
     }
 }

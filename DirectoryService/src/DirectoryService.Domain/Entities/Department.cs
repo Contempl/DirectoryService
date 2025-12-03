@@ -4,23 +4,27 @@ namespace DirectoryService.Domain.Entities;
 
 public class Department
 {
-    private List<Department> _children = [];
-    private List<Location> _locations = [];
     private Department(Guid id, 
         Name name, 
         Guid? parentId, 
         Identifier identifier, 
         Path path,
+        IEnumerable<Position> departmentPositions,
         short depth,
         bool isActive,
         IEnumerable<Location> locations,
         DateTime createdAt,
         DateTime? updatedAt)
     {
+        Id = Guid.NewGuid();
         Name = name;
+        ParentId = parentId;
         Identifier = identifier;
         Path = path;
-        Id = Guid.NewGuid();
+        Depth = depth;
+        IsActive = isActive;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
     }
     
     public Guid Id { get; private set; }
@@ -31,9 +35,9 @@ public class Department
 
     public Identifier Identifier { get; private set; }
 
-    public IReadOnlyList<Department> Children => _children;
+    public DepartmentLocation DepartmentLocations { get; private set; }
 
-    public List<Location> Locations => _locations;
+    public DepartmentPosition DepartmentPositions { get; private set; }
     
     public Path Path { get; private set; }
 
@@ -50,13 +54,17 @@ public class Department
     public static Result<Department> Create(
         Name name,
         Identifier identifier,
+        IEnumerable<Position> departmentPositions,
         Guid? parentId,
         short depth,
         Path path,
-        IEnumerable<Location> locations)
+        IEnumerable<Location> departmentLocations)
     {
-        if (!locations.Any())
+        if (!departmentLocations.Any())
             return Result.Failure<Department>("No locations specified");
+
+        if (!departmentPositions.Any())
+            return Result.Failure<Department>("No positions specified");
         
         var id = Guid.NewGuid();
         var createdAt = DateTime.UtcNow;
@@ -66,67 +74,11 @@ public class Department
             parentId, 
             identifier,
             path, 
+            departmentPositions,
             depth, 
             true,
-            locations, 
+            departmentLocations, 
             createdAt, 
             null);
     }
 }
-
-public record Identifier
-{
-    private Identifier(string identifier)
-    {
-        Value = identifier;
-    }
-    public string Value { get; }
-
-    public static Result<Identifier> Create(Guid id, string value)
-    {
-        foreach (var letter in value.ToCharArray())
-        {
-            if (!char.IsAsciiLetterOrDigit(letter))
-                return Result.Failure<Identifier>("Value must contain only Latin characters and numbers");
-        }
-        
-        if (string.IsNullOrWhiteSpace(value) || value.Length > 150)
-            return Result.Failure<Identifier>("Identifier must be not empty and between 150 characters");
-
-        return new Identifier(value);
-    }
-}
-
-public record Name
-{
-    private Name(string name)
-    {
-        Value = name;
-    }
-    public string Value { get; }
-
-    public static Result<Name> Create(Guid id, string value)
-    {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > 150)
-            return Result.Failure<Name>("Name must be not empty and between 150 characters");
-        return new Name(value);
-    }
-}
-
-public record Path
-{
-    private Path(string path)
-    {
-        Value = path;
-    }
-    public string Value { get; }
-
-    public static Result<Path> Create(Guid id, string value)
-    {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > 150)
-            return Result.Failure<Path>("Path cannot be empty and between 150 characters");
-        
-        return new Path(value);
-    }
-}
-
