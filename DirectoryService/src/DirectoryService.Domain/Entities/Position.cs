@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using DirectoryService.Domain.Entities.VO;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -38,8 +39,6 @@ public class Position
         if (string.IsNullOrWhiteSpace(description) || description.Length > 1000)
             return Result.Failure<Position>("Description cannot be empty and must be less than 1000 characters");
         
-        if (!departmentPositions.DepartmentIds.Any())
-            return Result.Failure<Position>("Positions must have at least one department");
         
         var id = Guid.NewGuid();
         var createdAt = DateTime.UtcNow;

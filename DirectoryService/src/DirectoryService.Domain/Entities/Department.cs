@@ -1,9 +1,13 @@
 using CSharpFunctionalExtensions;
+using DirectoryService.Domain.Entities.VO;
+using Path = DirectoryService.Domain.Entities.VO.Path;
 
 namespace DirectoryService.Domain.Entities;
 
 public class Department
 {
+    private readonly List<DepartmentLocation> _locations = [];
+    private readonly List<DepartmentPosition> _positions = [];
     private Department(Guid id, 
         Name name, 
         Guid? parentId, 
@@ -35,9 +39,9 @@ public class Department
 
     public Identifier Identifier { get; private set; }
 
-    public DepartmentLocation DepartmentLocations { get; private set; }
+    public IReadOnlyList<DepartmentLocation> Locations => _locations;
 
-    public DepartmentPosition DepartmentPositions { get; private set; }
+    public IReadOnlyList<DepartmentPosition> Positions => _positions;
     
     public Path Path { get; private set; }
 

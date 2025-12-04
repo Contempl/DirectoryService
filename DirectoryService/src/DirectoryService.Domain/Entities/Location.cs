@@ -1,18 +1,20 @@
 using CSharpFunctionalExtensions;
+using DirectoryService.Domain.Entities.VO;
 
 namespace DirectoryService.Domain.Entities;
 
 public class Location
 {
+    private List<DepartmentLocation> _departmentLocations = [];
     private Location(Guid id,Name name, string address, Timezone timezone, 
-        bool isActive, DepartmentLocation departmentLocations, DateTime createdAt, DateTime? updatedAt)
+        bool isActive, IEnumerable<DepartmentLocation> departmentLocations, DateTime createdAt, DateTime? updatedAt)
     {
         Id = id;
         Name = name;
         Address = address;
         Timezone = timezone;
         IsActive = isActive;
-        DepartmentLocations = departmentLocations;
+        _departmentLocations = departmentLocations.ToList();
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         
@@ -21,7 +23,7 @@ public class Location
 
     public Name Name { get; private set; }
 
-    public DepartmentLocation DepartmentLocations { get; set; }
+    public IReadOnlyList<DepartmentLocation> DepartmentLocations => _departmentLocations;
 
     public string Address { get; private set; }
 
@@ -34,10 +36,8 @@ public class Location
     public DateTime? UpdatedAt { get; private set; }
 
     public static Result<Location> Create(Name name, string address, Timezone timezone, 
-        bool isActive, DepartmentLocation departmentLocations)
+        bool isActive, IEnumerable<DepartmentLocation> departmentLocations)
     {
-        if (!departmentLocations.DepartmentIds.Any())
-            return Result.Failure<Location>("Department list is empty");
         
         var id = Guid.NewGuid();
         var createdAt = DateTime.UtcNow;

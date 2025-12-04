@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 
-namespace DirectoryService.Domain.Entities;
+namespace DirectoryService.Domain.Entities.VO;
 
 public record Name
 {

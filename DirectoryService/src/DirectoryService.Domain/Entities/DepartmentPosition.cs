@@ -1,8 +1,10 @@
 namespace DirectoryService.Domain.Entities;
 
-public class DepartmentPosition
+public class DepartmentPosition(Guid departmentId, Guid positionId)
 {
-    public List<Guid> DepartmentIds { get; set; }
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    
+    public Guid DepartmentId { get; private set; } = departmentId;
 
-    public List<Guid> PositionIds { get; set; }
+    public Guid PositionId { get; private set;  } = positionId;
 }
