@@ -4,9 +4,9 @@ namespace DirectoryService.Domain.Entities.VO;
 
 public record Path
 {
-    private Path(string path)
+    private Path(string value)
     {
-        Value = path;
+        Value = value;
     }
     public string Value { get; }
 

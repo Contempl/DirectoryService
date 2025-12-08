@@ -15,6 +15,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DCB9DC76-AFD8-4E49-94DB-4DBD4F682C3E}"
 	ProjectSection(SolutionItems) = preProject
 		editorconfig = editorconfig
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Global
