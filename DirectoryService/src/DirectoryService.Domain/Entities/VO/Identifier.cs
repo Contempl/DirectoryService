@@ -4,9 +4,9 @@ namespace DirectoryService.Domain.Entities.VO;
 
 public record Identifier
 {
-    private Identifier(string identifier)
+    private Identifier(string value)
     {
-        Value = identifier;
+        Value = value;
     }
     public string Value { get; }
 

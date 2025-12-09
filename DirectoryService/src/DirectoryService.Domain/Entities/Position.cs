@@ -5,10 +5,13 @@ namespace DirectoryService.Domain.Entities;
 
 public class Position
 {
+    public Position() { }
+    
+    private List<DepartmentPosition> _departmentPositions = [];
     private Position(Guid id, 
         Name name, 
         string description,
-        bool IsActive,
+        bool isActive,
         DepartmentPosition departmentPositions,
         DateTime createdAt, 
         DateTime? updatedAt)
@@ -25,9 +28,9 @@ public class Position
 
     public string? Description { get; private set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; private set; }
 
-    public DepartmentPosition DepartmentPositions { get; set; }
+    public IReadOnlyCollection<DepartmentPosition> DepartmentPositions => _departmentPositions;
 
     public DateTime CreatedAt { get; private set; }
 

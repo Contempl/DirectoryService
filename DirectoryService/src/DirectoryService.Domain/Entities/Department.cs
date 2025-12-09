@@ -6,6 +6,8 @@ namespace DirectoryService.Domain.Entities;
 
 public class Department
 {
+    public Department() { }
+    
     private readonly List<DepartmentLocation> _locations = [];
     private readonly List<DepartmentPosition> _positions = [];
     private Department(Guid id, 
