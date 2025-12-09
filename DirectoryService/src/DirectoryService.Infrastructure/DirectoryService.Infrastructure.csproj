@@ -28,4 +28,8 @@
       <Folder Include="Migrations\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Migrations\ApplicationDbContextModelSnapshot.cs" />
+    </ItemGroup>
+
 </Project>
