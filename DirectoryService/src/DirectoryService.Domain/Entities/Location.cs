@@ -8,15 +8,14 @@ public class Location
     public Location() { }
     
     private List<DepartmentLocation> _departmentLocations = [];
-    private Location(Guid id,Name name, string address, Timezone timezone, 
-        bool isActive, IEnumerable<DepartmentLocation> departmentLocations, DateTime createdAt, DateTime? updatedAt)
+    private Location(Guid id,Name name, Address address, Timezone timezone, 
+        bool isActive, DateTime createdAt, DateTime? updatedAt)
     {
         Id = id;
         Name = name;
         Address = address;
         Timezone = timezone;
         IsActive = isActive;
-        _departmentLocations = departmentLocations.ToList();
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         
@@ -27,7 +26,7 @@ public class Location
 
     public IReadOnlyList<DepartmentLocation> DepartmentLocations => _departmentLocations;
 
-    public string Address { get; private set; }
+    public Address Address { get; private set; }
 
     public Timezone Timezone { get; private set; }
 
@@ -37,8 +36,7 @@ public class Location
 
     public DateTime? UpdatedAt { get; private set; }
 
-    public static Result<Location> Create(Name name, string address, Timezone timezone, 
-        bool isActive, IEnumerable<DepartmentLocation> departmentLocations)
+    public static Result<Location> Create(Name name, Address address, Timezone timezone)
     {
         
         var id = Guid.NewGuid();
@@ -50,7 +48,6 @@ public class Location
             address, 
             timezone, 
             true, 
-            departmentLocations, 
             createdAt, 
             null);
     }

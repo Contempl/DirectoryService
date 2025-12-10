@@ -15,11 +15,21 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
             .HasColumnName("id");
         
         builder.HasKey(l => l.Id);
-        
-        builder.Property(l => l.Address)
-            .HasColumnName("address")
-            .HasMaxLength(500)
-            .IsRequired();
+
+        builder.ComplexProperty(l => l.Address, la =>
+        {
+            la.Property(a => a.City)
+                .HasColumnName("city");
+            
+            la.Property(a => a.Street)
+                .HasColumnName("street");
+            
+            la.Property(a => a.House)
+                .HasColumnName("house");
+            
+            la.Property(a => a.Apartment)
+                .HasColumnName("apartment");
+        });
         
         builder.Property(l => l.CreatedAt)
             .IsRequired()
