@@ -1,8 +1,10 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Application.Locations;
 
 public interface ILocationService
 {
-    Task<Guid> CreateLocationAsync(CreateLocationDto request, CancellationToken cancellationToken);
+    Task<Result<Guid, Errors>> CreateLocationAsync(CreateLocationDto request, CancellationToken cancellationToken);
 }
