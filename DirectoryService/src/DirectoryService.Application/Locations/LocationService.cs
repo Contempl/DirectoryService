@@ -1,6 +1,8 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
+using DirectoryService.Domain.Shared;
 using FluentValidation;
 
 namespace DirectoryService.Application.Locations;
@@ -9,12 +11,12 @@ public class LocationService(ILocationRepository locationRepository, IValidator<
 {
     
 
-    public async Task<Guid> CreateLocationAsync(CreateLocationDto request, CancellationToken cancellationToken = default)
+    public async Task<Result<Guid, Errors>> CreateLocationAsync(CreateLocationDto request, CancellationToken cancellationToken = default)
     {
         var validationResult = await locationValidator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
         {
-            throw new ValidationException(validationResult.Errors);
+            return GeneralErrors.ValueIsInvalid("location").ToErrors();
         }
         
         var locationName = Name.Create(request.Name).Value;
