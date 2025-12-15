@@ -4,10 +4,14 @@ using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
 using DirectoryService.Domain.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Locations;
 
-public class LocationService(ILocationRepository locationRepository, IValidator<CreateLocationDto> locationValidator) : ILocationService
+public class LocationService(
+    ILocationRepository locationRepository, 
+    IValidator<CreateLocationDto> locationValidator, 
+    ILogger<LocationService> _logger) : ILocationService
 {
     
 
@@ -26,6 +30,8 @@ public class LocationService(ILocationRepository locationRepository, IValidator<
         var location = Location.Create(locationName, locationAddress, request.Timezone).Value;
         
         var locationId = await locationRepository.AddAsync(location, cancellationToken);
+        
+        _logger.LogInformation($"Created location with id: {locationId}");
         
         return locationId;
     }
