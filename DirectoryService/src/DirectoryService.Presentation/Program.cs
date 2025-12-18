@@ -9,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<ApplicationDbContext>();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Host.UseSerilog((context, configuration) => 
