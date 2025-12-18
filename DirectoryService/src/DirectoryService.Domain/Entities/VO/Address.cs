@@ -1,4 +1,5 @@
 using CSharpFunctionalExtensions;
+using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Domain.Entities.VO;
 
@@ -9,10 +10,10 @@ public record Address(string City, string Street, string House, string? Apartmen
     public string House { get; }
     public string Apartment { get; }
 
-    public static Result<Address> Create(string city, string street, string house, string? apartment)
+    public static Result<Address, Error> Create(string city, string street, string house, string? apartment)
     {
         if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(street) || string.IsNullOrWhiteSpace(house))
-            return Result.Failure<Address>("Invalid address");
+            return GeneralErrors.ValueIsInvalid("Invalid address");
         
         return new Address(city, street, house, apartment);
     }
