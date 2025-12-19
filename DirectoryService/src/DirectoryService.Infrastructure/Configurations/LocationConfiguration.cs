@@ -16,7 +16,7 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
         
         builder.HasKey(l => l.Id);
 
-        builder.ComplexProperty(l => l.Address, la =>
+        builder.OwnsOne(l => l.Address, la =>
         {
             la.Property(a => a.City)
                 .HasColumnName("city");
@@ -29,6 +29,10 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
             
             la.Property(a => a.Apartment)
                 .HasColumnName("apartment");
+            
+            la.HasIndex(x => new { x.City, x.Street, x.House, x.Apartment })
+                .IsUnique()
+                .HasDatabaseName("ix_locations_address");
         });
         
         builder.Property(l => l.CreatedAt)
@@ -46,12 +50,16 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
                 .HasColumnName("timezone");
         });
         
-        builder.ComplexProperty(l => l.Name, ln =>
+        builder.OwnsOne(l => l.Name, ln =>
         {
             ln.Property(t => t.Value)
                 .IsRequired()
                 .HasMaxLength(500)
                 .HasColumnName("name");
+            
+            ln.HasIndex(x => x.Value)
+                .IsUnique()
+                .HasDatabaseName("ix_locations_name");
         });
         
         builder.Property(l => l.IsActive)
