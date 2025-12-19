@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DirectoryService.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class UniqueLocations : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

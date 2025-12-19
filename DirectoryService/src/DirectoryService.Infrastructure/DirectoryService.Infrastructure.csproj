@@ -32,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Migrations\ApplicationDbContextModelSnapshot.cs" />
+      <Folder Include="Migrations\" />
     </ItemGroup>
 
 </Project>
