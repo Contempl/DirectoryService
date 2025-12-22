@@ -23,7 +23,7 @@ public static class GeneralErrors
 
     public static Error AlreadyExist()
     {
-        return Error.Conflict("record.already.exist", "record already exists");
+        return Error.Conflict("record.already.exist", $"record already exists");
     }
 
     public static Error Failure()
