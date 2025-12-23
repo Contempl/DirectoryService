@@ -14,7 +14,7 @@ public class ExceptionMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext httpContext, Func<Task> next)
+    public async Task InvokeAsync(HttpContext httpContext)
     {
         try
         {

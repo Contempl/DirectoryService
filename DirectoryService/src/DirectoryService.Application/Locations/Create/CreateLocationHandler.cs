@@ -17,7 +17,7 @@ public class CreateLocationHandler(
 {
 
     public async Task<Result<Guid, Errors>> HandleAsync(CreateLocationRequest request,
-        CancellationToken cancellationToken = default(CancellationToken))
+        CancellationToken cancellationToken = default)
     {
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
         if (!validationResult.IsValid)
