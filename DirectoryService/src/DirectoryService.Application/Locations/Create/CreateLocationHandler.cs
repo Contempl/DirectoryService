@@ -37,10 +37,10 @@ public class CreateLocationHandler(
         
         var location = Location.Create(locationName, locationAddress, timezone).Value;
 
-        var locationId = await _locationRepository.AddAsync(location, cancellationToken);
+        var locationResult = await _locationRepository.CreateAsync(location, cancellationToken);
 
-        _logger.LogInformation($"Created location with id: {locationId}");
+        _logger.LogInformation($"Created location with id: {locationResult}");
 
-        return locationId;
+        return locationResult;
     }
 }

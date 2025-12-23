@@ -69,10 +69,8 @@ public class CreateDepartmentHandler(
         if (department.IsFailure)
             return department.Error.ToErrors();
 
-        var departmentId = await _departmentRepository.AddAsync(department.Value, cancellationToken);
+        var departmentResult = await _departmentRepository.CreateAsync(department.Value, cancellationToken);
 
-        _logger.LogInformation($"Created department with id: {departmentId}");
-
-        return departmentId;
+        return departmentResult;
     }
 }

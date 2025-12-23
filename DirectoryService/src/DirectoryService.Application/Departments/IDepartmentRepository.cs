@@ -6,7 +6,7 @@ namespace DirectoryService.Application.Departments;
 
 public interface IDepartmentRepository
 {
-    Task<Result<Guid, Errors>> AddAsync(Department department, CancellationToken cancellationToken = default);
+    Task<Result<Guid, Errors>> CreateAsync(Department department, CancellationToken cancellationToken = default);
     
     Task<Result<Department, Errors>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

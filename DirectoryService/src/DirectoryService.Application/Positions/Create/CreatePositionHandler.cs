@@ -47,11 +47,8 @@ public class CreatePositionHandler(
         
         var position = Position.Create(name, request.Description, departmentPositions).Value;
         
-        var positions = await _positionRepository.CreatePositionAsync(position, cancellationToken);
+        var positionResult = await _positionRepository.CreatePositionAsync(position, cancellationToken);
         
-        if (positions.IsFailure)
-            return positions.Error;
-        
-        return positions.Value;
+        return positionResult;
     }
 }
