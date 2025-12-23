@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Presentation.Controllers;
 
+[ApiController]
 public class LocationController : ControllerBase
 {
     private readonly ILocationService _locationService;
