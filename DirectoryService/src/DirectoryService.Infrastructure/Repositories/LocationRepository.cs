@@ -18,7 +18,7 @@ public class LocationRepository : ILocationRepository
         _logger = logger;
     }
 
-    public async Task<Result<Guid, Errors>> AddAsync(Location location, CancellationToken cancellationToken = default)
+    public async Task<Result<Guid, Errors>> CreateAsync(Location location, CancellationToken cancellationToken = default)
     {
         await _dbContext.AddAsync(location, cancellationToken);
         try
