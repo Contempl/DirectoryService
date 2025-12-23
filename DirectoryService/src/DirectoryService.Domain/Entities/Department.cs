@@ -1,6 +1,5 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities.VO;
-using DirectoryService.Domain.Shared;
 using Path = DirectoryService.Domain.Entities.VO.Path;
 
 namespace DirectoryService.Domain.Entities;
@@ -16,8 +15,12 @@ public class Department
         Guid? parentId, 
         Identifier identifier, 
         Path path,
+        IEnumerable<Position> departmentPositions,
         short depth,
-        List<DepartmentLocation> locations)
+        bool isActive,
+        IEnumerable<Location> locations,
+        DateTime createdAt,
+        DateTime? updatedAt)
     {
         Id = Guid.NewGuid();
         Name = name;
@@ -25,7 +28,9 @@ public class Department
         Identifier = identifier;
         Path = path;
         Depth = depth;
-        _locations = locations;
+        IsActive = isActive;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
     }
     
     public Guid Id { get; private set; }
@@ -46,48 +51,40 @@ public class Department
 
     public int ChildrenCount { get; private set; }
 
-    public bool IsActive { get; private set; } = true;
+    public bool IsActive { get; private set; }
 
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
 
-    public DateTime? UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
 
-    public static Result<Department, Error> Create(
+    public static Result<Department> Create(
         Name name,
         Identifier identifier,
+        IEnumerable<Position> departmentPositions,
         Guid? parentId,
-        Department? parent,
-        List<DepartmentLocation> locations)
+        short depth,
+        Path path,
+        IEnumerable<Location> departmentLocations)
     {
+        if (!departmentLocations.Any())
+            return Result.Failure<Department>("No locations specified");
+
+        if (!departmentPositions.Any())
+            return Result.Failure<Department>("No positions specified");
         
         var id = Guid.NewGuid();
-        short depth;
-        string path;
-        
-        if (parent is null)
-        {
-            path = identifier.Value;
-            depth = 0;
-            parentId = null;
-        }
-        else
-        {
-            path = $"{parent.Path}.{identifier}";
-            depth = (short)(parent.Depth + 1);
-            parentId = parent.Id; 
-        }
-
-        var pathVo = Path.Create(path);
-        if (pathVo.IsFailure)
-            return pathVo.Error;
-        
+        var createdAt = DateTime.UtcNow;
         return new Department(
             id, 
             name, 
             parentId, 
             identifier,
-            pathVo.Value,
+            path, 
+            departmentPositions,
             depth, 
-            locations);
+            true,
+            departmentLocations, 
+            createdAt, 
+            null);
     }
 }

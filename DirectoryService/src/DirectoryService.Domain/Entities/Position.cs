@@ -11,12 +11,16 @@ public class Position
     private Position(Guid id, 
         Name name, 
         string description,
-        List<DepartmentPosition> departmentPositions)
+        bool isActive,
+        DepartmentPosition departmentPositions,
+        DateTime createdAt, 
+        DateTime? updatedAt)
     {
         Id = id;
         Name = name;
         Description = description;
-        _departmentPositions = departmentPositions;
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
     }
     public Guid Id { get; private set; }
 
@@ -24,18 +28,23 @@ public class Position
 
     public string? Description { get; private set; }
 
-    public bool IsActive { get; private set; } = true;
+    public bool IsActive { get; private set; }
 
     public IReadOnlyCollection<DepartmentPosition> DepartmentPositions => _departmentPositions;
 
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; private set; }
 
-    public DateTime? UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; private set; }
 
 
-    public static Result<Position> Create(Name name, string description, List<DepartmentPosition> departmentPositions)
+    public static Result<Position> Create(Name name, string description, DepartmentPosition departmentPositions)
     {
+        if (string.IsNullOrWhiteSpace(description) || description.Length > 1000)
+            return Result.Failure<Position>("Description cannot be empty and must be less than 1000 characters");
+        
+        
         var id = Guid.NewGuid();
-        return new Position(id, name, description, departmentPositions);
+        var createdAt = DateTime.UtcNow;
+        return new Position(id, name, description, true, departmentPositions, createdAt, null);
     }
 }

@@ -20,9 +20,6 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
             .HasColumnName("description")
             .IsRequired(false);
 
-        builder.HasIndex(p => p.Name)
-            .IsUnique();
-        
         builder.ComplexProperty(p => p.Name, pn =>
         {
             pn.Property(n => n.Value)

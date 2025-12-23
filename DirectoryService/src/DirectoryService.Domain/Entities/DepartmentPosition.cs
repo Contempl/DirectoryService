@@ -7,9 +7,4 @@ public class DepartmentPosition(Guid departmentId, Guid positionId)
     public Guid DepartmentId { get; private set; } = departmentId;
 
     public Guid PositionId { get; private set;  } = positionId;
-
-    public static DepartmentPosition Create(Guid departmentId, Guid positionId)
-    {
-        return new DepartmentPosition(departmentId, positionId);
-    }
 }

@@ -1,5 +1,4 @@
 using CSharpFunctionalExtensions;
-using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Domain.Entities.VO;
 
@@ -11,10 +10,10 @@ public record Path
     }
     public string Value { get; }
 
-    public static Result<Path, Error> Create(string value)
+    public static Result<Path> Create(Guid id, string value)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > 150)
-            return GeneralErrors.ValueIsInvalid("Path cannot be empty and between 150 characters");
+            return Result.Failure<Path>("Path cannot be empty and between 150 characters");
         
         return new Path(value);
     }
