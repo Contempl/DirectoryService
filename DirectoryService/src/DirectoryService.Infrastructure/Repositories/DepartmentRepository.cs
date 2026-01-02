@@ -46,6 +46,18 @@ public class DepartmentRepository : IDepartmentRepository
         return result;
     }
     
+    public async Task<Result<Department, Error>> GetByIdWithLocationsAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var department = await _dbContext.Departments
+            .Include(d => d.Locations) 
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (department == null)
+            return GeneralErrors.NotFound();
+
+        return department;
+    }
+    
     public async Task<bool> CheckIfDepartmentsExistAsync(List<Guid> departmentIds, CancellationToken cancellationToken = default)
     {
         var foundCount = await _dbContext.Departments

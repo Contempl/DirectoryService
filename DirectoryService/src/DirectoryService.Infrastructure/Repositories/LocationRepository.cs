@@ -40,6 +40,5 @@ public class LocationRepository : ILocationRepository
             .CountAsync(cancellationToken);
 
         return foundCount == locationIds.Count;
-        
     }
 }
