@@ -36,7 +36,6 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
 
     public async Task<UnitResult<Errors>> Handle(UpdateLocationRequest request, CancellationToken cancellationToken)
     {
-            
         // Проверить — существует ли подразделение с таким departmentId и оно активно
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
 
@@ -46,7 +45,7 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
             return validationResult.ToErrors();
         }
 
-        var departmentId = request.LocationDto.departmentId;
+        var departmentId = request.DepartmentId;
 
         var existingDepartment = await _departmentRepository.GetByIdWithLocationsAsync(departmentId, cancellationToken);
         if (existingDepartment.IsFailure)
@@ -54,13 +53,8 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
             _logger.LogError("department with id {0} could not be found", departmentId);
             return existingDepartment.Error.ToErrors();
         }
-
-        if (existingDepartment.Value.IsActive is false)
-        {
-            _logger.LogError("department with id {0} is not active", departmentId);
-            return GeneralErrors.ValueIsInvalid("department is not active").ToErrors();
-        }
-        var locationIds = request.LocationDto.locationIds.ToList();
+        
+        var locationIds = request.LocationIds.ToList();
         
         //  Проверить — все locationIds существуют и активны, нет дубликатов
         var existingLocationsResult = await _locationRepository.CheckIfLocationsExistAsync(locationIds, cancellationToken);

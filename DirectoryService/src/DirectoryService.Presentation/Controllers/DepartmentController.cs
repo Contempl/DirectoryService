@@ -28,11 +28,9 @@ public class DepartmentController : ControllerBase
     }
     
     [HttpPut("api/departments/{departmentId}/locations")]
-    public async Task<Result<Guid, Errors>> UpdateLocations([FromQuery] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
+    public async Task<Result<Guid, Errors>> UpdateLocations([FromRoute] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
     {
-        var ids = locationIds.ToArray();
-        var command = new UpdateLocationDto(departmentId, ids);
-        var request = new UpdateLocationRequest(command);
+        var request = new UpdateLocationRequest(departmentId, locationIds);
         
         var result = await _updateLocationHandler.Handle(request, cancellationToken);
         if (result.IsFailure)

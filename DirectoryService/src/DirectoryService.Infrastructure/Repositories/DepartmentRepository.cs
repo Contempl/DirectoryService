@@ -50,6 +50,7 @@ public class DepartmentRepository : IDepartmentRepository
     {
         var department = await _dbContext.Departments
             .Include(d => d.Locations) 
+            .Where(d => d.IsActive)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
         if (department == null)
