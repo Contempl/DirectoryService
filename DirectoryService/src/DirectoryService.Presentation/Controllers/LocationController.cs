@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Presentation.Controllers;
 
+[ApiController]
 public class LocationController : ControllerBase
 {
     private readonly ILocationService _locationService;
@@ -18,6 +19,5 @@ public class LocationController : ControllerBase
     public async Task<EndpointResult<Guid>> CreateLocation(CreateLocationDto request, CancellationToken cancellationToken)
     {
         return await _locationService.CreateLocationAsync(request, cancellationToken);
-
     }
 }

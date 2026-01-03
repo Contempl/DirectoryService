@@ -90,4 +90,18 @@ public class Department
             depth, 
             locations);
     }
+    
+    public UnitResult<Error> UpdateLocations(IEnumerable<DepartmentLocation> newLocationIds)
+    {
+        var locationList = newLocationIds.ToList();
+
+        if (locationList.Count == 0)
+            return GeneralErrors.ValueIsRequired("locationId");
+
+        _locations.Clear();
+
+        _locations.AddRange(locationList);
+
+        return UnitResult.Success<Error>();
+    }
 }

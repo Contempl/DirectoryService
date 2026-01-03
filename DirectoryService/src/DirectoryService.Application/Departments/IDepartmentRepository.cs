@@ -11,4 +11,6 @@ public interface IDepartmentRepository
     Task<Result<Department, Errors>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> CheckIfDepartmentsExistAsync(List<Guid> departmentIds, CancellationToken cancellationToken = default);
+
+    Task<Result<Department, Error>> GetByIdWithLocationsAsync(Guid id, CancellationToken cancellationToken = default);
 }
