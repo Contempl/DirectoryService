@@ -14,6 +14,8 @@ builder.Services.AddInfrastructure();
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 app.UseExceptionHandlingMiddleware();
@@ -28,5 +30,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.MapControllers();
 
 app.Run();
