@@ -72,7 +72,7 @@ public class Department
         }
         else
         {
-            path = $"{parent.Path}.{identifier}";
+            path = $"{parent.Path.Value}.{identifier.Value}";
             depth = (short)(parent.Depth + 1);
             parentId = parent.Id; 
         }
