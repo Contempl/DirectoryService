@@ -21,6 +21,7 @@ namespace DirectoryService.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "9.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "ltree");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("DirectoryService.Domain.Entities.Department", b =>
@@ -72,17 +73,6 @@ namespace DirectoryService.Infrastructure.Migrations
                                 .HasMaxLength(500)
                                 .HasColumnType("character varying(500)")
                                 .HasColumnName("name");
-                        });
-
-                    b.ComplexProperty<Dictionary<string, object>>("Path", "DirectoryService.Domain.Entities.Department.Path#Path", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(500)
-                                .HasColumnType("character varying(500)")
-                                .HasColumnName("path");
                         });
 
                     b.HasKey("Id");
@@ -194,19 +184,39 @@ namespace DirectoryService.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.ComplexProperty<Dictionary<string, object>>("Name", "DirectoryService.Domain.Entities.Position.Name#Name", b1 =>
-                        {
-                            b1.IsRequired();
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(100)
-                                .HasColumnType("name");
-                        });
-
                     b.HasKey("Id");
 
                     b.ToTable("positions", (string)null);
+                });
+
+            modelBuilder.Entity("DirectoryService.Domain.Entities.Department", b =>
+                {
+                    b.OwnsOne("DirectoryService.Domain.Entities.VO.Path", "Path", b1 =>
+                        {
+                            b1.Property<Guid>("DepartmentId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("ltree")
+                                .HasColumnName("path");
+
+                            b1.HasKey("DepartmentId");
+
+                            b1.HasIndex("Value")
+                                .HasDatabaseName("idx_department_path");
+
+                            NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Value"), "gist");
+
+                            b1.ToTable("departments", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("DepartmentId");
+                        });
+
+                    b.Navigation("Path")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DirectoryService.Domain.Entities.DepartmentLocation", b =>
@@ -272,7 +282,7 @@ namespace DirectoryService.Infrastructure.Migrations
                                 .IsUnique()
                                 .HasDatabaseName("ix_locations_address");
 
-                            b1.ToTable("locations");
+                            b1.ToTable("locations", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("LocationId");
@@ -295,7 +305,7 @@ namespace DirectoryService.Infrastructure.Migrations
                                 .IsUnique()
                                 .HasDatabaseName("ix_locations_name");
 
-                            b1.ToTable("locations");
+                            b1.ToTable("locations", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("LocationId");
@@ -303,6 +313,34 @@ namespace DirectoryService.Infrastructure.Migrations
 
                     b.Navigation("Address")
                         .IsRequired();
+
+                    b.Navigation("Name")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DirectoryService.Domain.Entities.Position", b =>
+                {
+                    b.OwnsOne("DirectoryService.Domain.Entities.VO.Name", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("PositionId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("name");
+
+                            b1.HasKey("PositionId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("positions", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PositionId");
+                        });
 
                     b.Navigation("Name")
                         .IsRequired();

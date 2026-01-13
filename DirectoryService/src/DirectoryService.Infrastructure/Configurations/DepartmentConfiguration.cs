@@ -31,17 +31,22 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         builder.ComplexProperty(d => d.Identifier, di =>
         {
             di.Property(t => t.Value)
+                .HasColumnName("identifier")
                 .IsRequired()
-                .HasMaxLength(500)
-                .HasColumnName("identifier");
+                .HasMaxLength(500);
         });
 
-        builder.ComplexProperty(d => d.Path, dp =>
+        builder.OwnsOne(d => d.Path, dp =>
         {
             dp.Property(t => t.Value)
+                .HasColumnType("ltree")
                 .IsRequired()
                 .HasMaxLength(500)
                 .HasColumnName("path");
+            
+            dp.HasIndex(d => d.Value)
+                .HasMethod("gist")
+                .HasDatabaseName("idx_department_path");
         });
 
         builder.Property(d => d.IsActive)
