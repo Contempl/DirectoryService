@@ -23,6 +23,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("ltree");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DepartmentConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LocationConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PositionConfiguration).Assembly);

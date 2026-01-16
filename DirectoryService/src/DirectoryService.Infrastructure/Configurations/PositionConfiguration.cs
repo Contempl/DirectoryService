@@ -19,16 +19,16 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
         builder.Property(p => p.Description)
             .HasColumnName("description")
             .IsRequired(false);
-
-        builder.HasIndex(p => p.Name)
-            .IsUnique();
         
-        builder.ComplexProperty(p => p.Name, pn =>
+        builder.OwnsOne(p => p.Name, pn =>
         {
             pn.Property(n => n.Value)
                 .HasMaxLength(100)
-                .HasColumnType("name")
+                .HasColumnName("name")
                 .IsRequired();
+            
+            pn.HasIndex(p => p.Value)
+                .IsUnique();
         });
         
         builder.Property(p => p.CreatedAt)
@@ -41,6 +41,5 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
         
         builder.Property(l => l.IsActive)
             .HasColumnName("is_active");
-        
     }
 }

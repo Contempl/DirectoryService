@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DirectoryService.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DirectoryService.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109164714_LtreeIndex")]
+    partial class LtreeIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -209,7 +212,7 @@ namespace DirectoryService.Infrastructure.Migrations
 
                             NpgsqlIndexBuilderExtensions.HasMethod(b1.HasIndex("Value"), "gist");
 
-                            b1.ToTable("departments", (string)null);
+                            b1.ToTable("departments");
 
                             b1.WithOwner()
                                 .HasForeignKey("DepartmentId");
@@ -251,6 +254,29 @@ namespace DirectoryService.Infrastructure.Migrations
 
             modelBuilder.Entity("DirectoryService.Domain.Entities.Location", b =>
                 {
+                    b.OwnsOne("DirectoryService.Domain.Entities.VO.Name", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("LocationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(500)
+                                .HasColumnType("character varying(500)")
+                                .HasColumnName("name");
+
+                            b1.HasKey("LocationId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique()
+                                .HasDatabaseName("ix_locations_name");
+
+                            b1.ToTable("locations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LocationId");
+                        });
+
                     b.OwnsOne("DirectoryService.Domain.Entities.VO.Address", "Address", b1 =>
                         {
                             b1.Property<Guid>("LocationId")
@@ -282,30 +308,7 @@ namespace DirectoryService.Infrastructure.Migrations
                                 .IsUnique()
                                 .HasDatabaseName("ix_locations_address");
 
-                            b1.ToTable("locations", (string)null);
-
-                            b1.WithOwner()
-                                .HasForeignKey("LocationId");
-                        });
-
-                    b.OwnsOne("DirectoryService.Domain.Entities.VO.Name", "Name", b1 =>
-                        {
-                            b1.Property<Guid>("LocationId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(500)
-                                .HasColumnType("character varying(500)")
-                                .HasColumnName("name");
-
-                            b1.HasKey("LocationId");
-
-                            b1.HasIndex("Value")
-                                .IsUnique()
-                                .HasDatabaseName("ix_locations_name");
-
-                            b1.ToTable("locations", (string)null);
+                            b1.ToTable("locations");
 
                             b1.WithOwner()
                                 .HasForeignKey("LocationId");
@@ -336,7 +339,7 @@ namespace DirectoryService.Infrastructure.Migrations
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("positions", (string)null);
+                            b1.ToTable("positions");
 
                             b1.WithOwner()
                                 .HasForeignKey("PositionId");

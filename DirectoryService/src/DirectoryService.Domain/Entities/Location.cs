@@ -49,7 +49,7 @@ public class Location
             timezone, 
             true, 
             createdAt, 
-            null);
+            createdAt);
     }
 }
 
