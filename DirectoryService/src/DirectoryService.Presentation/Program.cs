@@ -10,7 +10,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
@@ -34,3 +34,8 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+namespace DirectorService.API
+{
+    public partial class Program;
+}
