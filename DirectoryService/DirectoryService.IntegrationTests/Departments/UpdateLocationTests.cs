@@ -1,5 +1,6 @@
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations.Update;
+using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,8 +16,9 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithValidData_ShouldUpdateLocation()
     {
         // Arrange
-        var locationIds = await CreateLocationsAsync();
-        var departmentWithLocations = await CreateDepartmentWithLocationsAsync();
+        var ct = CancellationToken.None;
+        var locationIds = await CreateLocationsAsync(ct);
+        var departmentWithLocations = await CreateDepartmentWithLocationsAsync(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -42,8 +44,9 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithOneLocation_ShouldUpdateSuccessfully()
     {
         // Arrange
-        var locationId = await CreateLocation();
-        var department = await CreateDepartmentAsync();
+        var ct = CancellationToken.None;
+        var locationId = await CreateLocation(ct);
+        var department = await CreateDepartmentAsync(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -62,8 +65,9 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithTheSameLocation_ShouldFallWithError()
     {
         // Arrange
-        var department = await CreateDepartmentAsync();
-        var locationId = await CreateLocation();
+        var ct = CancellationToken.None;
+        var department = await CreateDepartmentAsync(ct);
+        var locationId = await CreateLocation(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -82,7 +86,8 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithInvalidData_ShouldReturnError()
     {
         // Arrange
-        var departmentWithLocations = await CreateDepartmentWithLocationsAsync();
+        var ct = CancellationToken.None;
+        var departmentWithLocations = await CreateDepartmentWithLocationsAsync(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>

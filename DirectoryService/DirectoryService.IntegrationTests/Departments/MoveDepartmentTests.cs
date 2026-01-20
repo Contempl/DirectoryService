@@ -1,5 +1,6 @@
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Update;
+using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +17,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithValidData_ShouldUpdateDepartment()
     {
         // Arrange
-        var departmentIds = await CreateDepartmentsHierarchy();
+        var ct = CancellationToken.None;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -43,7 +45,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithNullParent_ShouldHaveZeroDepth()
     {
         // Arrange
-        var departmentIds = await CreateDepartmentsHierarchy();
+        var ct = CancellationToken.None;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -70,7 +73,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithInvalidData_ShouldReturnError()
     {
         // Arrange
-        var departmentIds = await CreateDepartmentsHierarchy();
+        var ct = CancellationToken.None;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>
@@ -89,7 +93,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_MoveIntoChildDepartment_ShouldFallWithError()
     {
         // Arrange
-        var departmentIds = await CreateDepartmentsHierarchy();
+        var ct = CancellationToken.None;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
         var result = await ExecuteHandler(sut =>

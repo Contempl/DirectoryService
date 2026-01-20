@@ -1,7 +1,7 @@
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
 
-namespace DirectoryService.IntegrationTests;
+namespace DirectoryService.IntegrationTests.Departments.Infrastructure;
 
 public class DepartmentsBaseTests : DirectoryBaseTests
 {
@@ -9,7 +9,7 @@ public class DepartmentsBaseTests : DirectoryBaseTests
     {
     }
 
-    protected async Task<Guid> CreateLocation()
+    protected async Task<Guid> CreateLocation(CancellationToken ct)
     {
         return await ExecuteInDb(async dbContext =>
         {
@@ -19,13 +19,13 @@ public class DepartmentsBaseTests : DirectoryBaseTests
                 Timezone.Create("UTC").Value).Value;
 
             dbContext.Locations.Add(location);
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ct);
 
             return location.Id;
         });
     }
 
-    protected async Task<IEnumerable<Guid>> CreateLocationsAsync()
+    protected async Task<IEnumerable<Guid>> CreateLocationsAsync(CancellationToken ct)
     {
         var result = await ExecuteInDb(async dbContext =>
         {
@@ -41,14 +41,14 @@ public class DepartmentsBaseTests : DirectoryBaseTests
                 locations.Add(location);
             }
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ct);
             return locations;
         });
         return result.Select(l => l.Id);
     }
 
 
-    protected async Task<Department> CreateDepartmentWithLocationsAsync()
+    protected async Task<Department> CreateDepartmentWithLocationsAsync(CancellationToken ct)
     {
         var timezone = Timezone.Create("UTC").Value;
 
@@ -82,14 +82,14 @@ public class DepartmentsBaseTests : DirectoryBaseTests
         return await ExecuteInDb<Department>(async (dbContext) =>
         {
             await dbContext.Locations.AddRangeAsync(location1, location2, location3);
-            await dbContext.Departments.AddAsync(department, CancellationToken.None);
+            await dbContext.Departments.AddAsync(department, ct);
 
-            await dbContext.SaveChangesAsync(CancellationToken.None);
+            await dbContext.SaveChangesAsync(ct);
             return department;
         });
     }
 
-    protected async Task<Department> CreateDepartmentAsync()
+    protected async Task<Department> CreateDepartmentAsync(CancellationToken ct)
     {
         var timezone = Timezone.Create("UTC").Value;
 
@@ -110,19 +110,19 @@ public class DepartmentsBaseTests : DirectoryBaseTests
         var department = Department.Create(deptName, identifier, null, null, departmentLocations).Value;
 
 
-        return await ExecuteInDb<Department>(async (dbContext) =>
+        return await ExecuteInDb<Department>(async dbContext =>
         {
-            await dbContext.Locations.AddAsync(location, CancellationToken.None);
-            await dbContext.Departments.AddAsync(department, CancellationToken.None);
+            await dbContext.Locations.AddAsync(location, ct);
+            await dbContext.Departments.AddAsync(department, ct);
 
-            await dbContext.SaveChangesAsync(CancellationToken.None);
+            await dbContext.SaveChangesAsync(ct);
             return department;
         });
     }
 
-    protected async Task<List<Guid>> CreateDepartmentsHierarchy()
+    protected async Task<List<Guid>> CreateDepartmentsHierarchy(CancellationToken ct)
     {
-        var locations = await CreateLocationsAsync();
+        var locations = await CreateLocationsAsync(ct);
         var locationIds = locations.ToArray();
         
         var main = Department.Create(
@@ -174,7 +174,7 @@ public class DepartmentsBaseTests : DirectoryBaseTests
                 main, moscow, marketing, engineers,
                 sales, shops, callCenter);
 
-            await dbContext.SaveChangesAsync(CancellationToken.None);
+            await dbContext.SaveChangesAsync(ct);
 
             return new List<Guid>
             {

@@ -1,5 +1,6 @@
 ﻿using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Create;
+using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,7 +16,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithValidData_ShouldSucceed()
     {
         // Arrange
-        var locationId = await CreateLocation();
+        var ct = CancellationToken.None;
+        var locationId = await CreateLocation(ct);
         
         // Act
         var result = await ExecuteHandler((sut) =>
@@ -42,7 +44,7 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithInvalidData_ShouldFail()
     {
         // Act
-        var result = await ExecuteHandler((sut) =>
+        var result = await ExecuteHandler(sut =>
         {
             var command = new CreateDepartmentRequest("Test Department", "TestDep", null, []);
             
@@ -58,7 +60,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithEmptyName_ShouldReturnError()
     {
         // Arrange
-        var locationId = await CreateLocation();
+        var ct = CancellationToken.None;
+        var locationId = await CreateLocation(ct);
 
         // Act
         var result = await ExecuteHandler((sut) =>
@@ -77,7 +80,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithIdentifier_ShouldReturnError()
     {
         // Arrange
-        var locationId = await CreateLocation();
+        var ct = CancellationToken.None;
+        var locationId = await CreateLocation(ct);
 
         // Act
         var result = await ExecuteHandler((sut) =>
