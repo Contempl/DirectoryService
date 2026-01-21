@@ -7,13 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Infrastructure;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IConfiguration configuration) : DbContext(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
-
-        optionsBuilder.UseNpgsql(configuration.GetConnectionString("Database"));
+        
         optionsBuilder.EnableSensitiveDataLogging();
         optionsBuilder.UseLoggerFactory(CreateLoggerFactory());
     }
@@ -55,6 +54,6 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         optionsBuilder.UseNpgsql(configuration.GetConnectionString("Database"));
 
-        return new ApplicationDbContext(optionsBuilder.Options, configuration);
+        return new ApplicationDbContext(optionsBuilder.Options);
     }
 }
