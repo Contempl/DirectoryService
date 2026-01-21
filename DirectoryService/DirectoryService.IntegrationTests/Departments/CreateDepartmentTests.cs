@@ -16,7 +16,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithValidData_ShouldSucceed()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var locationId = await CreateLocation(ct);
         
         // Act
@@ -24,14 +25,14 @@ public class CreateDepartmentTests : DepartmentsBaseTests
         {
             var command = new CreateDepartmentRequest("Test Department", "TestDep", null, [locationId]);
             
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
         
         // Assert
         await ExecuteInDb(async dbContext =>
         {
             var department = await dbContext.Departments
-                .FirstAsync(d => d.Id == result.Value, CancellationToken.None);
+                .FirstAsync(d => d.Id == result.Value, ct);
 
             Assert.NotNull(department);
             Assert.True(department.Id == result.Value);
@@ -44,11 +45,14 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithInvalidData_ShouldFail()
     {
         // Act
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
+        
         var result = await ExecuteHandler(sut =>
         {
             var command = new CreateDepartmentRequest("Test Department", "TestDep", null, []);
             
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
         
         // Assert
@@ -60,7 +64,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithEmptyName_ShouldReturnError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var locationId = await CreateLocation(ct);
 
         // Act
@@ -68,7 +73,7 @@ public class CreateDepartmentTests : DepartmentsBaseTests
         {
             var command = new CreateDepartmentRequest("", "TestDep", null, [locationId]);
             
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
         
         // Assert
@@ -80,7 +85,8 @@ public class CreateDepartmentTests : DepartmentsBaseTests
     public async Task CreateDepartment_WithIdentifier_ShouldReturnError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var locationId = await CreateLocation(ct);
 
         // Act
@@ -88,7 +94,7 @@ public class CreateDepartmentTests : DepartmentsBaseTests
         {
             var command = new CreateDepartmentRequest("Test Department", "", null, [locationId]);
             
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
         
         // Assert

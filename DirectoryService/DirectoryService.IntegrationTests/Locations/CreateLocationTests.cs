@@ -16,6 +16,8 @@ public class CreateLocationTests : DirectoryBaseTests
     public async Task CreateLocation_WithValidData_ShouldSucceed()
     {
         // Arrange
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var request = new CreateLocationDto("Museum", "Ryazan", "Pushkina", "8", null, "UTC");
         await using var scope = Services.CreateAsyncScope();
 
@@ -24,14 +26,14 @@ public class CreateLocationTests : DirectoryBaseTests
         {
             var command = new CreateLocationRequest(request);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
         await ExecuteInDb(async dbContext =>
         {
             var location = await dbContext.Locations
-                .FirstAsync(d => d.Id == result.Value, CancellationToken.None);
+                .FirstAsync(d => d.Id == result.Value, ct);
 
             Assert.NotNull(location);
             Assert.True(location.Id == result.Value);
@@ -44,6 +46,8 @@ public class CreateLocationTests : DirectoryBaseTests
     public async Task CreateLocation_WithInvalidName_ShouldReturnError()
     {
         // Arrange
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var request = new CreateLocationDto("", "Moscow", "", "9", null, "UTC");
 
         // Act
@@ -51,7 +55,7 @@ public class CreateLocationTests : DirectoryBaseTests
         {
             var command = new CreateLocationRequest(request);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
@@ -63,6 +67,8 @@ public class CreateLocationTests : DirectoryBaseTests
     public async Task CreateLocation_WithInvalidAddress_ShouldReturnError()
     {
         // Arrange
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var request = new CreateLocationDto("Box Office", "", "", "", null, "UTC");
 
         // Act
@@ -70,7 +76,7 @@ public class CreateLocationTests : DirectoryBaseTests
         {
             var command = new CreateLocationRequest(request);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
@@ -82,6 +88,8 @@ public class CreateLocationTests : DirectoryBaseTests
     public async Task CreateLocation_WithInvalidTimezone_ShouldFallWithError()
     {
         // Arrange
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var request = new CreateLocationDto("Museum", "Ryazan", "Pushkina", "8", null, "Jupiter");
 
         // Act
@@ -89,7 +97,7 @@ public class CreateLocationTests : DirectoryBaseTests
         {
             var command = new CreateLocationRequest(request);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert

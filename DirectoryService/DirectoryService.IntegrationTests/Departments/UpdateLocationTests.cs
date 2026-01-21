@@ -1,8 +1,12 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations.Update;
 using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
 namespace DirectoryService.IntegrationTests.Departments;
 
@@ -16,7 +20,8 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithValidData_ShouldUpdateLocation()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var locationIds = await CreateLocationsAsync(ct);
         var departmentWithLocations = await CreateDepartmentWithLocationsAsync(ct);
 
@@ -25,14 +30,14 @@ public class UpdateLocationTests : DepartmentsBaseTests
         {
             var command = new UpdateLocationRequest(departmentWithLocations.Id, locationIds);
 
-            return sut.Handle(command, CancellationToken.None);
+            return sut.Handle(command, ct);
         });
 
         // Assert
         await ExecuteInDb(async dbContext =>
         {
             var department = await dbContext.Departments
-                .FirstAsync(d => d.Id == departmentWithLocations.Id, CancellationToken.None);
+                .FirstAsync(d => d.Id == departmentWithLocations.Id, ct);
 
             Assert.NotNull(department);
             Assert.True(result.IsSuccess);
@@ -44,7 +49,8 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithOneLocation_ShouldUpdateSuccessfully()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var locationId = await CreateLocation(ct);
         var department = await CreateDepartmentAsync(ct);
 
@@ -53,7 +59,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         {
             var command = new UpdateLocationRequest(department.Id, [locationId]);
 
-            return sut.Handle(command, CancellationToken.None);
+            return sut.Handle(command, ct);
         });
 
         // Assert
@@ -65,7 +71,9 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithTheSameLocation_ShouldFallWithError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
+        
         var department = await CreateDepartmentAsync(ct);
         var locationId = await CreateLocation(ct);
 
@@ -74,7 +82,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         {
             var command = new UpdateLocationRequest(department.Id, [locationId, locationId]);
 
-            return sut.Handle(command, CancellationToken.None);
+            return sut.Handle(command, ct);
         });
 
         // Assert
@@ -86,7 +94,8 @@ public class UpdateLocationTests : DepartmentsBaseTests
     public async Task UpdateLocation_WithInvalidData_ShouldReturnError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var departmentWithLocations = await CreateDepartmentWithLocationsAsync(ct);
 
         // Act
@@ -94,7 +103,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         {
             var command = new UpdateLocationRequest(departmentWithLocations.Id, []);
 
-            return sut.Handle(command, CancellationToken.None);
+            return sut.Handle(command, ct);
         });
 
         // Assert

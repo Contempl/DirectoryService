@@ -17,7 +17,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithValidData_ShouldUpdateDepartment()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
@@ -25,14 +26,14 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         {
             var command = new UpdateDepartmentRequest(departmentIds[5], departmentIds[4]);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
         await ExecuteInDb(async dbContext =>
         {
             var department = await dbContext.Departments
-                .FirstAsync(d => d.Id == departmentIds[5], CancellationToken.None);
+                .FirstAsync(d => d.Id == departmentIds[5], ct);
 
             Assert.NotNull(department);
             Assert.True(result.IsSuccess);
@@ -45,7 +46,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithNullParent_ShouldHaveZeroDepth()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
@@ -53,14 +55,14 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         {
             var command = new UpdateDepartmentRequest(departmentIds[5], null);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
         await ExecuteInDb(async dbContext =>
         {
             var department = await dbContext.Departments
-                .FirstAsync(d => d.Id == departmentIds[5], CancellationToken.None);
+                .FirstAsync(d => d.Id == departmentIds[5], ct);
 
             Assert.NotNull(department);
             Assert.True(result.IsSuccess);
@@ -73,7 +75,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_WithInvalidData_ShouldReturnError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
@@ -81,7 +84,7 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         {
             var command = new UpdateDepartmentRequest(departmentIds[3], departmentIds[3]);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
@@ -93,7 +96,8 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     public async Task MoveDepartment_MoveIntoChildDepartment_ShouldFallWithError()
     {
         // Arrange
-        var ct = CancellationToken.None;
+        CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        CancellationToken ct = source.Token;
         var departmentIds = await CreateDepartmentsHierarchy(ct);
 
         // Act
@@ -101,7 +105,7 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         {
             var command = new UpdateDepartmentRequest(departmentIds[3], departmentIds[4]);
 
-            return sut.HandleAsync(command, CancellationToken.None);
+            return sut.HandleAsync(command, ct);
         });
 
         // Assert
