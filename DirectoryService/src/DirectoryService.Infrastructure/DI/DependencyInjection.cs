@@ -17,6 +17,8 @@ public static class DependencyInjection
     {
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Database")));
+        services.AddDbContext<IReadDbContext, ApplicationDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("Database")));
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
