@@ -1,4 +1,5 @@
-﻿using DirectoryService.Domain.Entities;
+﻿using DirectoryService.Application.Database;
+using DirectoryService.Domain.Entities;
 using DirectoryService.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Infrastructure;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options), IReadDbContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -38,7 +39,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Location> Locations  { get; set; }
 
     public DbSet<Position> Positions { get; set; }
-    
+
+    public IQueryable<Department> DepartmentsRead  => Set<Department>().AsNoTracking();
+    public IQueryable<DepartmentLocation> DepartmentLocationsRead => Set<DepartmentLocation>().AsNoTracking();
+    public IQueryable<DepartmentPosition> DepartmentPositionsRead => Set<DepartmentPosition>().AsNoTracking();
+    public IQueryable<Location> LocationsRead => Set<Location>().AsNoTracking();
+    public IQueryable<Position> PositionsRead => Set<Position>().AsNoTracking();
 }
 
 public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>

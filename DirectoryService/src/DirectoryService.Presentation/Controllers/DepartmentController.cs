@@ -33,17 +33,17 @@ public class DepartmentController : ControllerBase
     {
         return await _createDepartmentHandler.HandleAsync(request, cancellationToken);
     }
-    
+
     [HttpPut("api/departments/{departmentId}/locations")]
-    public async Task<Result<Guid, Errors>> UpdateLocations([FromRoute] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
+    public async Task<ActionResult<Result<Guid, Errors>>> UpdateLocations([FromRoute] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
     {
         var request = new UpdateLocationRequest(departmentId, locationIds);
         
         var result = await _updateLocationHandler.Handle(request, cancellationToken);
         if (result.IsFailure)
-            return result.Error;
+            return BadRequest(result.Error);
 
-        return departmentId;
+        return Ok(departmentId);
     }
 
     [HttpPut("api/departments/{departmentId}/parent")]
