@@ -1,6 +1,7 @@
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Queries;
+using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Presentation.Response;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +12,11 @@ namespace DirectoryService.Presentation.Controllers;
 public class LocationController : ControllerBase
 {
     private readonly ICommandHandler<Guid, CreateLocationRequest> _createLocationHandler;
-    private readonly IQueryHandler<GetLocationsQuery, GetLocationsDto?> _getLocationsHandler;
+    private readonly IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>> _getLocationsHandler;
 
     public LocationController(
         ICommandHandler<Guid, CreateLocationRequest> createLocationHandler,
-        IQueryHandler<GetLocationsQuery, GetLocationsDto?> getLocationsHandler)
+        IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>> getLocationsHandler)
     {
         _createLocationHandler = createLocationHandler;
         _getLocationsHandler = getLocationsHandler;
@@ -29,7 +30,7 @@ public class LocationController : ControllerBase
     }
 
     [HttpGet("api/locations")]
-    public async Task<ActionResult<GetLocationsDto>> GetLocations(
+    public async Task<ActionResult<PagedResult<LocationDto>>> GetLocations(
         [FromQuery]GetLocationsQuery query,
         CancellationToken cancellationToken)
     {

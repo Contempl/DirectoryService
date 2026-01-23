@@ -1,8 +1,4 @@
-using DirectoryService.Domain.Entities.VO;
-
 namespace DirectoryService.Contracts.Locations;
-
-public record GetLocationsDto(IReadOnlyList<LocationDto> Locations, long TotalCount);
 
 public record LocationDto
 {

@@ -1,11 +1,12 @@
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
+using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Locations;
 using Microsoft.EntityFrameworkCore;
 
 namespace DirectoryService.Application.Locations.Queries;
 
-public class GetLocationsHandler : IQueryHandler<GetLocationsQuery, GetLocationsDto?>
+public class GetLocationsHandler : IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>>
 {
     private readonly IReadDbContext _readDbContext;
 
@@ -14,7 +15,7 @@ public class GetLocationsHandler : IQueryHandler<GetLocationsQuery, GetLocations
         _readDbContext = context;
     }
 
-    public async Task<GetLocationsDto?> HandleAsync(GetLocationsQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<LocationDto>> HandleAsync(GetLocationsQuery query, CancellationToken cancellationToken)
     {
         var locationsQuery = _readDbContext.LocationsRead;
 
@@ -50,6 +51,10 @@ public class GetLocationsHandler : IQueryHandler<GetLocationsQuery, GetLocations
             })
             .ToListAsync(cancellationToken);
 
-        return new GetLocationsDto(locations, totalCount);
+        return new PagedResult<LocationDto>
+        {
+            Data = locations, 
+            TotalCount = totalCount
+        };
     }
 }
