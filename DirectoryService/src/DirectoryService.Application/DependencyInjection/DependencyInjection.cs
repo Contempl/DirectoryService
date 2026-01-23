@@ -21,6 +21,6 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Guid, CreateDepartmentRequest>, CreateDepartmentHandler>();
         services.AddScoped<ICommandHandler<UpdateLocationRequest>, UpdateLocationHandler>();
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
-        services.AddScoped<IQueryHandler<GetLocationsRequest, GetLocationsDto?>, GetLocationsHandler>();
+        services.AddScoped<IQueryHandler<GetLocationsQuery, GetLocationsDto?>, GetLocationsHandler>();
     }
 }

@@ -11,11 +11,11 @@ namespace DirectoryService.Presentation.Controllers;
 public class LocationController : ControllerBase
 {
     private readonly ICommandHandler<Guid, CreateLocationRequest> _createLocationHandler;
-    private readonly IQueryHandler<GetLocationsRequest, GetLocationsDto?> _getLocationsHandler;
+    private readonly IQueryHandler<GetLocationsQuery, GetLocationsDto?> _getLocationsHandler;
 
     public LocationController(
         ICommandHandler<Guid, CreateLocationRequest> createLocationHandler,
-        IQueryHandler<GetLocationsRequest, GetLocationsDto?> getLocationsHandler)
+        IQueryHandler<GetLocationsQuery, GetLocationsDto?> getLocationsHandler)
     {
         _createLocationHandler = createLocationHandler;
         _getLocationsHandler = getLocationsHandler;
@@ -29,10 +29,11 @@ public class LocationController : ControllerBase
     }
 
     [HttpGet("api/locations")]
-    public async Task<ActionResult<GetLocationsDto>> GetLocations([FromQuery]GetLocationsRequest request,
+    public async Task<ActionResult<GetLocationsDto>> GetLocations(
+        [FromQuery]GetLocationsQuery query,
         CancellationToken cancellationToken)
     {
-        var result =  await _getLocationsHandler.HandleAsync(request, cancellationToken);
+        var result =  await _getLocationsHandler.HandleAsync(query, cancellationToken);
         
         return Ok(result);
     }

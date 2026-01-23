@@ -2,17 +2,17 @@ using DirectoryService.Domain.Entities.VO;
 
 namespace DirectoryService.Contracts.Locations;
 
-public record GetLocationsDto(List<LocationDto> Locations, long TotalCount);
+public record GetLocationsDto(IReadOnlyList<LocationDto> Locations, long TotalCount);
 
 public record LocationDto
 {
     public Guid Id { get; init; }
 
-    public Name Name { get; init; }
+    public string Name { get; init; }
 
-    public Address Address { get; init; }
+    public AddressDto Address { get; init; }
 
-    public Timezone Timezone { get; init; }
+    public string Timezone { get; init; }
 
     public bool IsActive { get; init; }
 
