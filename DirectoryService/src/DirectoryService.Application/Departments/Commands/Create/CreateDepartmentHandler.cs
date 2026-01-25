@@ -8,7 +8,7 @@ using DirectoryService.Domain.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Application.Departments.Create;
+namespace DirectoryService.Application.Departments.Commands.Create;
 
 public class CreateDepartmentHandler(
     IDepartmentRepository _departmentRepository,

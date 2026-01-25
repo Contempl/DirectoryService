@@ -1,5 +1,4 @@
 using DirectoryService.Application.DependencyInjection;
-using DirectoryService.Infrastructure;
 using DirectoryService.Infrastructure.DI;
 using DirectoryService.Presentation.Middleware;
 using Serilog;
@@ -35,7 +34,7 @@ app.MapControllers();
 
 app.Run();
 
-namespace DirectorService.API
+namespace DirectoryService.Presentation
 {
     public partial class Program;
 }

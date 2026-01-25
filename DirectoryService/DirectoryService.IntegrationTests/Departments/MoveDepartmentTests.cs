@@ -1,5 +1,5 @@
 using DirectoryService.Application.Abstractions;
-using DirectoryService.Application.Departments.Update;
+using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

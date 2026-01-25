@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace DirectoryService.Application.Departments.Update;
+namespace DirectoryService.Application.Departments.Commands.Update;
 
 public class UpdateDepartmentValidator : AbstractValidator<UpdateDepartmentRequest>
 {
