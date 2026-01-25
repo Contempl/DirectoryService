@@ -1,5 +1,5 @@
 using CSharpFunctionalExtensions;
-using DirectoryService.Application.Departments.Create;
+using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Application.Departments;
