@@ -1,6 +1,6 @@
 using DirectoryService.Application.Abstractions;
-using DirectoryService.Application.Departments.Create;
-using DirectoryService.Application.Departments.Update;
+using DirectoryService.Application.Departments.Commands.Create;
+using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Queries;
 using DirectoryService.Application.Locations.Update;
@@ -18,6 +18,7 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssemblyContaining<CreateDepartmentHandler>();
         services.AddScoped<ICommandHandler<Guid, CreateLocationRequest>, CreateLocationHandler>();
+        services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>, CreatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>,CreatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, CreateDepartmentRequest>, CreateDepartmentHandler>();
         services.AddScoped<ICommandHandler<UpdateLocationRequest>, UpdateLocationHandler>();

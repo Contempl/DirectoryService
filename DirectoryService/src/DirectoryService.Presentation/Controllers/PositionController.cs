@@ -1,4 +1,4 @@
-using DirectoryService.Application.Positions;
+using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Positions.Create;
 using DirectoryService.Presentation.Response;
 using Microsoft.AspNetCore.Mvc;
@@ -8,11 +8,11 @@ namespace DirectoryService.Presentation.Controllers;
 [ApiController]
 public class PositionController : ControllerBase
 {
-    private readonly IPositionService _positionService;
+    private readonly ICommandHandler<Guid, CreatePositionRequest> _positionHandler;
 
-    public PositionController(IPositionService positionService)
+    public PositionController(ICommandHandler<Guid, CreatePositionRequest> positionService)
     {
-        _positionService = positionService;
+        _positionHandler = positionService;
     }
 
 
@@ -20,6 +20,6 @@ public class PositionController : ControllerBase
     public async Task<EndpointResult<Guid>> CreatePosition(CreatePositionRequest request,
         CancellationToken cancellationToken)
     {
-        return await _positionService.HandleAsync(request, cancellationToken);
+        return await _positionHandler.HandleAsync(request, cancellationToken);
     }
 }
