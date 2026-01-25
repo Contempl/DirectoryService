@@ -53,6 +53,7 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
             _logger.LogError("department with id {0} could not be found", departmentId);
             return existingDepartment.Error.ToErrors();
         }
+        var department = existingDepartment.Value;
         
         var locationIds = request.LocationIds.ToList();
         
@@ -73,20 +74,19 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
 
         using var transactionScope = transactionResult.Value;
 
-        List<DepartmentLocation> departmentLocations = [];
-        foreach (var locationId in locationIds)
-        {
-            var departmentLocation = new DepartmentLocation(
-                departmentId, locationId);
-            departmentLocations.Add(departmentLocation);
-        }
+        await _departmentRepository.DeleteLocationsByDepAsync(departmentId, cancellationToken);
+        
+        var newLocations = locationIds.Select(id => new DepartmentLocation(departmentId, id)).ToList();
+        
+        await _departmentRepository.AddDepLocationsRelationsAsync(newLocations, cancellationToken);
 
-        var updationResult = existingDepartment.Value.UpdateLocations(departmentLocations);
-        if (updationResult.IsFailure)
+        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
         {
             transactionScope.Rollback();
-            return updationResult.Error.ToErrors();
+            return saveResult.Error.ToErrors();
         }
+        
         transactionScope.Commit();
         
         return UnitResult.Success<Errors>();

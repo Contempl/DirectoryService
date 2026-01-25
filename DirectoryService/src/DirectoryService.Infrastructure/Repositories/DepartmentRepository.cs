@@ -170,34 +170,21 @@ public class DepartmentRepository : IDepartmentRepository
             return GeneralErrors.ValueIsInvalid(ex.Message);
         }
     }
-
-
-    public async Task<UnitResult<Error>> CheckIfDepartmentsExistAsync(Path parentPath, Path departmentPath,
-        CancellationToken cancellationToken = default)
+    
+    public async Task<UnitResult<Error>> DeleteLocationsByDepAsync(Guid departmentId, CancellationToken cancellationToken)
     {
-        string sql = """
-                     SELECT id
-                     FROM departments
-                     WHERE path = @parentPath::ltree AND path <@ @departmentPath::ltree
-                     ORDER BY depth
-                     """;
+        var departmentLocationsResult = await _dbContext.DepartmentLocations
+            .Where(dl => dl.DepartmentId == departmentId)
+            .ExecuteDeleteAsync(cancellationToken);
 
-        var dbConnection = _dbContext.Database.GetDbConnection();
+        return UnitResult.Success<Error>();
+    }
 
-        try
-        {
-            var sqlParams = new { parentPath = parentPath.Value, departmentPath = departmentPath.Value };
-
-            var result = await dbConnection.QueryAsync(sql, sqlParams);
-
-            if (result.Any())
-                return GeneralErrors.ValueIsInvalid("department.parentId");
-
-            return UnitResult.Success<Error>();
-        }
-        catch (Exception ex)
-        {
-            return GeneralErrors.Failure();
-        }
+    public async Task<UnitResult<Error>> AddDepLocationsRelationsAsync(
+        List<DepartmentLocation> departmentLocations,
+        CancellationToken cancellationToken)
+    {
+        await _dbContext.DepartmentLocations.AddRangeAsync(departmentLocations, cancellationToken);
+        return UnitResult.Success<Error>();
     }
 }

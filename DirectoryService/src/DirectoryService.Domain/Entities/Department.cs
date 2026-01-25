@@ -90,18 +90,20 @@ public class Department
             depth, 
             locations);
     }
-    
-    public UnitResult<Error> UpdateLocations(IEnumerable<DepartmentLocation> newLocationIds)
+    public UnitResult<Error> UpdateLocations(IEnumerable<DepartmentLocation> newLocations)
     {
-        var locationList = newLocationIds.ToList();
+        var locations = newLocations.ToList();
+        var newLocationIds = locations.Select(x => x.Id).ToList();
+        var toRemove = _locations.Where(l => !newLocationIds.Contains(l.LocationId)).ToList();
+        foreach (var old in toRemove)
+            _locations.Remove(old);
 
-        if (locationList.Count == 0)
-            return GeneralErrors.ValueIsRequired("locationId");
-
-        _locations.Clear();
-
-        _locations.AddRange(locationList);
-
+        var remainingIds = _locations.Select(l => l.LocationId).ToList();
+        var toAdd = locations.Where(l => !remainingIds.Contains(l.LocationId));
+        _locations.AddRange(toAdd);
+    
+        UpdatedAt = DateTime.UtcNow;
+        
         return UnitResult.Success<Error>();
-    }
+    }   
 }

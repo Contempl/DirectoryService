@@ -2,7 +2,7 @@ namespace DirectoryService.Domain.Entities;
 
 public class DepartmentLocation(Guid departmentId, Guid locationId)
 {
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid Id { get; private set; }
 
     public Guid DepartmentId { get; private set; } = departmentId;
 
