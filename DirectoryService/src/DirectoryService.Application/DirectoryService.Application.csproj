@@ -17,4 +17,8 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.11"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Departments\Commands\" />
+    </ItemGroup>
+
 </Project>

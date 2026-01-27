@@ -1,10 +1,10 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
-using DirectoryService.Application.Departments;
-using DirectoryService.Application.Departments.Create;
-using DirectoryService.Application.Departments.Update;
+using DirectoryService.Application.Departments.Commands.Create;
+using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Locations.Update;
-using DirectoryService.Contracts.Locations;
+using DirectoryService.Application.Pagination;
+using DirectoryService.Contracts.Departments;
 using DirectoryService.Domain.Shared;
 using DirectoryService.Presentation.Response;
 using Microsoft.AspNetCore.Mvc;
@@ -16,16 +16,19 @@ public class DepartmentController : ControllerBase
 {
     private readonly ICommandHandler<Guid, CreateDepartmentRequest> _createDepartmentHandler;
     private readonly ICommandHandler<UpdateLocationRequest> _updateLocationHandler;
+    private readonly IQueryHandler<bool, PagedResult<DepartmentDto>> _getTopDepartmentsHandler;
     private readonly ICommandHandler<Guid, UpdateDepartmentRequest> _updateDepartmentHandler;
 
     public DepartmentController(
         ICommandHandler<Guid, CreateDepartmentRequest> createDepartmentHandler, 
         ICommandHandler<UpdateLocationRequest> updateLocationHandler, 
-        ICommandHandler<Guid, UpdateDepartmentRequest> updateDepartmentHandler)
+        ICommandHandler<Guid, UpdateDepartmentRequest> updateDepartmentHandler, 
+        IQueryHandler<bool, PagedResult<DepartmentDto>> getTopDepartmentsHandler)
     {
         _createDepartmentHandler = createDepartmentHandler;
         _updateLocationHandler = updateLocationHandler;
         _updateDepartmentHandler = updateDepartmentHandler;
+        _getTopDepartmentsHandler = getTopDepartmentsHandler;
     }
     
     [HttpPost("api/departments")]
@@ -53,5 +56,13 @@ public class DepartmentController : ControllerBase
         var request = new UpdateDepartmentRequest(departmentId, parentId);
         
         return await _updateDepartmentHandler.HandleAsync(request, cancellationToken);
+    }
+
+    [HttpGet("api/departments/top-positions")]
+    public async Task<ActionResult<PagedResult<DepartmentDto>>> GetTopPositions(bool sortByDescending, CancellationToken cancellationToken)
+    {
+        var result = await _getTopDepartmentsHandler.HandleAsync(sortByDescending, cancellationToken);
+
+        return Ok(result);
     }
 }

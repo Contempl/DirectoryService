@@ -6,7 +6,7 @@ using DirectoryService.Domain.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace DirectoryService.Application.Departments.Update;
+namespace DirectoryService.Application.Departments.Commands.Update;
 
 public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentRequest>
 {
