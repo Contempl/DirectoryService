@@ -2,6 +2,8 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries;
+using DirectoryService.Application.Departments.Queries.ChildrenDepartments;
+using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Queries;
 using DirectoryService.Application.Locations.Update;
@@ -27,5 +29,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
         services.AddScoped<IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>>, GetLocationsHandler>();
         services.AddScoped<IQueryHandler<bool, PagedResult<DepartmentDto>>, GetTopDepartmentsHandler>();
+        services.AddScoped<IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>>, GetExpandedDepartmentsHandler>();
+        services.AddScoped<IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>>, GetChildrenHandler>();
     }
 }

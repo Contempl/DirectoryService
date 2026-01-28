@@ -1,4 +1,3 @@
-using CSharpFunctionalExtensions;
 using DirectoryService.Application.Database;
 using DirectoryService.Application.Departments;
 using DirectoryService.Application.Locations;
@@ -19,6 +18,7 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("Database")));
         services.AddDbContext<IReadDbContext, ApplicationDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Database")));
+        services.AddSingleton<IDbConnectionFactory, NpgsqlConnectionFactory>();
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
