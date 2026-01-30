@@ -4,6 +4,7 @@ using DirectoryService.Application.Departments;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Path = DirectoryService.Domain.Entities.VO.Path;
 
@@ -170,8 +171,9 @@ public class DepartmentRepository : IDepartmentRepository
             return GeneralErrors.ValueIsInvalid(ex.Message);
         }
     }
-    
-    public async Task<UnitResult<Error>> DeleteLocationsByDepAsync(Guid departmentId, CancellationToken cancellationToken)
+
+    public async Task<UnitResult<Error>> DeleteLocationsByDepAsync(Guid departmentId,
+        CancellationToken cancellationToken)
     {
         var departmentLocationsResult = await _dbContext.DepartmentLocations
             .Where(dl => dl.DepartmentId == departmentId)
@@ -186,5 +188,87 @@ public class DepartmentRepository : IDepartmentRepository
     {
         await _dbContext.DepartmentLocations.AddRangeAsync(departmentLocations, cancellationToken);
         return UnitResult.Success<Error>();
+    }
+
+    public async Task UpdateTreePathsAsync(
+        Path oldPath,
+        Path newPath,
+        CancellationToken cancellationToken)
+    {
+        string sql = """
+                     UPDATE departments
+                     SET path =
+                     CASE
+                         WHEN nlevel(path) = nlevel(@OldPath::ltree)
+                         THEN @NewPath::ltree
+                         ELSE
+                             @NewPath::ltree
+                             ||
+                             subpath(path, nlevel(@OldPath::ltree))
+                     END
+                     WHERE path <@ @OldPath::ltree;
+                     """;
+
+        var parameters = new DynamicParameters(new
+        {
+            oldPath = oldPath.Value,
+            newPath = newPath.Value
+        });
+
+        await _dbContext.Database.GetDbConnection()
+            .ExecuteAsync(sql, parameters);
+    }
+
+    public async Task DeactivateOrphanedLinksAsync(Guid departmentId, CancellationToken cancellationToken)
+    {
+        string sqlLocations = """
+                                  UPDATE locations l
+                              SET is_active = false,
+                                  updated_at = NOW()
+                              WHERE
+                                  EXISTS (
+                                      SELECT 1
+                                      FROM department_locations dl
+                                      WHERE dl.location_id = l.id
+                                        AND dl.department_id = @deptId
+                                  )
+                              AND
+                                  NOT EXISTS (
+                                      SELECT 1
+                                      FROM department_locations dl2
+                                      JOIN departments d ON d.id = dl2.department_id
+                                      WHERE dl2.location_id = l.id
+                                        AND d.is_active = true
+                                        AND dl2.department_id <> @deptId
+                                  );
+                              """;
+        string sqlPositions = """
+                                 UPDATE positions p
+                              SET is_active = false,
+                                  updated_at = NOW()
+                              WHERE
+                                  EXISTS (
+                                      SELECT 1
+                                      FROM department_positions dp
+                                      WHERE dp.position_id = p.id
+                                        AND dp.department_id = @deptId
+                                  )
+                              AND
+                                  NOT EXISTS (
+                                      SELECT 1
+                                      FROM department_positions dp2
+                                      JOIN departments d ON d.id = dp2.department_id
+                                      WHERE dp2.position_id = p.id
+                                        AND d.is_active = true
+                                        AND dp2.department_id <> @deptId
+                                  );
+                              """;
+
+        var connection = _dbContext.Database.GetDbConnection();
+
+        var parameters = new DynamicParameters(new { deptId = departmentId });
+
+        await connection.ExecuteAsync(sqlLocations, parameters);
+        await connection.ExecuteAsync(sqlPositions, parameters);
     }
 }

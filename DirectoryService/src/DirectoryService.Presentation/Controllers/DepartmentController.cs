@@ -1,6 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
+using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ChildrenDepartments;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
@@ -20,6 +21,7 @@ public class DepartmentController : ControllerBase
     private readonly ICommandHandler<UpdateLocationRequest> _updateLocationHandler;
     private readonly IQueryHandler<bool, PagedResult<DepartmentDto>> _getTopDepartmentsHandler;
     private readonly ICommandHandler<Guid, UpdateDepartmentRequest> _updateDepartmentHandler;
+    private readonly ICommandHandler<Guid, DeleteDepartmentRequest> _deleteDepartmentHandler;
     private readonly IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> _getExpandedDepartmentsHandler;
     private readonly IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> _getChildrenHandler;
 
@@ -29,7 +31,8 @@ public class DepartmentController : ControllerBase
         ICommandHandler<Guid, UpdateDepartmentRequest> updateDepartmentHandler, 
         IQueryHandler<bool, PagedResult<DepartmentDto>> getTopDepartmentsHandler,
         IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> getExpandedDepartmentsHandler, 
-        IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> getChildrenHandler)
+        IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> getChildrenHandler, 
+        ICommandHandler<Guid, DeleteDepartmentRequest> deleteDepartmentHandler)
     {
         _createDepartmentHandler = createDepartmentHandler;
         _updateLocationHandler = updateLocationHandler;
@@ -37,6 +40,7 @@ public class DepartmentController : ControllerBase
         _getTopDepartmentsHandler = getTopDepartmentsHandler;
         _getExpandedDepartmentsHandler = getExpandedDepartmentsHandler;
         _getChildrenHandler = getChildrenHandler;
+        _deleteDepartmentHandler = deleteDepartmentHandler;
     }
     
     [HttpPost("api/departments")]
@@ -93,6 +97,15 @@ public class DepartmentController : ControllerBase
         var query = new GetChildrenQuery(parentId, request);
         var result = await _getChildrenHandler.HandleAsync(query, cancellationToken);
         
+        return Ok(result);
+    }
+
+    [HttpDelete("api/departments/{departmentId}")]
+    public async Task<ActionResult<Guid>> DeleteDepartment([FromRoute] Guid departmentId, CancellationToken cancellationToken)
+    {
+        var request = new DeleteDepartmentRequest(departmentId);
+        var result = await _deleteDepartmentHandler.HandleAsync(request, cancellationToken);
+
         return Ok(result);
     }
 }
