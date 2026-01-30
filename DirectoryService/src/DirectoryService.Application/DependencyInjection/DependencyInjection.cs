@@ -1,5 +1,6 @@
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
+using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries;
 using DirectoryService.Application.Departments.Queries.ChildrenDepartments;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Guid, CreateLocationRequest>, CreateLocationHandler>();
         services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>, CreatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>,CreatePositionHandler>();
+        services.AddScoped<ICommandHandler<Guid, DeleteDepartmentRequest>,DeleteDepartmentHandler>();
         services.AddScoped<ICommandHandler<Guid, CreateDepartmentRequest>, CreateDepartmentHandler>();
         services.AddScoped<ICommandHandler<UpdateLocationRequest>, UpdateLocationHandler>();
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
