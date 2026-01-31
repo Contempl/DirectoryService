@@ -4,7 +4,7 @@ using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Departments;
 using Microsoft.EntityFrameworkCore;
 
-namespace DirectoryService.Application.Departments.Queries;
+namespace DirectoryService.Application.Departments.Queries.GetTopDepartments;
 
 public class GetTopDepartmentsHandler : IQueryHandler<bool, PagedResult<DepartmentDto>>
 {

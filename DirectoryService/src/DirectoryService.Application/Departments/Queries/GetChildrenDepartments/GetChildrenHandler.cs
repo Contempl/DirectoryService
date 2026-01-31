@@ -3,7 +3,7 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Contracts.Departments;
 
-namespace DirectoryService.Application.Departments.Queries.ChildrenDepartments;
+namespace DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
 
 public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>>
 {
