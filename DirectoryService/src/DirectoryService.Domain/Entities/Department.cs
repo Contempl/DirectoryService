@@ -51,6 +51,8 @@ public class Department
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; private set; } = DateTime.UtcNow;
+    
+    public DateTime? DeletedAt { get; private set; }
 
     public static Result<Department, Error> Create(
         Name name,
@@ -105,5 +107,32 @@ public class Department
         UpdatedAt = DateTime.UtcNow;
         
         return UnitResult.Success<Error>();
-    }   
+    }
+
+    public UnitResult<Error> SoftDelete()
+    {
+        if (IsActive is false)
+            return GeneralErrors.ValueIsInvalid("Department is already deleted.");
+        
+        IsActive = false;
+        DeletedAt = DateTime.UtcNow;
+        
+        return UnitResult.Success<Error>();
+    }
+    
+    public Result<Path, Error> ChangePathAfterSoftDelete()
+    {
+        var pathArr = Path.Value.Split('.');
+        var subArr = pathArr[..^1];
+        var subpath = string.Join('.', subArr.Select(x => x));
+        var pathWithDeletedPrefix = string.Concat("deleted_", pathArr.Last());
+        
+        var newPath = string.Join('.', subpath, pathWithDeletedPrefix);
+        
+        var pathResult = Path.Create(newPath);
+        if (pathResult.IsFailure)
+            return pathResult.Error;
+        
+        return pathResult.Value;
+    }
 }
