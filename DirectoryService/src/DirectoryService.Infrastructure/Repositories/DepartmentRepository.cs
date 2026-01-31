@@ -190,7 +190,7 @@ public class DepartmentRepository : IDepartmentRepository
         return UnitResult.Success<Error>();
     }
 
-    public async Task UpdateTreePathsAsync(
+    public async Task<UnitResult<Error>> UpdateTreePathsAsync(
         Path oldPath,
         Path newPath,
         CancellationToken cancellationToken)
@@ -217,9 +217,11 @@ public class DepartmentRepository : IDepartmentRepository
 
         await _dbContext.Database.GetDbConnection()
             .ExecuteAsync(sql, parameters);
+        
+        return UnitResult.Success<Error>();
     }
 
-    public async Task DeactivateOrphanedLinksAsync(Guid departmentId, CancellationToken cancellationToken)
+    public async Task<UnitResult<Error>> DeactivateOrphanedLocationsAsync(Guid departmentId, CancellationToken cancellationToken)
     {
         string sqlLocations = """
                                   UPDATE locations l
@@ -242,6 +244,19 @@ public class DepartmentRepository : IDepartmentRepository
                                         AND dl2.department_id <> @deptId
                                   );
                               """;
+       
+
+        var connection = _dbContext.Database.GetDbConnection();
+
+        var parameters = new DynamicParameters(new { deptId = departmentId });
+
+        await connection.ExecuteAsync(sqlLocations, parameters);
+        
+        return UnitResult.Success<Error>();
+    }
+
+    public async Task<UnitResult<Error>> DeactivateOrphanedPositionsAsync(Guid departmentId, CancellationToken cancellationToken = default)
+    {
         string sqlPositions = """
                                  UPDATE positions p
                               SET is_active = false,
@@ -263,12 +278,13 @@ public class DepartmentRepository : IDepartmentRepository
                                         AND dp2.department_id <> @deptId
                                   );
                               """;
-
+        
         var connection = _dbContext.Database.GetDbConnection();
 
         var parameters = new DynamicParameters(new { deptId = departmentId });
-
-        await connection.ExecuteAsync(sqlLocations, parameters);
+        
         await connection.ExecuteAsync(sqlPositions, parameters);
+        
+        return UnitResult.Success<Error>();
     }
 }

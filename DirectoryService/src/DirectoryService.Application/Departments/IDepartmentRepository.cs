@@ -26,7 +26,12 @@ public interface IDepartmentRepository
 
     Task<UnitResult<Error>> MoveDepartment(Path departmentPath, CancellationToken cancellationToken = default);
 
-    Task UpdateTreePathsAsync(Path oldPath, Path newPath, CancellationToken cancellationToken = default);
+    Task<UnitResult<Error>> UpdateTreePathsAsync(Path oldPath, Path newPath,
+        CancellationToken cancellationToken = default);
 
-    Task DeactivateOrphanedLinksAsync(Guid departmentId, CancellationToken cancellationToken = default);
+    Task<UnitResult<Error>> DeactivateOrphanedLocationsAsync(Guid departmentId,
+        CancellationToken cancellationToken = default);
+
+    Task<UnitResult<Error>> DeactivateOrphanedPositionsAsync(Guid departmentId,
+        CancellationToken cancellationToken = default);
 }

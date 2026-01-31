@@ -101,9 +101,12 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpDelete("api/departments/{departmentId}")]
-    public async Task<ActionResult<Guid>> DeleteDepartment([FromRoute] Guid departmentId, CancellationToken cancellationToken)
+    public async Task<ActionResult<Guid>> DeleteDepartment(
+        [FromRoute] Guid departmentId,
+        CancellationToken cancellationToken)
     {
         var request = new DeleteDepartmentRequest(departmentId);
+        
         var result = await _deleteDepartmentHandler.HandleAsync(request, cancellationToken);
 
         return Ok(result);

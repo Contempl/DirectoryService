@@ -13,7 +13,8 @@ public class DeleteDepartmentHandler : ICommandHandler<Guid, DeleteDepartmentReq
     private readonly ITransactionManager _transactionManager;
     private readonly ILogger<DeleteDepartmentHandler> _logger;
 
-    public DeleteDepartmentHandler(IDepartmentRepository departmentRepository, 
+    public DeleteDepartmentHandler(
+        IDepartmentRepository departmentRepository, 
         ILogger<DeleteDepartmentHandler> logger, 
         ITransactionManager transactionManager)
     {
@@ -46,20 +47,42 @@ public class DeleteDepartmentHandler : ICommandHandler<Guid, DeleteDepartmentReq
         if (pathIdentifierUpdateResult.IsFailure)
             return pathIdentifierUpdateResult.Error.ToErrors();
         
-        await _departmentRepository.UpdateTreePathsAsync(oldPath, pathIdentifierUpdateResult.Value, cancellationToken);
+        var updateResult = await _departmentRepository.UpdateTreePathsAsync(oldPath, pathIdentifierUpdateResult.Value, cancellationToken);
+        if (updateResult.IsFailure)
+        {
+            transaction.Rollback();
+            _logger.LogError($"Failed to update paths while deleting department. Id: {request.DepartmentId}.");
+            
+            return updateResult.Error.ToErrors();
+        }
         
-        await _departmentRepository.DeactivateOrphanedLinksAsync(department.Id, cancellationToken);
+        var deleteOrphanLocationsResult = await _departmentRepository.DeactivateOrphanedLocationsAsync(department.Id, cancellationToken);
+        if (deleteOrphanLocationsResult.IsFailure)
+        {
+            transaction.Rollback();
+            _logger.LogError($"Failed to delete orphan locations while deactivating department. Id: {request.DepartmentId}.");
+            
+            return deleteOrphanLocationsResult.Error.ToErrors();
+        }
+        
             
         var saveChangesResult = await _transactionManager.SaveChangesAsync(cancellationToken);
         if (saveChangesResult.IsFailure)
         {
+            transaction.Rollback();
             _logger.LogError($"Department with id: {request.DepartmentId} failed to delete");
+            
             return saveChangesResult.Error.ToErrors();
         }
         
         var commitResult = transaction.Commit();
         if (commitResult.IsFailure)
+        {
+            transaction.Rollback();
+            _logger.LogError("Failed to commit the transaction.");
+            
             return commitResult.Error.ToErrors();
+        }
         
         _logger.LogInformation("Department {Id} soft deleted.", department.Id);
         return department.Id;
