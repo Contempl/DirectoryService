@@ -1,38 +1,40 @@
 using Dapper;
+using DirectoryService.Infrastructure.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore.Storage;    
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DirectoryService.Infrastructure.BackgroundServices;
 
 public class DepartmentCleanerBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly TimeSpan _period;
-    private readonly int _thresholdMonths;
+    private readonly BackgroundServiceOptions _options;
     private readonly ILogger<DepartmentCleanerBackgroundService> _logger;
 
     public DepartmentCleanerBackgroundService(
         ILogger<DepartmentCleanerBackgroundService> logger,
         IServiceScopeFactory serviceScopeFactory,
-        IConfiguration configuration)
+        IOptions<BackgroundServiceOptions> options)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
-
-        int hours = configuration.GetValue<int>("BackgroundJobs:DepartmentCleanupIntervalHours");
-        _thresholdMonths = configuration.GetValue<int>("BackgroundJobs:HardDeleteThresholdMonths");
-        _period = TimeSpan.FromHours(hours);
+        _options = options.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        var period = TimeSpan.FromHours(_options.DepartmentCleanupIntervalHours);
+
+        _logger.LogInformation("Cleaner started. Period: {Hours}h.", 
+            _options.DepartmentCleanupIntervalHours );
+        
         _logger.LogInformation("Department Cleanup Worker started.");
 
-        using var timer = new PeriodicTimer(_period);
+        using var timer = new PeriodicTimer(period);
 
         while (await timer.WaitForNextTickAsync(cancellationToken))
         {
@@ -49,6 +51,7 @@ public class DepartmentCleanerBackgroundService : BackgroundService
 
     private async Task ProcessCleanup(CancellationToken cancellationToken)
     {
+        var thresholdMonths = _options.HardDeleteThresholdMonths;
         _logger.LogInformation("Starting department cleanup process...");
 
         using var scope = _serviceScopeFactory.CreateScope();
@@ -58,7 +61,7 @@ public class DepartmentCleanerBackgroundService : BackgroundService
 
         try
         {
-            var cutoffDate = DateTime.UtcNow.AddMonths(-_thresholdMonths);
+            var cutoffDate = DateTime.UtcNow.AddMonths(-thresholdMonths);
             _logger.LogInformation("Cleaning up departments deactivated before {CutoffDate}", cutoffDate);
 
             var departmentsToDelete = await dbContext.Departments

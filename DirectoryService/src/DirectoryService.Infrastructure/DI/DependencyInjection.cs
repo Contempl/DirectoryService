@@ -4,6 +4,7 @@ using DirectoryService.Application.Locations;
 using DirectoryService.Application.Positions;
 using DirectoryService.Infrastructure.BackgroundServices;
 using DirectoryService.Infrastructure.Database;
+using DirectoryService.Infrastructure.Options;
 using DirectoryService.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,5 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<ITransactionManager, TransactionManager>();
+        services.Configure<BackgroundServiceOptions>(
+            configuration.GetSection(BackgroundServiceOptions.SectionName));
     }
 }
