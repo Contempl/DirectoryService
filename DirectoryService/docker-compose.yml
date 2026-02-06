@@ -1,5 +1,16 @@
 services:
   
+  directory-service:
+    container_name: directory-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5353:5353"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5353
+
   postgres:
     container_name: postgres
     image: postgres
