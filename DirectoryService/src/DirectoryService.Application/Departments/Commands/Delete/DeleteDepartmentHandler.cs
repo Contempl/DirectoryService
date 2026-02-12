@@ -1,8 +1,10 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
+using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Shared;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Departments.Commands.Delete;
@@ -11,16 +13,19 @@ public class DeleteDepartmentHandler : ICommandHandler<Guid, DeleteDepartmentReq
 {
     private readonly IDepartmentRepository _departmentRepository;
     private readonly ITransactionManager _transactionManager;
+    private readonly HybridCache _cache;
     private readonly ILogger<DeleteDepartmentHandler> _logger;
 
     public DeleteDepartmentHandler(
         IDepartmentRepository departmentRepository, 
-        ILogger<DeleteDepartmentHandler> logger, 
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager,
+        HybridCache cache,
+        ILogger<DeleteDepartmentHandler> logger) 
     {
         _departmentRepository = departmentRepository;
-        _logger = logger;
         _transactionManager = transactionManager;
+        _cache = cache;
+        _logger = logger;
     }
 
     public async Task<Result<Guid, Errors>> HandleAsync(DeleteDepartmentRequest request, CancellationToken cancellationToken)
@@ -84,7 +89,10 @@ public class DeleteDepartmentHandler : ICommandHandler<Guid, DeleteDepartmentReq
             return commitResult.Error.ToErrors();
         }
         
+        await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+        
         _logger.LogInformation("Department {Id} soft deleted.", department.Id);
+        
         return department.Id;
     }
 }

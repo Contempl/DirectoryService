@@ -2,8 +2,10 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Application.Validation;
+using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Departments.Commands.Update;
@@ -13,18 +15,21 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
     private readonly IDepartmentRepository _departmentRepository;
     private readonly ITransactionManager _transactionManager;
     private readonly IValidator<UpdateDepartmentRequest> _validator;
+    private readonly HybridCache _cache;
     private readonly ILogger<UpdateDepartmentHandler> _logger;
 
     public UpdateDepartmentHandler(
         IDepartmentRepository departmentRepository,
         IValidator<UpdateDepartmentRequest> validator,
         ILogger<UpdateDepartmentHandler> logger,
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager, 
+        HybridCache cache)
     {
         _departmentRepository = departmentRepository;
         _validator = validator;
-        _logger = logger;
         _transactionManager = transactionManager;
+        _cache = cache;
+        _logger = logger;
     }
 
     public async Task<Result<Guid, Errors>> HandleAsync(UpdateDepartmentRequest request,
@@ -87,7 +92,10 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
 
             transaction.Commit();
 
+            await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+            
             _logger.LogInformation("Department {Id} moved successfully", departmentId);
+            
             return departmentId;
         }
         catch (Exception)

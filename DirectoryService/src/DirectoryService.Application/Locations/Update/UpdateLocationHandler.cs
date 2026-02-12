@@ -3,9 +3,11 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Application.Departments;
 using DirectoryService.Application.Validation;
+using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Locations.Update;
@@ -16,6 +18,7 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
     private readonly IDepartmentRepository _departmentRepository;
     private readonly IValidator<UpdateLocationRequest> _validator;
     private readonly ITransactionManager _transactionManager;
+    private readonly HybridCache _cache;
     private readonly ILogger<UpdateLocationHandler> _logger;
     
 
@@ -23,14 +26,16 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
         ILocationRepository locationRepository, 
         IValidator<UpdateLocationRequest> validator, 
         ITransactionManager transactionManager, 
+        HybridCache cache,
         IDepartmentRepository departmentRepository,
         ILogger<UpdateLocationHandler> logger)
     {
         _locationRepository = locationRepository;
         _validator = validator;
-        _logger = logger;
+        _cache = cache;
         _transactionManager = transactionManager;
         _departmentRepository = departmentRepository;
+        _logger = logger;
     }
     
 
@@ -88,6 +93,8 @@ public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
         }
         
         transactionScope.Commit();
+        
+        await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
         
         return UnitResult.Success<Errors>();
     }
