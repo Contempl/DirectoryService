@@ -8,20 +8,42 @@ using DirectoryService.Application.Departments.Queries.GetTopDepartments;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Queries;
 using DirectoryService.Application.Locations.Update;
+using DirectoryService.Application.Options;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Application.Positions.Create;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DirectoryService.Application.DependencyInjection;
 
 public static class DependencyInjection
 {
-    public static void AddApplication(this IServiceCollection services)
+    public static void AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
+        var cacheOptions = configuration
+            .GetSection(CachingOptions.SectionName)
+            .Get<CachingOptions>();
+        
         services.AddValidatorsFromAssemblyContaining<CreateDepartmentHandler>();
+
+        services.AddStackExchangeRedisCache(setup =>
+        {
+            setup.Configuration = cacheOptions!.RedisConnectionString;
+        });
+            
+        services.AddHybridCache(options =>
+        {
+            options.DefaultEntryOptions = new HybridCacheEntryOptions()
+            {
+                LocalCacheExpiration = TimeSpan.FromMinutes(cacheOptions!.LocalCacheExpiration ),
+                Expiration = TimeSpan.FromMinutes(cacheOptions.Expiration)
+            };
+        });
+        
         services.AddScoped<ICommandHandler<Guid, CreateLocationRequest>, CreateLocationHandler>();
         services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>, CreatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, CreatePositionRequest>,CreatePositionHandler>();
