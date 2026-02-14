@@ -2,10 +2,12 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations;
 using DirectoryService.Application.Validation;
+using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
 using DirectoryService.Domain.Shared;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Departments.Commands.Create;
@@ -14,6 +16,7 @@ public class CreateDepartmentHandler(
     IDepartmentRepository _departmentRepository,
     ILocationRepository _locationRepository,
     IValidator<CreateDepartmentRequest> _validator,
+    HybridCache _cache,
     ILogger<CreateDepartmentHandler> _logger) : ICommandHandler<Guid, CreateDepartmentRequest>
 {
     public async Task<Result<Guid, Errors>> HandleAsync(CreateDepartmentRequest request,
@@ -70,6 +73,8 @@ public class CreateDepartmentHandler(
             return department.Error.ToErrors();
 
         var departmentResult = await _departmentRepository.CreateAsync(department.Value, cancellationToken);
+
+        await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
 
         return departmentResult;
     }
