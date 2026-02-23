@@ -1,5 +1,6 @@
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar"
-import { SidebarTrigger } from "../ui/sidebar";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { SidebarTrigger } from "@/shared/components/ui/sidebar";
 import { routes } from "@/shared/routes";
 import { Link } from "lucide-react";
 

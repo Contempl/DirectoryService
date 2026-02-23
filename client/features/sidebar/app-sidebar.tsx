@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-} from "../ui/sidebar";
+} from "@/shared/components/ui/sidebar";
 import Link from "next/link";
 
 const menuItems = [
