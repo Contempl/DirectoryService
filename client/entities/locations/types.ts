@@ -14,8 +14,3 @@ export type LocationDto = {
   createdAt: string; 
   updatedAt?: string | null;
 }
-
-export type PagedResult<T> = {
-  data: T[];
-  totalCount: number;
-}

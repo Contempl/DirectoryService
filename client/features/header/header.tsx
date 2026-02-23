@@ -1,3 +1,4 @@
+"use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { SidebarTrigger } from "@/shared/components/ui/sidebar";
@@ -15,7 +16,7 @@ export default function Header() {
               FS
             </div>
             <Link href={routes.home}>
-              <span>Fullstack</span>
+              <span className="text-white">Fullstack</span>
             </Link>
           </div>
         </div>

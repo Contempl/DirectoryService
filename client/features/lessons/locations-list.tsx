@@ -1,6 +1,8 @@
+"use client"
+
 import { locationsApi } from "@/entities/locations/api";
 import type { LocationDto } from "@/entities/locations/types";
-import LocationCard from "@/entities/locations/ui/LocationCard";
+import LocationCard from "@/features/lessons/location-card";
 import { useEffect, useState } from "react";
 
 export default function LocationsList() {
@@ -12,12 +14,11 @@ export default function LocationsList() {
     const fetch = async () => {
       setLoading(true);
       try {
-      //   const result = await locationsApi.getLocations({
-      //   page: 1,
-      //   pageSize: 10,
-      //   isActive: true
-      // });
-      const result = { data: mockLocations, totalCount: mockLocations.length };
+        const result = await locationsApi.getLocations({
+        page: 1,
+        page_size: 10,
+        is_active: true
+      });
         setLocations(result.data);
       } catch (e: unknown) {
         if (e instanceof Error)
@@ -51,24 +52,3 @@ export default function LocationsList() {
     </div>
   );
 }
-
-export const mockLocations: LocationDto[] = [
-  {
-    id: "1",
-    name: "Main Office",
-    address: { city: "Berlin", street: "Alexanderplatz", house: "1" },
-    timezone: "Europe/Berlin",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Branch Office",
-    address: { city: "Munich", street: "Marienplatz", house: "5" },
-    timezone: "Europe/Berlin",
-    isActive: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: null,
-  },
-];

@@ -1,30 +1,36 @@
 import { apiClient } from "@/shared/api/axios-instance";
-import { LocationDto, PagedResult } from "./types";
+import { LocationDto } from "./types";
+import { PagedResult } from "@/shared/types";
 
 
-export type GetLocationsQuery = {
-    departmentIds?: string[], 
+export type GetLocationsRequest = {
+    department_ids?: string[], 
     search?: string,
-    isActive: boolean,
+    is_active: boolean,
     page: number,
-    pageSize: number
+    page_size: number
 }
 
 export type CreateLocationDto = {
-  Name: string;
-  City: string;
-  Street: string;
-  House: string;
-  Apartment?: string | null;
-  Timezone: string;
+  name: string;
+  city: string;
+  street: string;
+  house: string;
+  apartment?: string | null;
+  timezone: string;
 }
 
 export type CreateLocationRequest ={
-  CreateLocationDto: CreateLocationDto;
+  name: string;
+  city: string;
+  street: string;
+  house: string;
+  apartment?: string | null;
+  timezone: string;
 }
 
 export const locationsApi = {
-    getLocations: async (query?: GetLocationsQuery): Promise<PagedResult<LocationDto>> => {
+    getLocations: async (query?: GetLocationsRequest): Promise<PagedResult<LocationDto>> => {
         const response = await apiClient.get<PagedResult<LocationDto>>("/locations", {
             params: query
     });
