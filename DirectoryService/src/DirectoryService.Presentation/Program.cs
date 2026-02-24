@@ -19,7 +19,15 @@ var app = builder.Build();
 
 app.UseExceptionHandlingMiddleware();
 
-app.UseSerilogRequestLogging(); 
+app.UseSerilogRequestLogging();
+
+app.UseCors(bld =>
+{
+    bld.WithOrigins("http://localhost:3000")
+        .AllowCredentials()
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+});
 
 if (app.Environment.IsDevelopment())
 {

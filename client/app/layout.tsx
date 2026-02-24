@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/sidebar/app-sidebar";
-import Header from "@/components/header/header";
+import { SidebarProvider } from "@/shared/components/ui/sidebar";
+import { AppSidebar } from "@/features/sidebar/app-sidebar";
+import Header from "@/features/header/header";
 
 
 export const metadata: Metadata = {
@@ -17,9 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body
-      >
-        {children}
+      <body>
         <SidebarProvider>
           <div className="flex h-screen w-full">
             <AppSidebar />

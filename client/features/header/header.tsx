@@ -1,5 +1,7 @@
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar"
-import { SidebarTrigger } from "../ui/sidebar";
+"use client";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { SidebarTrigger } from "@/shared/components/ui/sidebar";
 import { routes } from "@/shared/routes";
 import { Link } from "lucide-react";
 
@@ -14,7 +16,7 @@ export default function Header() {
               FS
             </div>
             <Link href={routes.home}>
-              <span>Fullstack</span>
+              <span className="text-white">Fullstack</span>
             </Link>
           </div>
         </div>
