@@ -30,17 +30,16 @@ export type CreateLocationRequest ={
 }
 
 export const locationsApi = {
-    getLocations: async (query?: GetLocationsRequest): Promise<PagedResult<LocationDto>> => {
-        const response = await apiClient.get<PagedResult<LocationDto>>("/locations", {
-            params: query
-    });
+  getLocations: async (query?: GetLocationsRequest) => {
+    const response = await apiClient.get<PagedResult<LocationDto>>("/locations", {
+      params: query
+        });
+          return response.data;
+  },
 
-        return response.data;
-    },
-
-    createLocation: async (request: CreateLocationRequest) => {
-        const response = await apiClient.post("/locations", request);
+  createLocation: async (request: CreateLocationRequest) => {
+    const response = await apiClient.post("/locations", request);
         
-        return response.data;
-    },
+    return response.data;
+  },
 }
