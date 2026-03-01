@@ -1,14 +1,14 @@
 import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
-import { PagedResult } from "@/shared/types";
+import { PagedResult } from "@/shared/api/types";
 
 
 export type GetLocationsRequest = {
     department_ids?: string[], 
     search?: string,
-    is_active: boolean,
+    isActive: boolean,
     page: number,
-    page_size: number
+    pageSize: number
 }
 
 export type CreateLocationDto = {
