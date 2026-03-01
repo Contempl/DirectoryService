@@ -10,17 +10,17 @@ import { useState } from "react";
 export default function LocationsList() {
 
   const [page, setPage] = useState(1);
-  const [page_size, setPageSize] = useState(5);
-  const [is_active, setIsActive] = useState(true);
+  const [pageSize, setPageSize] = useState(5);
+  const [isActive, setIsActive] = useState(true);
   const { data, isLoading, isError, error } = useQuery<
     PagedResult<LocationDto>
   >({
-    queryKey: ["locations", { page, page_size, is_active }],
+    queryKey: ["locations", { page, page_size: pageSize, isActive }],
     queryFn: () =>
       locationsApi.getLocations({
         page,
-        pageSize: page_size,
-        isActive: is_active,
+        pageSize: pageSize,
+        isActive: isActive,
       }),
       staleTime: 1000 * 60,
   });
@@ -37,7 +37,7 @@ export default function LocationsList() {
   if (!data || data.data.length === 0)
     return <p>No locations</p>;
 
-const totalPages = Math.ceil(data.totalCount / page_size);
+const totalPages = Math.ceil(data.totalCount / pageSize);
 
   return (
     <div>
@@ -59,7 +59,7 @@ const totalPages = Math.ceil(data.totalCount / page_size);
             setIsActive(true);
           }}
           className={`px-4 py-2 rounded transition-colors ${
-            is_active
+            isActive
               ? "bg-blue-600 text-white"
               : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
@@ -73,7 +73,7 @@ const totalPages = Math.ceil(data.totalCount / page_size);
             setIsActive(false);
           }}
           className={`px-4 py-2 rounded transition-colors ${
-            !is_active
+            !isActive
               ? "bg-blue-600 text-white"
               : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
