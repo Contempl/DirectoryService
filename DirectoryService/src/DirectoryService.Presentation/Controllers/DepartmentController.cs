@@ -6,6 +6,7 @@ using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
 using DirectoryService.Application.Locations.Update;
+using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Domain.Shared;
@@ -18,7 +19,7 @@ namespace DirectoryService.Presentation.Controllers;
 public class DepartmentController : ControllerBase
 {
     private readonly ICommandHandler<Guid, CreateDepartmentRequest> _createDepartmentHandler;
-    private readonly ICommandHandler<UpdateLocationRequest> _updateLocationHandler;
+    private readonly ICommandHandler<UpdateLocationsRequest> _updateLocationHandler;
     private readonly IQueryHandler<bool, PagedResult<DepartmentDto>> _getTopDepartmentsHandler;
     private readonly ICommandHandler<Guid, UpdateDepartmentRequest> _updateDepartmentHandler;
     private readonly ICommandHandler<Guid, DeleteDepartmentRequest> _deleteDepartmentHandler;
@@ -27,7 +28,7 @@ public class DepartmentController : ControllerBase
 
     public DepartmentController(
         ICommandHandler<Guid, CreateDepartmentRequest> createDepartmentHandler, 
-        ICommandHandler<UpdateLocationRequest> updateLocationHandler, 
+        ICommandHandler<UpdateLocationsRequest> updateLocationHandler, 
         ICommandHandler<Guid, UpdateDepartmentRequest> updateDepartmentHandler, 
         IQueryHandler<bool, PagedResult<DepartmentDto>> getTopDepartmentsHandler,
         IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> getExpandedDepartmentsHandler, 
@@ -52,7 +53,7 @@ public class DepartmentController : ControllerBase
     [HttpPut("api/departments/{departmentId}/locations")]
     public async Task<ActionResult<Result<Guid, Errors>>> UpdateLocations([FromRoute] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
     {
-        var request = new UpdateLocationRequest(departmentId, locationIds);
+        var request = new UpdateLocationsRequest(departmentId, locationIds);
         
         var result = await _updateLocationHandler.Handle(request, cancellationToken);
         if (result.IsFailure)
