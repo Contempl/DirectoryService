@@ -1,101 +1,119 @@
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
-using DirectoryService.Application.Departments;
+using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Validation;
-using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
+using DirectoryService.Domain.Entities.VO;
 using DirectoryService.Domain.Shared;
-using FluentValidation;
-using Microsoft.Extensions.Caching.Hybrid;
+using FluentValidation; 
 using Microsoft.Extensions.Logging;
 
 namespace DirectoryService.Application.Locations.Update;
 
-public class UpdateLocationHandler : ICommandHandler<UpdateLocationRequest>
+public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationRequest>
 {
     private readonly ILocationRepository _locationRepository;
-    private readonly IDepartmentRepository _departmentRepository;
-    private readonly IValidator<UpdateLocationRequest> _validator;
     private readonly ITransactionManager _transactionManager;
-    private readonly HybridCache _cache;
-    private readonly ILogger<UpdateLocationHandler> _logger;
-    
+    private readonly IValidator<UpdateLocationRequest> _validator;
+    private readonly ILogger<UpdateLocationsHandler> _logger;
 
-    public UpdateLocationHandler(
-        ILocationRepository locationRepository, 
-        IValidator<UpdateLocationRequest> validator, 
-        ITransactionManager transactionManager, 
-        HybridCache cache,
-        IDepartmentRepository departmentRepository,
-        ILogger<UpdateLocationHandler> logger)
+    public UpdateLocationHandler(ILocationRepository locationRepository,
+        IValidator<UpdateLocationRequest> validator,
+        ILogger<UpdateLocationsHandler> logger, 
+        ITransactionManager transactionManager)
     {
         _locationRepository = locationRepository;
         _validator = validator;
-        _cache = cache;
-        _transactionManager = transactionManager;
-        _departmentRepository = departmentRepository;
+        _transactionManager = transactionManager; 
         _logger = logger;
     }
-    
 
-    public async Task<UnitResult<Errors>> Handle(UpdateLocationRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Location, Errors>> HandleAsync(UpdateLocationRequest request, CancellationToken cancellationToken)
     {
-        // Проверить — существует ли подразделение с таким departmentId и оно активно
         var validationResult = await _validator.ValidateAsync(request, cancellationToken);
-
         if (!validationResult.IsValid)
         {
-            _logger.LogError("Validation of location failed.");
+            _logger.LogError("validation failed for update location request.");
             return validationResult.ToErrors();
         }
-
-        var departmentId = request.DepartmentId;
-
-        var existingDepartment = await _departmentRepository.GetByIdWithLocationsAsync(departmentId, cancellationToken);
-        if (existingDepartment.IsFailure)
+        var transactionScopeResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
+        if (transactionScopeResult.IsFailure)
         {
-            _logger.LogError("department with id {0} could not be found", departmentId);
-            return existingDepartment.Error.ToErrors();
-        }
-        var department = existingDepartment.Value;
-        
-        var locationIds = request.LocationIds.ToList();
-        
-        //  Проверить — все locationIds существуют и активны, нет дубликатов
-        var existingLocationsResult = await _locationRepository.CheckIfLocationsExistAsync(locationIds, cancellationToken);
-
-        if (existingLocationsResult is false)
-        {
-            _logger.LogError("one or more locations are not active or don't exist");
-            return GeneralErrors.ValueIsInvalid("one or more locations doesn't exist or isn't active").ToErrors();
-        }
-    
-        // Обновить — заменить старые привязки к локациям новым списком
-        var transactionResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
-
-        if (!transactionResult.IsSuccess)
-            return transactionResult.Error.ToErrors();
-
-        using var transactionScope = transactionResult.Value;
-
-        await _departmentRepository.DeleteLocationsByDepAsync(departmentId, cancellationToken);
-        
-        var newLocations = locationIds.Select(id => new DepartmentLocation(departmentId, id)).ToList();
-        
-        await _departmentRepository.AddDepLocationsRelationsAsync(newLocations, cancellationToken);
-
-        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
-        if (saveResult.IsFailure)
-        {
-            transactionScope.Rollback();
-            return saveResult.Error.ToErrors();
+            _logger.LogInformation("Failed to begin transaction.");
+            
+            return transactionScopeResult.Error.ToErrors();
         }
         
-        transactionScope.Commit();
+        using var transactionScope = transactionScopeResult.Value;
         
-        await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+        var existingLocationResult =  await _locationRepository
+            .GetLocationByIdAsync(request.LocationId, cancellationToken);
+
+        if (existingLocationResult.IsFailure)
+        {
+            _logger.LogError($"location with id {request.LocationId} not found.");
+            return existingLocationResult.Error.ToErrors();
+        }
         
-        return UnitResult.Success<Errors>();
+        var existingLocation = existingLocationResult.Value;
+
+        var nameCreationResult = Name.Create(request.LocationDto.Name);
+        if (nameCreationResult.IsFailure)
+        {
+            _logger.LogError("failed to create name VO for location.");
+            return nameCreationResult.Error.ToErrors();
+        }
+
+        var name = nameCreationResult.Value;
+
+        var addressCreationResult = Address.Create(
+            request.LocationDto.City,
+            request.LocationDto.Street,
+            request.LocationDto.House,
+            request.LocationDto.Apartment);
+
+        if (addressCreationResult.IsFailure)
+        {
+            _logger.LogError("failed to create address VO for location.");
+            return addressCreationResult.Error.ToErrors();
+        }
+
+        var address = addressCreationResult.Value;
+
+        var timezoneCreationResult = Timezone.Create(request.LocationDto.Timezone);
+
+        if (timezoneCreationResult.IsFailure)
+        {
+            _logger.LogError("failed to create timezone VO for location.");
+            return timezoneCreationResult.Error.ToErrors();
+        }
+
+        var timezone = timezoneCreationResult.Value;
+
+        var updateResult = existingLocation.Update(name, address, timezone);
+
+        if (updateResult.IsFailure)
+        {
+            _logger.LogError("failed to update location inside entity.");
+            updateResult.Error.ToErrors();
+        }
+
+        var saveChangesResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveChangesResult.IsFailure)
+        {
+            _logger.LogError("failed to save changes via transaction.");
+            return saveChangesResult.Error.ToErrors();
+        }
+
+        var commitResult = transactionScope.Commit();
+        if (commitResult.IsFailure)
+        {
+            _logger.LogInformation("Failed to commit  transaction.");
+            return commitResult.Error.ToErrors();
+        }
+
+        return existingLocation;
+
     }
 }

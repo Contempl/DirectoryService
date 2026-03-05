@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities.VO;
+using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -50,6 +51,19 @@ public class Location
             true, 
             createdAt, 
             createdAt);
+    }
+    
+    public UnitResult<Error> Update(Name name, Address address, Timezone timezone)
+    {
+        Name = name;
+
+        Address = address;
+
+        Timezone = timezone;
+        
+        UpdatedAt =  DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
     }
 }
 
