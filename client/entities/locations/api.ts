@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
 import { PagedResult } from "@/shared/api/types";
+import { queryOptions } from "@tanstack/react-query";
 
 
 export type GetLocationsRequest = {
@@ -43,3 +44,14 @@ export const locationsApi = {
     return response.data;
   },
 }
+
+export const locationsQueryOptions = {
+  baseKey: "locations",
+
+  getLocationsOptions: (query: GetLocationsRequest) =>
+    queryOptions({
+      queryKey: [locationsQueryOptions.baseKey, query],
+      queryFn: () => locationsApi.getLocations(query),
+      staleTime: 1000 * 60,
+    }),
+};

@@ -1,29 +1,19 @@
 "use client"
 
-import { locationsApi } from "@/entities/locations/api";
-import type { LocationDto } from "@/entities/locations/types";
 import LocationCard from "@/features/lessons/location-card";
-import { PagedResult } from "@/shared/api/types";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useLocationsList } from "./model/use-locations-list";
+import { Button } from "@/shared/components/ui/button";
+import { CreateLocationDialog } from "./create-location-dialog";
 
 export default function LocationsList() {
-
+  const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isActive, setIsActive] = useState(true);
-  const { data, isLoading, isError, error } = useQuery<
-    PagedResult<LocationDto>
-  >({
-    queryKey: ["locations", { page, page_size: pageSize, isActive }],
-    queryFn: () =>
-      locationsApi.getLocations({
-        page,
-        pageSize: pageSize,
-        isActive: isActive,
-      }),
-      staleTime: 1000 * 60,
-  });
+ 
+  const { data, isLoading, isError, error } =
+  useLocationsList({ page, pageSize, isActive });
 
   if (isLoading) return <p>Loading...</p>;
 
@@ -109,6 +99,15 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
           )}
         </div>
       )}
+      
+      {/* кнопка */}
+    <div className="mt-6">
+      <Button onClick={() => setOpen(true)}>
+        Создать локацию
+      </Button>
+    </div>
+    
+      <CreateLocationDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }
