@@ -52,7 +52,9 @@ public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationReq
 
         if (existingLocationResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError($"location with id {request.LocationId} not found.");
+            
             return existingLocationResult.Error.ToErrors();
         }
         
@@ -61,7 +63,9 @@ public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationReq
         var nameCreationResult = Name.Create(request.LocationDto.Name);
         if (nameCreationResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError("failed to create name VO for location.");
+            
             return nameCreationResult.Error.ToErrors();
         }
 
@@ -75,7 +79,9 @@ public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationReq
 
         if (addressCreationResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError("failed to create address VO for location.");
+            
             return addressCreationResult.Error.ToErrors();
         }
 
@@ -85,7 +91,9 @@ public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationReq
 
         if (timezoneCreationResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError("failed to create timezone VO for location.");
+            
             return timezoneCreationResult.Error.ToErrors();
         }
 
@@ -95,21 +103,27 @@ public class UpdateLocationHandler : ICommandHandler<Location ,UpdateLocationReq
 
         if (updateResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError("failed to update location inside entity.");
+            
             updateResult.Error.ToErrors();
         }
 
         var saveChangesResult = await _transactionManager.SaveChangesAsync(cancellationToken);
         if (saveChangesResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogError("failed to save changes via transaction.");
+            
             return saveChangesResult.Error.ToErrors();
         }
 
         var commitResult = transactionScope.Commit();
         if (commitResult.IsFailure)
         {
+            transactionScope.Rollback();
             _logger.LogInformation("Failed to commit  transaction.");
+            
             return commitResult.Error.ToErrors();
         }
 
