@@ -6,7 +6,7 @@ import { useLocationsList } from "./model/use-locations-list";
 import { Button } from "@/shared/components/ui/button";
 import { CreateLocationDialog } from "./create-location-dialog";
 import { LocationDto } from "@/entities/locations/types";
-import { EditLocationDialog } from "./model/edit-location-dialog";
+import { EditLocationDialog } from "./edit-location-dialog";
 
 export default function LocationsList() {
   const [page, setPage] = useState(1);
@@ -15,11 +15,7 @@ export default function LocationsList() {
   const [createOpen, setCreateOpen] = useState(false)
   const [updateOpen, setUpdateOpen] = useState(false)
 
-  const [selectedLocation, setSelectedLocation] = useState<LocationDto | undefined>(undefined)
-
-  const handleEdit = (location: LocationDto) => {
-  setSelectedLocation(location)
-}
+  const [selectedLocation, setSelectedLocation] = useState<LocationDto | undefined>(undefined);
  
   const { data, isLoading, isError, error } =
   useLocationsList({ page, pageSize, isActive });

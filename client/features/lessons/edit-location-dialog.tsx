@@ -1,4 +1,4 @@
-import { useUpdateLocation } from "./use-update-location"
+import { useUpdateLocation } from "./model/use-update-location"
 import { LocationDto } from "@/entities/locations/types"
 import z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,7 +9,7 @@ import { Dialog,
   DialogHeader, 
   DialogTitle } from "@/shared/components/ui/dialog"
 import { Button } from "@/shared/components/ui/button"
-import { FormError } from "../create-location-dialog"
+import { FormError } from "./create-location-dialog"
 import { Label } from "@/shared/components/ui/label"
 import { Input } from "@/shared/components/ui/input"
 import { useForm } from "react-hook-form"

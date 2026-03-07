@@ -1,4 +1,7 @@
+import { Button } from "@/shared/components/ui/button";
 import { LocationDto } from "../../entities/locations/types";
+import { Trash2 } from "lucide-react";
+import { useDeleteLocation } from "./model/use-delete-location";
 
 
 interface Props {
@@ -7,6 +10,17 @@ interface Props {
 }
 
 export default function LocationCard({ location, onEdit }: Props) {
+
+const { deleteLocation, isPending } = useDeleteLocation();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    deleteLocation(location.id);
+  };
+
+
   return (
     <div
       key={location.id}
@@ -37,12 +51,27 @@ export default function LocationCard({ location, onEdit }: Props) {
           Updated: {new Date(location.updatedAt).toLocaleDateString()}
         </p>
       )}
+      
+        <div className="flex items-center justify-between mt-4">
+          <span>Обновлено {location.updatedAt?.toLocaleString()}</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-white! hover:bg-red-500! transition-colors"
+            onClick={handleDelete}
+            disabled={isPending}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
       <button
         onClick={onEdit}
         className="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         Edit
       </button>
+
     </div>
   );
 }
