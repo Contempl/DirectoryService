@@ -3,9 +3,10 @@ import { LocationDto } from "../../entities/locations/types";
 
 interface Props {
   location: LocationDto;
+  onEdit: () => void
 }
 
-export default function LocationCard({ location }: Props) {
+export default function LocationCard({ location, onEdit }: Props) {
   return (
     <div
       key={location.id}
@@ -36,6 +37,12 @@ export default function LocationCard({ location }: Props) {
           Updated: {new Date(location.updatedAt).toLocaleDateString()}
         </p>
       )}
+      <button
+        onClick={onEdit}
+        className="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Edit
+      </button>
     </div>
   );
 }

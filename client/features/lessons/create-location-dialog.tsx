@@ -169,7 +169,7 @@ export function CreateLocationDialog({ open, onOpenChange }: Props) {
 
             {/* Таймзона */}
             <div className="grid gap-2">
-              <Label htmlFor="timezone">Таймзона</Label>
+              <Label htmlFor="timezone">Часовой пояс</Label>
               <Input
                 id="timezone"
                 placeholder="Europe/Moscow"
