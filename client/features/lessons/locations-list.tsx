@@ -1,29 +1,24 @@
 "use client"
 
-import { locationsApi } from "@/entities/locations/api";
-import type { LocationDto } from "@/entities/locations/types";
 import LocationCard from "@/features/lessons/location-card";
-import { PagedResult } from "@/shared/api/types";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useLocationsList } from "./model/use-locations-list";
+import { Button } from "@/shared/components/ui/button";
+import { CreateLocationDialog } from "./create-location-dialog";
+import { LocationDto } from "@/entities/locations/types";
+import { EditLocationDialog } from "./edit-location-dialog";
 
 export default function LocationsList() {
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isActive, setIsActive] = useState(true);
-  const { data, isLoading, isError, error } = useQuery<
-    PagedResult<LocationDto>
-  >({
-    queryKey: ["locations", { page, page_size: pageSize, isActive }],
-    queryFn: () =>
-      locationsApi.getLocations({
-        page,
-        pageSize: pageSize,
-        isActive: isActive,
-      }),
-      staleTime: 1000 * 60,
-  });
+  const [createOpen, setCreateOpen] = useState(false)
+  const [updateOpen, setUpdateOpen] = useState(false)
+
+  const [selectedLocation, setSelectedLocation] = useState<LocationDto | undefined>(undefined);
+ 
+  const { data, isLoading, isError, error } =
+  useLocationsList({ page, pageSize, isActive });
 
   if (isLoading) return <p>Loading...</p>;
 
@@ -82,33 +77,62 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
         </button>
       </div>
 
-      {/* 🔹 Список */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {data.data.map((loc) => (
-          <LocationCard key={loc.id} location={loc} />
+    
+        
+      {data.data.map((location) => (
+        <LocationCard
+          key={location.id}
+          location={location}
+          onEdit={() => {
+            setSelectedLocation(location)
+            setUpdateOpen(true)
+          }}
+        />
+      ))}
+    </div>
+
+    {/* пагинация */}
+    {totalPages > 1 && (
+      <div className="mt-6 flex gap-2">
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+          <button
+            key={pageNum}
+            onClick={() => setPage(pageNum)}
+            className={`px-3 py-1 rounded transition-colors ${
+              pageNum === page
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            {pageNum}
+          </button>
         ))}
       </div>
+    )}
 
-      {/* 🔹 Пагинация */}
-      {totalPages > 1 && (
-        <div className="mt-6 flex gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-            (pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                className={`px-3 py-1 rounded transition-colors ${
-                  pageNum === page
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-              >
-                {pageNum}
-              </button>
-            )
-          )}
-        </div>
-      )}
+    {/* кнопка создания */}
+    <div className="mt-6">
+      <Button onClick={() => setCreateOpen(true)}>
+        Создать локацию
+      </Button>
+    </div>
+
+    {/* create dialog */}
+    <CreateLocationDialog
+      open={createOpen}
+      onOpenChange={setCreateOpen}
+    />
+
+    {/* update dialog */}
+    {selectedLocation && (
+      <EditLocationDialog
+        key={selectedLocation.id}
+        location={selectedLocation}
+        open={selectedLocation !== undefined && updateOpen}
+        onOpenChange={setUpdateOpen}
+      />
+    )}
     </div>
   );
 }

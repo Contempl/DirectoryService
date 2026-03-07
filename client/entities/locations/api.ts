@@ -1,6 +1,7 @@
 import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
 import { PagedResult } from "@/shared/api/types";
+import { queryOptions } from "@tanstack/react-query";
 
 
 export type GetLocationsRequest = {
@@ -29,6 +30,17 @@ export type CreateLocationRequest ={
   timezone: string;
 }
 
+export type UpdateLocationRequest = {
+  name: string;
+  city: string;
+  street: string;
+  house: string;
+  apartment?: string | null;
+  timezone: string;
+}
+
+
+
 export const locationsApi = {
   getLocations: async (query?: GetLocationsRequest) => {
     const response = await apiClient.get<PagedResult<LocationDto>>("/locations", {
@@ -42,4 +54,25 @@ export const locationsApi = {
         
     return response.data;
   },
+
+   updateLocation: async (id: string, request: UpdateLocationRequest) => {
+    const response = await apiClient.put(`/locations/${id}`, request);
+    return response.data;
+  },
+
+  deleteLocation: async (id: string) => {
+    const respones = await apiClient.delete(`/locations/${id}`);
+    return respones.data;
+  },
 }
+
+export const locationsQueryOptions = {
+  baseKey: "locations",
+
+  getLocationsOptions: (query: GetLocationsRequest) =>
+    queryOptions({
+      queryKey: [locationsQueryOptions.baseKey, query],
+      queryFn: () => locationsApi.getLocations(query),
+      staleTime: 1000 * 60,
+    }),
+};
