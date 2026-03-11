@@ -1,4 +1,5 @@
-using DirectoryService.Application.Validation;
+﻿using DirectoryService.Application.Validation;
+using DirectoryService.Domain.Entities.VO;
 using DirectoryService.Domain.Shared;
 using FluentValidation;
 
@@ -8,11 +9,23 @@ public class UpdateLocationValidator : AbstractValidator<UpdateLocationRequest>
 {
     public UpdateLocationValidator()
     {
-        RuleFor(x => x.LocationIds.ToList())
+        RuleFor(x => x.LocationDto.Name)
             .NotEmpty()
-            .WithError(GeneralErrors.ValueIsRequired("locationIds"))
-            .Must(locationIds => locationIds != null 
-                                 && locationIds.Count() == locationIds.Distinct().Count())
-            .WithError(GeneralErrors.ValueIsRequired("locationIds"));
+            .MaximumLength(150)
+            .WithError(GeneralErrors.ValueIsInvalid("Name must be not empty and between 150 characters"));
+
+        RuleFor(x => x.LocationDto.City)
+            .MaximumLength(128)
+            .MinimumLength(2);
+
+        RuleFor(x => x.LocationDto.Street)
+            .MaximumLength(128)
+            .MinimumLength(2);
+
+        RuleFor(x => x.LocationDto.House)
+            .MaximumLength(20);
+
+        RuleFor(x => x.LocationDto.Timezone)
+            .MustBeValueObject(Timezone.Create);
     }
 }

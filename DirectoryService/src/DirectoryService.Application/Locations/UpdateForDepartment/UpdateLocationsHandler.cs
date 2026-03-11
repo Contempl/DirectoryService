@@ -1,0 +1,101 @@
+using CSharpFunctionalExtensions;
+using DirectoryService.Application.Abstractions;
+using DirectoryService.Application.Database;
+using DirectoryService.Application.Departments;
+using DirectoryService.Application.Validation;
+using DirectoryService.Contracts.Constants;
+using DirectoryService.Domain.Entities;
+using DirectoryService.Domain.Shared;
+using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Logging;
+
+namespace DirectoryService.Application.Locations.UpdateForDepartment;
+
+public class UpdateLocationsHandler : ICommandHandler<UpdateLocationsRequest>
+{
+    private readonly ILocationRepository _locationRepository;
+    private readonly IDepartmentRepository _departmentRepository;
+    private readonly IValidator<UpdateLocationsRequest> _validator;
+    private readonly ITransactionManager _transactionManager;
+    private readonly HybridCache _cache;
+    private readonly ILogger<UpdateLocationsHandler> _logger;
+    
+
+    public UpdateLocationsHandler(
+        ILocationRepository locationRepository, 
+        IValidator<UpdateLocationsRequest> validator, 
+        ITransactionManager transactionManager, 
+        HybridCache cache,
+        IDepartmentRepository departmentRepository,
+        ILogger<UpdateLocationsHandler> logger)
+    {
+        _locationRepository = locationRepository;
+        _validator = validator;
+        _cache = cache;
+        _transactionManager = transactionManager;
+        _departmentRepository = departmentRepository;
+        _logger = logger;
+    }
+    
+
+    public async Task<UnitResult<Errors>> Handle(UpdateLocationsRequest request, CancellationToken cancellationToken)
+    {
+        // Проверить — существует ли подразделение с таким departmentId и оно активно
+        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            _logger.LogError("Validation of location failed.");
+            return validationResult.ToErrors();
+        }
+
+        var departmentId = request.DepartmentId;
+
+        var existingDepartment = await _departmentRepository.GetByIdWithLocationsAsync(departmentId, cancellationToken);
+        if (existingDepartment.IsFailure)
+        {
+            _logger.LogError("department with id {0} could not be found", departmentId);
+            return existingDepartment.Error.ToErrors();
+        }
+        var department = existingDepartment.Value;
+        
+        var locationIds = request.LocationIds.ToList();
+        
+        //  Проверить — все locationIds существуют и активны, нет дубликатов
+        var existingLocationsResult = await _locationRepository.CheckIfLocationsExistAsync(locationIds, cancellationToken);
+
+        if (existingLocationsResult is false)
+        {
+            _logger.LogError("one or more locations are not active or don't exist");
+            return GeneralErrors.ValueIsInvalid("one or more locations doesn't exist or isn't active").ToErrors();
+        }
+    
+        // Обновить — заменить старые привязки к локациям новым списком
+        var transactionResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
+
+        if (!transactionResult.IsSuccess)
+            return transactionResult.Error.ToErrors();
+
+        using var transactionScope = transactionResult.Value;
+
+        await _departmentRepository.DeleteLocationsByDepAsync(departmentId, cancellationToken);
+        
+        var newLocations = locationIds.Select(id => new DepartmentLocation(departmentId, id)).ToList();
+        
+        await _departmentRepository.AddDepLocationsRelationsAsync(newLocations, cancellationToken);
+
+        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+        {
+            transactionScope.Rollback();
+            return saveResult.Error.ToErrors();
+        }
+        
+        transactionScope.Commit();
+        
+        await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+        
+        return UnitResult.Success<Errors>();
+    }
+}

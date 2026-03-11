@@ -2,7 +2,7 @@ export type AddressDto = {
   city: string;
   street: string;
   house: string;
-  appartment?: string | null;
+  apartment?: string | null;
 }
 
 export type LocationDto = {

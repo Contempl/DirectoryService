@@ -41,4 +41,16 @@ public class LocationRepository : ILocationRepository
 
         return foundCount == locationIds.Count;
     }
+
+    public async Task<Result<Location, Error>> GetLocationByIdAsync(Guid locationId, CancellationToken cancellationToken = default)
+    {
+        var existingLocation = await _dbContext.Locations
+            .FirstOrDefaultAsync(l => l.Id == locationId
+                                 && l.IsActive, cancellationToken);
+
+        if (existingLocation is null)
+            return GeneralErrors.NotFound(locationId);
+
+        return existingLocation;
+    }
 }

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations.Update;
+using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +29,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         // Act
         var result = await ExecuteHandler(sut =>
         {
-            var command = new UpdateLocationRequest(departmentWithLocations.Id, locationIds);
+            var command = new UpdateLocationsRequest(departmentWithLocations.Id, locationIds);
 
             return sut.Handle(command, ct);
         });
@@ -57,7 +58,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         // Act
         var result = await ExecuteHandler(sut =>
         {
-            var command = new UpdateLocationRequest(department.Id, [locationId]);
+            var command = new UpdateLocationsRequest(department.Id, [locationId]);
 
             return sut.Handle(command, ct);
         });
@@ -80,7 +81,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         // Act
         var result = await ExecuteHandler(sut =>
         {
-            var command = new UpdateLocationRequest(department.Id, [locationId, locationId]);
+            var command = new UpdateLocationsRequest(department.Id, [locationId, locationId]);
 
             return sut.Handle(command, ct);
         });
@@ -101,7 +102,7 @@ public class UpdateLocationTests : DepartmentsBaseTests
         // Act
         var result = await ExecuteHandler(sut =>
         {
-            var command = new UpdateLocationRequest(departmentWithLocations.Id, []);
+            var command = new UpdateLocationsRequest(departmentWithLocations.Id, []);
 
             return sut.Handle(command, ct);
         });
@@ -111,11 +112,11 @@ public class UpdateLocationTests : DepartmentsBaseTests
         Assert.True(result.IsFailure);
     }
 
-    private async Task<T> ExecuteHandler<T>(Func<ICommandHandler<UpdateLocationRequest>, Task<T>> action)
+    private async Task<T> ExecuteHandler<T>(Func<ICommandHandler<UpdateLocationsRequest>, Task<T>> action)
     {
         await using var scope = Services.CreateAsyncScope();
 
-        var sut = scope.ServiceProvider.GetRequiredService<ICommandHandler<UpdateLocationRequest>>();
+        var sut = scope.ServiceProvider.GetRequiredService<ICommandHandler<UpdateLocationsRequest>>();
 
         return await action(sut);
     }
