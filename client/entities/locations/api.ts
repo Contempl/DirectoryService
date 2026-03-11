@@ -1,7 +1,7 @@
 import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
 import { PagedResult } from "@/shared/api/types";
-import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions } from "@tanstack/react-query";
 
 
 export type GetLocationsRequest = {
@@ -68,13 +68,6 @@ export const locationsApi = {
 
 export const locationsQueryOptions = {
   baseKey: "locations",
-
-  getLocationsOptions: (query: GetLocationsRequest) =>
-    queryOptions({
-      queryKey: [locationsQueryOptions.baseKey, query],
-      queryFn: () => locationsApi.getLocations(query),
-      staleTime: 1000 * 60,
-    }),
 
     getLocationInfiniteOptions: ({ pageSize, isActive }: { pageSize: number; isActive: boolean }) => {
       return infiniteQueryOptions({
