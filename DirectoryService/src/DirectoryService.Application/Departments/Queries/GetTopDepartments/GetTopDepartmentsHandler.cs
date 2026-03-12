@@ -56,7 +56,7 @@ public class GetTopDepartmentsHandler : IQueryHandler<bool, PagedResult<Departme
 
                 var result = new PagedResult<DepartmentDto>
                 {
-                    Data = departments,
+                    Items = departments,
                     TotalCount = departments.Length,
                 };
 

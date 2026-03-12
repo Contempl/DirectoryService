@@ -1,7 +1,7 @@
 import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
 import { PagedResult } from "@/shared/api/types";
-import { queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions } from "@tanstack/react-query";
 
 
 export type GetLocationsRequest = {
@@ -30,6 +30,7 @@ export type CreateLocationRequest ={
   timezone: string;
 }
 
+
 export type UpdateLocationRequest = {
   name: string;
   city: string;
@@ -38,7 +39,6 @@ export type UpdateLocationRequest = {
   apartment?: string | null;
   timezone: string;
 }
-
 
 
 export const locationsApi = {
@@ -61,18 +61,32 @@ export const locationsApi = {
   },
 
   deleteLocation: async (id: string) => {
-    const respones = await apiClient.delete(`/locations/${id}`);
-    return respones.data;
+    const response = await apiClient.delete(`/locations/${id}`);
+    return response.data;
   },
 }
 
 export const locationsQueryOptions = {
   baseKey: "locations",
 
-  getLocationsOptions: (query: GetLocationsRequest) =>
-    queryOptions({
-      queryKey: [locationsQueryOptions.baseKey, query],
-      queryFn: () => locationsApi.getLocations(query),
-      staleTime: 1000 * 60,
-    }),
+    getLocationInfiniteOptions: ({ pageSize, isActive }: { pageSize: number; isActive: boolean }) => {
+      return infiniteQueryOptions({
+        queryKey: [locationsQueryOptions.baseKey, { pageSize, isActive }],
+        queryFn: ({ pageParam }) => locationsApi.getLocations({ page: pageParam ?? 1, pageSize, isActive }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.items || lastPage.page >= lastPage.totalPages) {
+            return undefined;
+          }
+          return lastPage.page + 1;
+        },
+        select: (data): PagedResult<LocationDto> => ({
+          items: data.pages.flatMap((page) => page?.items ?? []),
+          totalCount: data.pages[0]?.totalCount ?? 0,
+          page: data.pages[0]?.page ?? 1,
+          pageSize: data.pages[0]?.pageSize ?? pageSize,
+          totalPages: data.pages[0]?.totalPages ?? 0
+        })
+      });
+    },
 };

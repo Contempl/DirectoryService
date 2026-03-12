@@ -1,14 +1,16 @@
 "use client"
 
+import type { LocationDto } from "@/entities/locations/types";
 import LocationCard from "@/features/lessons/location-card";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocationsList } from "./model/use-locations-list";
 import { Button } from "@/shared/components/ui/button";
-import { CreateLocationDialog } from "./create-location-dialog";
-import { LocationDto } from "@/entities/locations/types";
 import { EditLocationDialog } from "./edit-location-dialog";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { CreateLocationDialog } from "./create-location-dialog";
 
 export default function LocationsList() {
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [isActive, setIsActive] = useState(true);
@@ -17,10 +19,18 @@ export default function LocationsList() {
 
   const [selectedLocation, setSelectedLocation] = useState<LocationDto | undefined>(undefined);
  
-  const { data, isLoading, isError, error } =
-  useLocationsList({ page, pageSize, isActive });
+  const { 
+    data, 
+    isPending, 
+    isError, 
+    error, 
+    isFetchingNextPage,
+    cursorRef
+  } = useLocationsList(pageSize, isActive);
 
-  if (isLoading) return <p>Loading...</p>;
+  
+
+  if (isPending) return <p>Loading...</p>;
 
   if (isError)
     return (
@@ -29,7 +39,7 @@ export default function LocationsList() {
       </p>
     );
 
-  if (!data || data.data.length === 0)
+  if (!data || data.items.length === 0)
     return <p>No locations</p>;
 
 const totalPages = Math.ceil(data.totalCount / pageSize);
@@ -41,7 +51,7 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
           Locations ({data.totalCount})
         </h2>
 
-        {isLoading && (
+        {isPending && (
           <span className="text-sm text-gray-500">Updating...</span>
         )}
       </div>
@@ -77,10 +87,11 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
         </button>
       </div>
 
+      {/* 🔹 Список */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
     
         
-      {data.data.map((location) => (
+      {data.items.map((location) => (
         <LocationCard
           key={location.id}
           location={location}
@@ -92,24 +103,7 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
       ))}
     </div>
 
-    {/* пагинация */}
-    {totalPages > 1 && (
-      <div className="mt-6 flex gap-2">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-          <button
-            key={pageNum}
-            onClick={() => setPage(pageNum)}
-            className={`px-3 py-1 rounded transition-colors ${
-              pageNum === page
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            }`}
-          >
-            {pageNum}
-          </button>
-        ))}
-      </div>
-    )}
+    
 
     {/* кнопка создания */}
     <div className="mt-6">
@@ -133,6 +127,10 @@ const totalPages = Math.ceil(data.totalCount / pageSize);
         onOpenChange={setUpdateOpen}
       />
     )}
+
+    <div ref={cursorRef} className="flex justify-center py-4">
+      {isFetchingNextPage && <Spinner />}
+      </div>
     </div>
   );
 }

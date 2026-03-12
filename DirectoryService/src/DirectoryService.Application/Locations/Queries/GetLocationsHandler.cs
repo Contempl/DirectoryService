@@ -53,7 +53,10 @@ public class GetLocationsHandler : IQueryHandler<GetLocationsQuery, PagedResult<
 
         return new PagedResult<LocationDto>
         {
-            Data = locations, 
+            Items = locations, 
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / query.PageSize),
             TotalCount = totalCount
         };
     }
