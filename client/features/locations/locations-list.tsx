@@ -1,7 +1,7 @@
 "use client"
 
 import type { LocationDto } from "@/entities/locations/types";
-import LocationCard from "@/features/lessons/location-card";
+import LocationCard from "@/features/locations/location-card";
 import { useCallback, useState } from "react";
 import { useLocationsList } from "./model/use-locations-list";
 import { Button } from "@/shared/components/ui/button";
