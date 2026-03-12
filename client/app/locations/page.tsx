@@ -1,6 +1,6 @@
 "use client";
 
-import LocationsList from "@/features/lessons/locations-list";
+import LocationsList from "@/features/locations/locations-list";
 
 export default function LocationsPage() {
   return <LocationsList />;
