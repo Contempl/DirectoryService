@@ -2,7 +2,7 @@ import { locationsQueryOptions } from "@/entities/locations/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-export function useLocationsList(pageSize: number, isActive: boolean) {
+export function useLocationsList(search: string | undefined, pageSize: number, isActive: boolean) {
   const {
     data,
     isPending,
@@ -13,7 +13,7 @@ export function useLocationsList(pageSize: number, isActive: boolean) {
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery({
-    ...locationsQueryOptions.getLocationInfiniteOptions({ pageSize, isActive }),
+    ...locationsQueryOptions.getLocationInfiniteOptions({ search, pageSize, isActive }),
   });
 
 
