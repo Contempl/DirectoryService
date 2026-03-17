@@ -1,0 +1,54 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Web", "FileService.Web\FileService.Web.csproj", "{4FA50261-88B2-4AD5-857B-F3ED6B373BA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Core", "FileService.Core\FileService.Core.csproj", "{8E75E6BD-DDB4-496C-AF3F-B2B4E012EBB6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Domain", "FileService.Domain\FileService.Domain.csproj", "{9F084EB8-F37D-481F-97DA-9AE68F07777A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Infrastructure.S3", "FileService.Infrastructure.S3\FileService.Infrastructure.S3.csproj", "{5CF54F4A-8BD7-4FDC-94C8-0A2511860511}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Infrastructure.Postgres", "FileService.Infrastructure.Postgres\FileService.Infrastructure.Postgres.csproj", "{9B397E1D-13D7-49DD-A991-9AC90B5E1235}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{8C39A558-DB04-473F-A4DD-D2E0DA1BE40D}"
+	ProjectSection(SolutionItems) = preProject
+		..\docker-compose.yml = ..\docker-compose.yml
+		Dockerfile = Dockerfile
+		.dockerignore = .dockerignore
+		..\.env = ..\.env
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileService.Contracts", "FileService.Contracts\FileService.Contracts.csproj", "{7045FCA4-73A1-4A28-8CEF-E762FB62CA67}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4FA50261-88B2-4AD5-857B-F3ED6B373BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FA50261-88B2-4AD5-857B-F3ED6B373BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FA50261-88B2-4AD5-857B-F3ED6B373BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FA50261-88B2-4AD5-857B-F3ED6B373BA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E75E6BD-DDB4-496C-AF3F-B2B4E012EBB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E75E6BD-DDB4-496C-AF3F-B2B4E012EBB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E75E6BD-DDB4-496C-AF3F-B2B4E012EBB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E75E6BD-DDB4-496C-AF3F-B2B4E012EBB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F084EB8-F37D-481F-97DA-9AE68F07777A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F084EB8-F37D-481F-97DA-9AE68F07777A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F084EB8-F37D-481F-97DA-9AE68F07777A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F084EB8-F37D-481F-97DA-9AE68F07777A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CF54F4A-8BD7-4FDC-94C8-0A2511860511}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CF54F4A-8BD7-4FDC-94C8-0A2511860511}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CF54F4A-8BD7-4FDC-94C8-0A2511860511}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CF54F4A-8BD7-4FDC-94C8-0A2511860511}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B397E1D-13D7-49DD-A991-9AC90B5E1235}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B397E1D-13D7-49DD-A991-9AC90B5E1235}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B397E1D-13D7-49DD-A991-9AC90B5E1235}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B397E1D-13D7-49DD-A991-9AC90B5E1235}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7045FCA4-73A1-4A28-8CEF-E762FB62CA67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7045FCA4-73A1-4A28-8CEF-E762FB62CA67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7045FCA4-73A1-4A28-8CEF-E762FB62CA67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7045FCA4-73A1-4A28-8CEF-E762FB62CA67}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

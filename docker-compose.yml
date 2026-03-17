@@ -3,7 +3,7 @@ services:
   directory-service:
     container_name: directory-service
     build:
-      context: .
+      context: ./DirectoryService
       dockerfile: Dockerfile
     ports:
       - "5353:5353"
@@ -11,9 +11,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
 
-  postgres:
-    container_name: postgres
-    image: postgres
+  postgres_ds:
+    container_name: postgres-ds
+    image: postgres:17
     restart: always
     environment:
       POSTGRES_DB: directory_service_db
@@ -24,7 +24,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
         
-  seq:
+  seq_ds:
     image: datalust/seq:latest
     container_name: seq
     restart: unless-stopped
@@ -44,6 +44,37 @@ services:
     restart: 
       always
     
+  file-service:
+    container_name: file-service-ds
+    build:
+      context: ./FileService
+      dockerfile: Dockerfile
+      args:
+        - NUGET_USERNAME=${NUGET_USERNAME}
+        - NUGET_PASSWORD=${NUGET_PASSWORD}
+    ports:
+      - "5555:5353"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5353
+  
+  postgres_fs:
+    container_name: postgres-fs
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: fileservice_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres-data-fs:/var/lib/postgresql/data
+
+
 volumes: 
   postgres-data:
   seq_data:
+  postgres-data-fs:
+  
+  
