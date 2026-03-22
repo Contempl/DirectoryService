@@ -1,4 +1,6 @@
-﻿using FileService.Domain.Assets;
+﻿using System.Text.Json;
+using FileService.Domain.Assets;
+using FileService.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,11 +34,41 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
             });
 
             mb.Property(md => md.Size).HasColumnName("size");
-
-            mb.Property(md => md.Status).HasConversion<string>();
-
-
+            mb.Property(md => md.ExpectedChunksCount).HasColumnName("expected_chunks_count");
         });
+        
+        builder.Property(ma => ma.Id).HasColumnName("id");
+        
+        builder.Property(ma => ma.Status).HasConversion<string>().HasColumnName("status");
 
+        builder.OwnsOne(ma => ma.Owner, ob =>
+        {
+            ob.Property(o => o.Context).HasColumnName("context");
+            ob.Property(o => o.EntityId).HasColumnName("context_id");
+        });
+        
+        builder.Property(ma => ma.AssetType).HasConversion<string>().HasColumnName("asset_type");
+        
+        builder.Property(ma => ma.CreatedAt).HasColumnName("created_at");
+        builder.Property(ma => ma.UpdatedAt).HasColumnName("updated_at");
+        
+        builder.Property(ma => ma.RawKey)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<StorageKey>(v, (JsonSerializerOptions?)null)!)
+            .HasColumnName("raw_key")
+            .HasColumnType("jsonb");
+        
+        builder.Property(ma => ma.FinalKey)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => JsonSerializer.Deserialize<StorageKey>(v, (JsonSerializerOptions?)null)!)
+            .HasColumnName("final_key")
+            .HasColumnType("jsonb");
+
+        builder.HasIndex(ma => new
+        {
+            ma.Status, ma.CreatedAt
+        });
     }
 }
