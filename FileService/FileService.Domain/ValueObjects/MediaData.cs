@@ -12,6 +12,7 @@ public record MediaData
     public long Size { get; set; }
 
     public int ExpectedChunksCount { get; set; }
+    private MediaData() { }
 
     private MediaData(FileName fileName, ContentType contentType, long size, int expectedChunksCount)
     {
