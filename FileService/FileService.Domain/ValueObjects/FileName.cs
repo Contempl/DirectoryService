@@ -9,7 +9,7 @@ public record FileName
 
     public string Extension { get; }
 
-
+    private FileName() { }
     private FileName(string name,  string extension)
     {
         Value = name;

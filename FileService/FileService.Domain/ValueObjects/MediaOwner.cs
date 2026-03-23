@@ -17,6 +17,8 @@ public record MediaOwner
 
     public Guid EntityId { get; }
 
+    private MediaOwner() { }
+    
     private MediaOwner(string context, Guid entityId)
     {
         Context = context;

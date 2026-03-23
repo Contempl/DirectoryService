@@ -9,6 +9,8 @@ public record ContentType
     public string Value { get; }
 
     public MediaType MediaType { get;  }
+
+    private ContentType() { }
     
     private  ContentType(string value, MediaType type)
     {

@@ -15,6 +15,8 @@ public record StorageKey
 
     public string FullPath { get; }
 
+    private StorageKey() { }
+    
     private StorageKey(string location, string key, string prefix)
     {
         Location =  location;
