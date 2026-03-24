@@ -1,4 +1,5 @@
-﻿using FileService.Infrastructure.Postgres;
+﻿using FileService.Core.Endpoints;
+using FileService.Infrastructure.Postgres;
 using Framework.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -43,6 +44,9 @@ public static class ApiExtensions
         app.UseSwaggerUI();
 
         app.UseHttpsRedirection();
+
+        var apiGroup = app.MapGroup("/api").WithOpenApi();
+        app.MapEndpoints(apiGroup);
 
         return app;
     }
