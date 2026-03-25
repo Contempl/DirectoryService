@@ -7,12 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\FileService.Contracts\FileService.Contracts.csproj" />
       <ProjectReference Include="..\FileService.Domain\FileService.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="directoryservice.core" Version="1.0.0" />
       <PackageReference Include="directoryservice.framework" Version="1.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\Delete\" />
+      <Folder Include="Features\Download\" />
+      <Folder Include="Features\Upload\" />
     </ItemGroup>
 
 </Project>
