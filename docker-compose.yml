@@ -71,10 +71,35 @@ services:
     volumes:
       - postgres-data-fs:/var/lib/postgresql/data
 
-
+  auth-service:
+    container_name: auth-service-backend
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+      args:
+        - NUGET_USERNAME=${NUGET_USERNAME}
+        - NUGET_PASSWORD=${NUGET_PASSWORD}
+    ports: 
+      - "5656:5353"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:5353
+  
+  postgres_as:
+    container_name: postgres_as
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: authservice_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres-data-as:/var/lib/postgressql/data    
+  
 volumes: 
   postgres-data:
   seq_data:
   postgres-data-fs:
-  
-  
+  postgres-data-as:
