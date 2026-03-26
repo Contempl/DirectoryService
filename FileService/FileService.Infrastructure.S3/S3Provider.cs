@@ -25,7 +25,11 @@ public class S3Provider : IS3Provider
         _logger = logger;
     }
 
-    public async Task<Result<string, Error>> UploadFileAsync(Stream stream, string bucketName, string key, string contentType, CancellationToken token)
+    public async Task<Result<string, Error>> UploadFileAsync(
+        Stream stream, 
+        string bucketName, 
+        string key, 
+        string contentType, CancellationToken cancellationToken)
     {
         var request = new PutObjectRequest
         {
@@ -35,14 +39,15 @@ public class S3Provider : IS3Provider
             ContentType = contentType,
         };
         
-        await _s3Client.PutObjectAsync(request, token);
+        await _s3Client.PutObjectAsync(request, cancellationToken);
         return bucketName;
     }
 
     public async Task<Result<string, Error>> StartMultipartUploadAsync(
         string bucketName,
         string key,
-        string contentType)
+        string contentType,
+        CancellationToken  cancellationToken = default)
     {
         try
         {
@@ -51,7 +56,7 @@ public class S3Provider : IS3Provider
                 BucketName = bucketName, Key = key, ContentType = contentType
             };
             
-            var response = await _s3Client.InitiateMultipartUploadAsync(request);
+            var response = await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
 
             return response.UploadId;
         }
@@ -85,19 +90,49 @@ public class S3Provider : IS3Provider
         }
     }
 
-    public Task<UnitResult<Error>> UploadFileAsync(StorageKey key, Stream stream, MediaData mediaData, CancellationToken cancellationToken = default)
+    public async Task<UnitResult<Error>> UploadFileAsync(StorageKey key, Stream stream, MediaData mediaData, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var s3UploadRequest = new PutObjectRequest
+        {
+            BucketName = key.Location,
+            Key = key.Value,
+            InputStream = stream,
+            ContentType = mediaData.ContentType.Value,
+        };
+        await _s3Client.PutObjectAsync(s3UploadRequest, cancellationToken);
+
+        return UnitResult.Success<Error>();
+    }
+    
+
+    public async Task<Result<string, Error>> DownloadFileAsync(StorageKey key, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _s3Client.GetObjectAsync(key.Location, key.Value, cancellationToken);
+            
+            return result.Key;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading file");
+            return S3ErrorMapper.ToError(ex);
+        }
     }
 
-    public Task<Result<string, Error>> DownloadFileAsync(StorageKey key, string tempPath, CancellationToken cancellationToken = default)
+    public async Task<Result<string, Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
-    }
+        try
+        {
+            var result =  await _s3Client.DeleteObjectAsync(key.Location, key.Value, cancellationToken);
 
-    public Task<Result<string, Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+            return result.DeleteMarker;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting file");
+            return S3ErrorMapper.ToError(ex);
+        }
     }
     
     

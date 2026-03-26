@@ -22,7 +22,7 @@ public class MediaAssetsRepository : IMediaAssetsRepository
     public async Task<Result<Guid, Error>> AddAsync(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
     {
         _dbContext.MediaAssets.Add(mediaAsset);
-
+        
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -43,6 +43,42 @@ public class MediaAssetsRepository : IMediaAssetsRepository
             _logger.LogError(ex, "Unexpected error while creating mediaAsset");
 
             return GeneralErrors.Failure();
+        }
+    }
+
+    public async Task<Result<MediaAsset, Error>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var asset = await _dbContext.MediaAssets.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (asset is null)
+            return GeneralErrors.NotFound(id);
+
+        return asset;
+    }
+
+    public async Task<UnitResult<Error>> RemoveAsync(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _dbContext.MediaAssets.Remove(mediaAsset);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to remove mediaAsset. {ex}", ex);
+            return GeneralErrors.Failure();
+        }
+        return UnitResult.Success<Error>();
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to save changes of mediaAsset. {ex}", ex);
         }
     }
 }
