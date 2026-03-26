@@ -1,8 +1,13 @@
-﻿using System.Reflection;
+﻿using Core.Abstractions;
+using CSharpFunctionalExtensions;
 using FileService.Core.Endpoints;
+using FileService.Core.Features.Delete;
+using FileService.Core.Features.Download;
+using FileService.Core.Features.Upload;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
 using Microsoft.EntityFrameworkCore;
+using Shared.Kernel;
 
 namespace FileService.Configuration;
 
@@ -19,6 +24,10 @@ public static class DependencyInjection
         services.AddEndpoints(typeof(EndpointsExtensions).Assembly);
         
         services.AddS3(configuration);
+
+        services.AddScoped<ICommandHandler<Guid, DeleteFileRequest>, DeleteFileHandler>();
+        services.AddScoped<ICommandHandler<Guid, UploadFileCommand>, UploadFileHandler>();
+        services.AddScoped<IQueryHandler<DownloadFileRequest, Result<string, Error>>, DownloadFileHandler>();
         
         return services;
     }
