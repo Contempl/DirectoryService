@@ -67,7 +67,7 @@ public class VideoAsset : MediaAsset
         return UnitResult.Success<Error>();
     }
 
-    public Result<VideoAsset, Error> CreateMediaForUpload(Guid id, MediaData mediaData, MediaOwner owner)
+    public static Result<VideoAsset, Error> CreateMediaForUpload(Guid id, MediaData mediaData, MediaOwner owner)
     {
         UnitResult<Error> validationResult = ValidateForUpload(mediaData);
         if (validationResult.IsFailure)
