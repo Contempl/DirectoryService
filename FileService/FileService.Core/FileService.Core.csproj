@@ -14,12 +14,8 @@
     <ItemGroup>
       <PackageReference Include="directoryservice.core" Version="1.0.0" />
       <PackageReference Include="directoryservice.framework" Version="1.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Features\Delete\" />
-      <Folder Include="Features\Download\" />
-      <Folder Include="Features\Upload\" />
+      <PackageReference Include="FluentValidation" Version="12.1.1" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     </ItemGroup>
 
 </Project>
