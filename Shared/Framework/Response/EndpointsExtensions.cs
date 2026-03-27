@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace FileService.Core.Endpoints;
+namespace Framework.Response;
 
 public static class EndpointsExtensions
 {

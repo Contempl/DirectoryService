@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Routing;
 
-namespace FileService.Core.Endpoints;
+namespace Framework.Response;
 
 public interface IEndpoint
 {
