@@ -21,6 +21,7 @@ COPY ["FileService.Core/FileService.Core.csproj", "FileService.Core/"]
 COPY ["FileService.Domain/FileService.Domain.csproj", "FileService.Domain/"]
 COPY ["FileService.Infrastructure.Postgres/FileService.Infrastructure.Postgres.csproj", "FileService.Infrastructure.Postgres/"]
 COPY ["FileService.Infrastructure.S3/FileService.Infrastructure.S3.csproj", "FileService.Infrastructure.S3/"]
+COPY ["FileService.Contracts/FileService.Contracts.csproj", "FileService.Contracts/"]
 RUN dotnet restore "FileService.Web/FileService.Web.csproj"
 COPY . .
 WORKDIR "/src/FileService.Web"

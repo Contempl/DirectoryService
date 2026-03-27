@@ -16,7 +16,7 @@ public record FileName
         Extension = extension;
     }
     
-    static Result<FileName, Error> Create(string name, string extension)
+    public static Result<FileName, Error> Create(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return GeneralErrors.ValueIsInvalid(nameof(name));

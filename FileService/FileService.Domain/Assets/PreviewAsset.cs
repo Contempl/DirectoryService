@@ -46,7 +46,7 @@ public class PreviewAsset : MediaAsset
         return UnitResult.Success<Error>();
     }
 
-    public Result<PreviewAsset, Error> CreatePreviewForUpload(Guid id, MediaData mediaData, MediaOwner owner)
+    public static Result<PreviewAsset, Error> CreatePreviewForUpload(Guid id, MediaData mediaData, MediaOwner owner)
     {
         UnitResult<Error> validationResult = ValidateForUpload(mediaData);
         if (validationResult.IsFailure)
