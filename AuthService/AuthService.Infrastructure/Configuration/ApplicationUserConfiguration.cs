@@ -10,7 +10,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
     {
         builder.HasKey(u => u.Id);
         
-        builder.ToTable("ApplicationUsers");
+        builder.ToTable("application_users");
 
         builder.Property(u => u.Id)
             .IsRequired()
