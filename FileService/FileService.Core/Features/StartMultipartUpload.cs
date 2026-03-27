@@ -1,6 +1,5 @@
 using CSharpFunctionalExtensions;
 using FileService.Contracts;
-using FileService.Core.Endpoints;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
