@@ -1,3 +1,4 @@
+using AuthService.Configuration;
 using Framework.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,13 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthentication();
+builder.Services.AddAuthorization();
+
+builder.Services.AddDatabaseWithLogging(builder.Configuration);
+
+builder.Services.AddIdentityProvider(builder.Configuration);
 
 builder.Services.AddCors();
 
@@ -29,6 +37,11 @@ app.UseCors(bld =>
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseMigrations();
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Run();
