@@ -1,5 +1,7 @@
 using AuthService.Configuration;
+using AuthService.Core.Identity;
 using Framework.Middleware;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddDatabaseWithLogging(builder.Configuration);
 
 builder.Services.AddIdentityProvider(builder.Configuration);
+
+builder.Services.AddHostedService<SeedDataService>();
 
 builder.Services.AddCors();
 

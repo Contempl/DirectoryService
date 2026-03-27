@@ -1,4 +1,5 @@
 ﻿using AuthService.Core;
+using AuthService.Core.Options;
 using AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public static class DependencyInjection
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             })
+            .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
 
@@ -36,6 +38,10 @@ public static class DependencyInjection
                 .EnableSensitiveDataLogging()
                 .LogTo(Console.WriteLine, LogLevel.Information));
 
+        services.Configure<AdminOptions>(
+            configuration.GetSection(nameof(AdminOptions))
+        );
+        
         return services;
     }
 }
