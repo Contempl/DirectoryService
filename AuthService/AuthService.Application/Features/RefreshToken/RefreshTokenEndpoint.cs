@@ -9,11 +9,10 @@ public class RefreshTokenEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/refresh", async Task<EndpointResult<Guid>>(
-
-            CancellationToken cancellationToken) =>
-        {
-            throw new NotImplementedException();
-        });
+        app.MapPost("/refresh", async Task<EndpointResult<Domain.Entities.RefreshToken>>(
+            [FromBody] RefreshTokenRequest request,
+            [FromServices] RefreshTokenHandler handler,
+            CancellationToken cancellationToken)
+                => await handler.HandleAsync(request, cancellationToken));
     }
 }
