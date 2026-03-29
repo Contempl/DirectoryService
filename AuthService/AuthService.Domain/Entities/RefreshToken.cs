@@ -15,7 +15,7 @@ public class RefreshToken
     
     public bool IsRevoked { get; private set; }            // отозван ли
     
-    public DateTime? RevokedAt { get; init; }
+    public DateTime? RevokedAt { get; private set; }
     
     public string? ReplacedByToken { get; private set; }   // если был заменён новым токеном
     
@@ -38,12 +38,12 @@ public class RefreshToken
     public static Result<RefreshToken, Error> Create(
         string token,
         Guid userId,
-        Guid jwtTokeId,
+        Guid jwtTokenId,
         DateTime expiryDate)
     {
         try
         {
-            var jwtId =  jwtTokeId.ToString();
+            var jwtId =  jwtTokenId.ToString();
         
             var refreshToken = new RefreshToken(token, userId, jwtId, expiryDate);
         
@@ -53,5 +53,14 @@ public class RefreshToken
         {
             return GeneralErrors.ValueIsInvalid("failed to create refresh token");
         }
+    }
+
+    public UnitResult<Error> Revoke(string? replacedByToken = null)
+    {
+        IsRevoked = true;
+        RevokedAt = DateTime.UtcNow;
+        ReplacedByToken = replacedByToken;
+        
+        return UnitResult.Success<Error>();
     }
 }
