@@ -1,7 +1,7 @@
 using AuthService.Configuration;
 using AuthService.Core.Identity;
 using Framework.Middleware;
-using Microsoft.AspNetCore.Identity;
+using Framework.Response;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,5 +47,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+var apiGroup = app.MapGroup("/api").WithOpenApi();
+app.MapEndpoints(apiGroup);
 
 app.Run();
