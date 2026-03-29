@@ -1,4 +1,5 @@
 ﻿using AuthService.Core;
+using AuthService.Core.Identity;
 using AuthService.Core.Options;
 using AuthService.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,8 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddHostedService<DeleteRevokedTokensService>();
 
         return services;
     }
