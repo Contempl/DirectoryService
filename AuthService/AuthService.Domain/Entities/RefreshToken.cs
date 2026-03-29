@@ -1,4 +1,7 @@
-﻿namespace AuthService.Domain.Entities;
+﻿using CSharpFunctionalExtensions;
+using Shared.Kernel;
+
+namespace AuthService.Domain.Entities;
 
 public class RefreshToken
 {
@@ -20,7 +23,35 @@ public class RefreshToken
     
     public Guid UserId { get; init; }
     
-    public ApplicationUser User { get; init; } = null!;
-
     private RefreshToken() { }
+
+    private RefreshToken(string token, Guid userId, string jwtId, DateTime expiryDate)
+    {
+        Id = Guid.NewGuid();
+        Token = token;
+        UserId = userId;
+        JwtId = jwtId;
+        ExpiryDate = expiryDate;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public static Result<RefreshToken, Error> Create(
+        string token,
+        Guid userId,
+        Guid jwtTokeId,
+        DateTime expiryDate)
+    {
+        try
+        {
+            var jwtId =  jwtTokeId.ToString();
+        
+            var refreshToken = new RefreshToken(token, userId, jwtId, expiryDate);
+        
+            return refreshToken;
+        }
+        catch (Exception ex)
+        {
+            return GeneralErrors.ValueIsInvalid("failed to create refresh token");
+        }
+    }
 }
