@@ -1,15 +1,18 @@
-﻿using AuthService.Core;
+﻿using AuthService.Application.Features.RefreshToken;
+using AuthService.Core;
 using AuthService.Core.Identity;
 using AuthService.Core.Options;
 using AuthService.Domain.Entities;
+using Core.Abstractions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Shared.Kernel;
 
 namespace AuthService.Configuration;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddIdentityProvider(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
@@ -30,6 +33,8 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddHostedService<DeleteRevokedTokensService>();
+        
+        services.AddScoped<ICommandHandler<RefreshToken, RefreshTokenRequest>, RefreshTokenHandler>();
 
         return services;
     }
@@ -47,6 +52,10 @@ public static class DependencyInjection
 
         services.Configure<JwtOptions>(
             configuration.GetSection(nameof(JwtOptions))
+        );
+
+        services.Configure<BackgroundServiceOptions>(
+            configuration.GetSection(nameof(BackgroundServiceOptions))
         );
         
         return services;

@@ -15,7 +15,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddDatabaseWithLogging(builder.Configuration);
 
-builder.Services.AddIdentityProvider(builder.Configuration);
+builder.Services.AddConfiguration(builder.Configuration);
 
 builder.Services.AddHostedService<SeedDataService>();
 
