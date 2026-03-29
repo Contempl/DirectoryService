@@ -6,6 +6,6 @@ namespace AuthService.Application;
 
 public interface ITokenProvider
 {
-    string GenerateAccessToken(ApplicationUser user, IList<string> roles);
+    string GenerateJwtToken(ApplicationUser user, List<string> roles, HashSet<string> permissions);
     Result<RefreshToken, Error> GenerateRefreshToken(Guid userId, Guid jwtTokenId);
 }

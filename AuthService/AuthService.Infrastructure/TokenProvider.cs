@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AuthService.Application;
 using AuthService.Core.Options;
 using AuthService.Domain.Entities;
 using CSharpFunctionalExtensions;
@@ -12,7 +13,7 @@ using Shared.Kernel;
 
 namespace AuthService.Core;
 
-public class TokenProvider
+public class TokenProvider : ITokenProvider
 {
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<TokenProvider> _logger;
@@ -23,16 +24,20 @@ public class TokenProvider
         _logger = logger;
     }
 
-    public string GenerateJwtToken(ApplicationUser user)
+    public string GenerateJwtToken(ApplicationUser user, List<string> roles, HashSet<string> permissions)
     {
         var key = Encoding.UTF8.GetBytes(_jwtOptions.Secret);
+        
         var claims = new List<Claim>
         {
-            new Claim("sub", user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Name, string.Concat(user.FirstName, " ", user.LastName)),
-            new Claim("jti", Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+            new Claim(JwtRegisteredClaimNames.Name, string.Concat(user.FirstName, " ", user.LastName)),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+        
+        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        claims.AddRange(permissions.Select(p => new Claim("permission", p)));
         
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key),
             SecurityAlgorithms.HmacSha256Signature);
@@ -67,11 +72,3 @@ public class TokenProvider
         return refreshToken;
     }
 }
-
-
-// sub — Id пользователя (Guid)
-// email — email пользователя
-// name — FirstName + LastName
-// jti — уникальный идентификатор токена
-// roles — список ролей пользователя (каждая роль — отдельный claim)
-// permissions — список permissions на основе ролей (каждый permission — отдельный claim)
