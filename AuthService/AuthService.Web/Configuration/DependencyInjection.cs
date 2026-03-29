@@ -41,6 +41,10 @@ public static class DependencyInjection
         services.Configure<AdminOptions>(
             configuration.GetSection(nameof(AdminOptions))
         );
+
+        services.Configure<JwtOptions>(
+            configuration.GetSection(nameof(JwtOptions))
+        );
         
         return services;
     }
