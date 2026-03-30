@@ -28,7 +28,7 @@ public class ApplicationUser : IdentityUser<Guid>
         LastName = lastName;
     }
 
-    public static Result<ApplicationUser, Error> Create(string firstName, string lastName)
+    public static Result<ApplicationUser, Error> Create(string firstName, string lastName, string email)
     {
         if (string.IsNullOrEmpty(firstName) || firstName.Length > 100)
             return GeneralErrors.ValueIsInvalid(nameof(firstName));
@@ -39,7 +39,8 @@ public class ApplicationUser : IdentityUser<Guid>
         var user = new ApplicationUser
         {
             FirstName = firstName,
-            LastName = lastName
+            LastName = lastName,
+            Email = email,
         };
 
         return user;
@@ -50,7 +51,7 @@ public class ApplicationUser : IdentityUser<Guid>
         if (string.IsNullOrEmpty(email))
             return GeneralErrors.ValueIsInvalid(nameof(email));
         
-        var userCreationResult = ApplicationUser.Create(firstName, lastName);
+        var userCreationResult = ApplicationUser.Create(firstName, lastName, email);
         
         if (userCreationResult.IsFailure)
             return GeneralErrors.ValueIsInvalid(nameof(ApplicationUser));
