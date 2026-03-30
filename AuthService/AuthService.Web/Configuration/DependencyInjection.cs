@@ -1,4 +1,5 @@
 ﻿using AuthService.Application.Features.RefreshToken;
+using AuthService.Application.Features.Register;
 using AuthService.Core;
 using AuthService.Core.Identity;
 using AuthService.Core.Options;
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.AddHostedService<DeleteRevokedTokensService>();
         
         services.AddScoped<ICommandHandler<RefreshToken, RefreshTokenRequest>, RefreshTokenHandler>();
+        services.AddScoped<ICommandHandler<Guid, RegisterRequest>, RegisterHandler>();
 
         return services;
     }
