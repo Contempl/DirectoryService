@@ -1,4 +1,6 @@
+using AuthService.Application;
 using AuthService.Configuration;
+using AuthService.Core.EmailSender;
 using AuthService.Core.Identity;
 using Framework.Middleware;
 using Framework.Response;
@@ -6,6 +8,12 @@ using Framework.Response;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
+else
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
