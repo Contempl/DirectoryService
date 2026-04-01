@@ -1,4 +1,6 @@
-﻿using AuthService.Application.Database;
+﻿using System.IdentityModel.Tokens.Jwt;
+using AuthService.Application.Database;
+using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
 using Core.Abstractions;
 using CSharpFunctionalExtensions;
@@ -68,11 +70,21 @@ public class RefreshTokenHandler : ICommandHandler<Domain.Entities.RefreshToken,
                 await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id);
                 return GeneralErrors.Failure().ToErrors();
             }
-        
+            
             if (refreshToken.ExpiryDate < DateTime.UtcNow)
                 return GeneralErrors.ValueIsInvalid(nameof(RefreshToken)).ToErrors();
-        
-            var newRefToken = _tokenProvider.GenerateRefreshToken(user.Id, refreshToken.Id);
+            
+            var roles =  await _userManager.GetRolesAsync(user);
+            var permissions = RolePermissions.GetPermissions(roles);
+            
+            var newJwtToken = _tokenProvider.GenerateJwtToken(user, roles.ToList(), permissions);
+
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(newJwtToken);
+            var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            var newRefToken = _tokenProvider.GenerateRefreshToken(user.Id, jti);
+            
             if (newRefToken.IsFailure)
                 return newRefToken.Error.ToErrors();
 
