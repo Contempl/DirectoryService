@@ -24,9 +24,9 @@ public class GetDepartmentsHandler : IQueryHandler<GetDepartmentsQuery, PagedRes
                 query.LocationsIds.All(id => d.Locations.Any(l => l.LocationId == id)));
 
         if (!string.IsNullOrWhiteSpace(query.Search))
-            departmentsQuery = departmentsQuery.Where(d => 
-                d.Name.Value.Contains(query.Search, StringComparison.OrdinalIgnoreCase)); // нейронка пишет, что EF.Functions.Like() лучше
-
+            departmentsQuery = departmentsQuery.Where(d =>
+                EF.Functions.ILike(d.Name.Value, $"%{query.Search}%"));
+                
         if (query.IsActive is not null)
             departmentsQuery = departmentsQuery.Where(d => d.IsActive == query.IsActive);
 
