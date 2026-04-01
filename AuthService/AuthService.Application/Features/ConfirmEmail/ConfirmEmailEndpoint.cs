@@ -11,7 +11,7 @@ public class ConfirmEmailEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/auth/confirm-email?userId={userId}&token={token}", async Task<EndpointResult>(
+        app.MapGet("/auth/confirm-email", async Task<EndpointResult>(
                 [FromQuery] Guid userId,
                 [FromQuery] string token,
                 [FromServices] ConfirmEmailQueryHandler handler,
