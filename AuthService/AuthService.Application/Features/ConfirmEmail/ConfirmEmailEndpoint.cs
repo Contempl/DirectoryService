@@ -1,0 +1,24 @@
+﻿using CSharpFunctionalExtensions;
+using Framework.Response;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Shared.Kernel;
+
+namespace AuthService.Application.Features.ConfirmEmail;
+
+public class ConfirmEmailEndpoint : IEndpoint
+{
+    public void MapEndpoint(IEndpointRouteBuilder app)
+    {
+        app.MapGet("/auth/confirm-email?userId={userId}&token={token}", async Task<EndpointResult>(
+                [FromQuery] Guid userId,
+                [FromQuery] string token,
+                [FromServices] ConfirmEmailQueryHandler handler,
+                CancellationToken cancellationToken) =>
+        {
+            var query = new ConfirmEmailQuery(userId, token);
+            return await handler.HandleAsync(query, cancellationToken);
+        });
+    }
+} 

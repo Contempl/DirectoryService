@@ -1,10 +1,17 @@
-﻿using AuthService.Application.Features.RefreshToken;
+﻿using AuthService.Application;
+using AuthService.Application.Database;
+using AuthService.Application.Features.ConfirmEmail;
+using AuthService.Application.Features.RefreshToken;
 using AuthService.Application.Features.Register;
 using AuthService.Core;
+using AuthService.Core.Database;
 using AuthService.Core.Identity;
 using AuthService.Core.Options;
+using AuthService.Core.Repositories;
 using AuthService.Domain.Entities;
 using Core.Abstractions;
+using CSharpFunctionalExtensions;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Shared.Kernel;
@@ -35,8 +42,15 @@ public static class DependencyInjection
 
         services.AddHostedService<DeleteRevokedTokensService>();
         
+        services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITransactionManager, TransactionManager>();
+        services.AddScoped<ITokenProvider, TokenProvider>();
+        services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
+        
         services.AddScoped<ICommandHandler<RefreshToken, RefreshTokenRequest>, RefreshTokenHandler>();
         services.AddScoped<ICommandHandler<Guid, RegisterRequest>, RegisterHandler>();
+        services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
 
         return services;
     }
@@ -56,6 +70,10 @@ public static class DependencyInjection
             configuration.GetSection(nameof(JwtOptions))
         );
 
+        services.Configure<SmtpOptions>(
+            configuration.GetSection(nameof(SmtpOptions))
+        );
+        
         services.Configure<BackgroundServiceOptions>(
             configuration.GetSection(nameof(BackgroundServiceOptions))
         );
