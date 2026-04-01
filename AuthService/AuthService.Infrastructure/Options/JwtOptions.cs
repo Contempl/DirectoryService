@@ -1,6 +1,8 @@
-﻿namespace AuthService.Core.Options;
+﻿using AuthService.Application.Abstractions;
 
-public record JwtOptions
+namespace AuthService.Core.Options;
+
+public record JwtOptions : IJwtOptions
 {
     public string Issuer { get; init; } = string.Empty;
 
