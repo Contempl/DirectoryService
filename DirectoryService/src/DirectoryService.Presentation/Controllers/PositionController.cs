@@ -2,6 +2,7 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Application.Positions.Create;
+using DirectoryService.Application.Positions.Delete;
 using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Contracts.Positions;
 using DirectoryService.Domain.Shared;
@@ -14,17 +15,20 @@ namespace DirectoryService.Presentation.Controllers;
 public class PositionController : ControllerBase
 {
     private readonly ICommandHandler<Guid, CreatePositionRequest> _positionHandler;
+    private readonly ICommandHandler<Guid, DeletePositionRequest> _deletePositionHandler;
     private readonly IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>> _getPositionsQueryHandler;
     private readonly IQueryHandler<Guid, Result<PositionDto, Error>> _getPositionQueryHandler;
 
     public PositionController(
         ICommandHandler<Guid, CreatePositionRequest> positionService,
         IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>> getPositionsQueryHandler,
-        IQueryHandler<Guid, Result<PositionDto, Error>> getPositionQueryHandler)
+        IQueryHandler<Guid, Result<PositionDto, Error>> getPositionQueryHandler,
+        ICommandHandler<Guid, DeletePositionRequest> deletePositionHandler)
     {
         _positionHandler = positionService;
         _getPositionsQueryHandler = getPositionsQueryHandler;
         _getPositionQueryHandler = getPositionQueryHandler;
+        _deletePositionHandler = deletePositionHandler;
     }
 
 
@@ -55,5 +59,17 @@ public class PositionController : ControllerBase
             return BadRequest();
         
         return Ok(result.Value);
+    }
+
+    [HttpDelete("/api/positions/{positionId}")]
+    public async Task<EndpointResult<Guid>> DeletePosition(
+        [FromRoute] Guid positionId,
+        CancellationToken cancellationToken)
+    {
+        var request =  new DeletePositionRequest(positionId);
+        
+        var result = await _deletePositionHandler.HandleAsync(request, cancellationToken);
+        
+        return result;
     }
 }

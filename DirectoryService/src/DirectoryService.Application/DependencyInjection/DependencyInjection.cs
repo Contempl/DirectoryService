@@ -15,6 +15,7 @@ using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Options;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Application.Positions.Create;
+using DirectoryService.Application.Positions.Delete;
 using DirectoryService.Application.Positions.GetById;
 using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Contracts.Departments;
@@ -62,6 +63,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
         services.AddScoped<ICommandHandler<Guid, DeleteLocationRequest>, DeleteLocationHandler>();
         services.AddScoped<ICommandHandler<Location, UpdateLocationRequest> , UpdateLocationHandler>();
+        services.AddScoped<ICommandHandler<Guid, DeletePositionRequest> , DeletePositionHandler>();
         services.AddScoped<IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>>, GetLocationsHandler>();
         services.AddScoped<IQueryHandler<bool, PagedResult<DepartmentDto>>, GetTopDepartmentsHandler>();
         services.AddScoped<IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>>, GetExpandedDepartmentsHandler>();
