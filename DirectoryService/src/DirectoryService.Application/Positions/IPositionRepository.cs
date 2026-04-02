@@ -7,4 +7,6 @@ namespace DirectoryService.Application.Positions;
 public interface IPositionRepository
 {
     Task<Result<Guid, Errors>> CreatePositionAsync(Position position, CancellationToken cancellationToken);
+    
+    Task<Result<Position, Errors>> GetPositionById(Guid id, CancellationToken cancellationToken);
 }

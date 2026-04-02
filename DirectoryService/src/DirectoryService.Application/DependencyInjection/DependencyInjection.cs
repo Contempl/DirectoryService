@@ -14,8 +14,10 @@ using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Options;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Application.Positions.Create;
+using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
+using DirectoryService.Contracts.Positions;
 using DirectoryService.Domain.Entities;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -62,5 +64,6 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>>, GetExpandedDepartmentsHandler>();
         services.AddScoped<IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>>, GetChildrenHandler>();
         services.AddScoped<IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>>, GetDepartmentsHandler>();
+        services.AddScoped<IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>>, GetPositionsHandler>();
     }
 }
