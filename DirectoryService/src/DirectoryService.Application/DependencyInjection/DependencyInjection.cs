@@ -4,6 +4,7 @@ using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
+using DirectoryService.Application.Departments.Queries.GetListOfDepartments;
 using DirectoryService.Application.Departments.Queries.GetTopDepartments;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Delete;
@@ -60,5 +61,6 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<bool, PagedResult<DepartmentDto>>, GetTopDepartmentsHandler>();
         services.AddScoped<IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>>, GetExpandedDepartmentsHandler>();
         services.AddScoped<IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>>, GetChildrenHandler>();
+        services.AddScoped<IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>>, GetDepartmentsHandler>();
     }
 }

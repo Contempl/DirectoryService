@@ -8,11 +8,12 @@ import { Button } from "@/shared/components/ui/button";
 import { EditLocationDialog } from "./edit-location-dialog";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { CreateLocationDialog } from "./create-location-dialog";
-import { useGetLocationsFilter } from "./model/locations-filter-store";
+import { setFilterSelectedDepartments, useGetLocationsFilter } from "./model/locations-filter-store";
 import { LocationsFilter } from "./locations-filter";
+import { DepartmentsPicker } from "../departments/departments-picker";
 
 export default function LocationsList() {
-  const { search, pageSize } = useGetLocationsFilter();
+  const { search, pageSize, selectedDepartments } = useGetLocationsFilter();
   const [page, setPage] = useState(1);
   const [isActive, setIsActive] = useState(true);
   const [createOpen, setCreateOpen] = useState(false)
@@ -52,6 +53,14 @@ export default function LocationsList() {
 
       <div className="mb-4">
         <LocationsFilter />
+      </div>
+
+      <div className="mb-4">
+        <DepartmentsPicker
+          selectedDepartments={selectedDepartments}
+          onChange={setFilterSelectedDepartments}
+          multiselect
+        />
       </div>
 
       {/* 🔹 Фильтр */}
