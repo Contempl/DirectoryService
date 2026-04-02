@@ -48,4 +48,15 @@ public class Position
 
         return UnitResult.Success<Error>();
     }
+
+    public UnitResult<Errors> Update(Name name, string? description)
+    {
+        Name = name;
+        
+        Description = description ?? Description;
+        
+        UpdatedAt = DateTime.UtcNow;
+        
+        return UnitResult.Success<Errors>();
+    }
 }

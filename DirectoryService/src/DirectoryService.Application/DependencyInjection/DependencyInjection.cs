@@ -18,6 +18,7 @@ using DirectoryService.Application.Positions.Create;
 using DirectoryService.Application.Positions.Delete;
 using DirectoryService.Application.Positions.GetById;
 using DirectoryService.Application.Positions.Queries;
+using DirectoryService.Application.Positions.Update;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Contracts.Positions;
@@ -27,6 +28,7 @@ using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using UpdateLocationRequest = DirectoryService.Application.Locations.Update.UpdateLocationRequest;
 
 namespace DirectoryService.Application.DependencyInjection;
 
@@ -63,6 +65,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
         services.AddScoped<ICommandHandler<Guid, DeleteLocationRequest>, DeleteLocationHandler>();
         services.AddScoped<ICommandHandler<Location, UpdateLocationRequest> , UpdateLocationHandler>();
+        services.AddScoped<ICommandHandler<Position, UpdatePositionCommand> , UpdatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, DeletePositionRequest> , DeletePositionHandler>();
         services.AddScoped<IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>>, GetLocationsHandler>();
         services.AddScoped<IQueryHandler<bool, PagedResult<DepartmentDto>>, GetTopDepartmentsHandler>();
