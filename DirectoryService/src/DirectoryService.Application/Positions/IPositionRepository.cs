@@ -8,5 +8,5 @@ public interface IPositionRepository
 {
     Task<Result<Guid, Errors>> CreatePositionAsync(Position position, CancellationToken cancellationToken);
     
-    Task<Result<Position, Errors>> GetPositionById(Guid id, CancellationToken cancellationToken);
+    Task<Result<Position, Error>> GetPositionById(Guid id, CancellationToken cancellationToken);
 }

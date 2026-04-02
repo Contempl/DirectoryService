@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Application.Departments.Commands.Delete;
@@ -14,11 +15,13 @@ using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Options;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Application.Positions.Create;
+using DirectoryService.Application.Positions.GetById;
 using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Contracts.Positions;
 using DirectoryService.Domain.Entities;
+using DirectoryService.Domain.Shared;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
@@ -65,5 +68,6 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>>, GetChildrenHandler>();
         services.AddScoped<IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>>, GetDepartmentsHandler>();
         services.AddScoped<IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>>, GetPositionsHandler>();
+        services.AddScoped<IQueryHandler<Guid, Result<PositionDto, Error>>, GetPositionHandler>();
     }
 }

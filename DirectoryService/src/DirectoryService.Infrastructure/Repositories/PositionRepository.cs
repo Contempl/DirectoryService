@@ -35,13 +35,13 @@ public class PositionRepository : IPositionRepository
          }
     }
 
-    public async Task<Result<Position, Errors>> GetPositionById(Guid id, CancellationToken cancellationToken)
+    public async Task<Result<Position, Error>> GetPositionById(Guid id, CancellationToken cancellationToken)
     {
         var position = await _dbContext.Positions.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (position is null)
         {
             _logger.LogInformation("failed to fetch position.");
-            return GeneralErrors.NotFound(name: nameof(Position)).ToErrors();
+            return GeneralErrors.NotFound(name: nameof(Position));
         }
 
         return position;
