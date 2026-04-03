@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities.VO;
+using DirectoryService.Domain.Shared;
 
 namespace DirectoryService.Domain.Entities;
 
@@ -37,5 +38,25 @@ public class Position
     {
         var id = Guid.NewGuid();
         return new Position(id, name, description, departmentPositions);
+    }
+
+    public UnitResult<Error> SoftDelete()
+    {
+        IsActive = false;
+        
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Errors> Update(Name name, string? description)
+    {
+        Name = name;
+        
+        Description = description ?? Description;
+        
+        UpdatedAt = DateTime.UtcNow;
+        
+        return UnitResult.Success<Errors>();
     }
 }
