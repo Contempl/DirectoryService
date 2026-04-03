@@ -52,7 +52,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
         
-        services.AddScoped<ICommandHandler<RefreshToken, RefreshTokenRequest>, RefreshTokenHandler>();
+        services.AddScoped<RefreshTokenHandler>();
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();

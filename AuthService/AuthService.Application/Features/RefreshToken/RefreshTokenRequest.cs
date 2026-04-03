@@ -2,4 +2,4 @@
 
 namespace AuthService.Application.Features.RefreshToken;
 
-public record RefreshTokenRequest(string RefreshToken) : ICommand;
+public record RefreshTokenRequest(string AccessToken, string RefreshToken) : ICommand;

@@ -18,7 +18,7 @@ public class RefreshTokensRepository : IRefreshTokensRepository
         _logger = logger;
     }
 
-    public async Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, 
+    public async Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, Guid userId,
         CancellationToken cancellationToken = default)
     {
         var refreshToken = await _authDbContext.RefreshTokens

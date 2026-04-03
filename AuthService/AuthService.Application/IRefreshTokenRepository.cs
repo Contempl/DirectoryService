@@ -6,7 +6,7 @@ namespace AuthService.Application;
 
 public interface IRefreshTokensRepository
 {
-   Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, CancellationToken cancellationToken = default);
+   Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, Guid userId, CancellationToken cancellationToken = default);
 
    Task<UnitResult<Error>> RevokeAllRefreshTokensFromUser(Guid userId);
    

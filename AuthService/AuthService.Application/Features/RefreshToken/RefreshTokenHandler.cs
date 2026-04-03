@@ -1,21 +1,27 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
+using AuthService.Application.Features.Login;
 using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
 using Core.Abstractions;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Shared.Kernel;
 
 namespace AuthService.Application.Features.RefreshToken;
 
-public class RefreshTokenHandler : ICommandHandler<Domain.Entities.RefreshToken, RefreshTokenRequest>
+public class RefreshTokenHandler : ICommandHandler<LoginResponse, RefreshTokenRequest>
 {
     private readonly ITransactionManager _transactionManager;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
     private readonly ITokenProvider _tokenProvider;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IJwtOptions _jwtOptions;
     private readonly ILogger<RefreshTokenHandler> _logger;
 
     public RefreshTokenHandler(
@@ -23,31 +29,50 @@ public class RefreshTokenHandler : ICommandHandler<Domain.Entities.RefreshToken,
         ILogger<RefreshTokenHandler> logger, 
         UserManager<ApplicationUser> userManager,
         ITokenProvider tokenProvider,
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager, 
+        IJwtOptions jwtOptions)
     {
         _refreshTokensRepository = refreshTokensRepository;
         _userManager = userManager;
         _tokenProvider = tokenProvider;
         _transactionManager = transactionManager;
+        _jwtOptions = jwtOptions;
         _logger = logger;
     }
 
-    public async Task<Result<Domain.Entities.RefreshToken, Errors>> HandleAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<Result<LoginResponse, Errors>> HandleAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-
         var beginTransactionAsync = await _transactionManager.BeginTransactionAsync(cancellationToken);
         if (beginTransactionAsync.IsFailure)
         {
             _logger.LogInformation("Failed to begin transaction,");
             return GeneralErrors.Failure().ToErrors();
         }
+        
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret)),
+            ValidateIssuer = true,
+            ValidIssuer = _jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = _jwtOptions.Audience,
+            ValidateLifetime = false 
+        };
+
+        var principal = new JwtSecurityTokenHandler()
+            .ValidateToken(request.AccessToken, tokenValidationParameters, out _);
+        
+        var subClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
+            return GeneralErrors.ValueIsRequired(nameof(userId)).ToErrors(); 
 
         using var transactionScope = beginTransactionAsync.Value;
 
         try
         {
             var fetchToken = await _refreshTokensRepository
-                .GetByTokenAsync(request.RefreshToken, cancellationToken);
+                .GetByTokenAsync(request.RefreshToken, userId, cancellationToken);
         
             if (fetchToken.IsFailure)
             {
@@ -102,8 +127,11 @@ public class RefreshTokenHandler : ICommandHandler<Domain.Entities.RefreshToken,
             
                 return commitResult.Error.ToErrors();
             }
-        
-            return newRefreshToken;
+
+            var response = new LoginResponse(
+                newJwtToken, newRefreshToken.Token, _jwtOptions.AccessTokenLifetimeMinutes);
+            
+            return response;
         }
         catch (Exception ex)
         {
