@@ -5,6 +5,7 @@ using AuthService.Application.Features.ConfirmEmail;
 using AuthService.Application.Features.Login;
 using AuthService.Application.Features.RefreshToken;
 using AuthService.Application.Features.Register;
+using AuthService.Application.Features.SendPassResetLink;
 using AuthService.Core;
 using AuthService.Core.Database;
 using AuthService.Core.Identity;
@@ -51,10 +52,12 @@ public static class DependencyInjection
         services.AddScoped<ITransactionManager, TransactionManager>();
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
+        services.AddScoped<IValidator<SendResetPasswordRequest>, SendResetPasswordValidator>();
         
         services.AddScoped<RefreshTokenHandler>();
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
+        services.AddScoped<SendResetPasswordHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
         
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
