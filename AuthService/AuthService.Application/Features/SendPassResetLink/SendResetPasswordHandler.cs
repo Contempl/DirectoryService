@@ -14,19 +14,16 @@ public class SendResetPasswordHandler : ICommandHandler<PasswordResetCompleted, 
 {
     private readonly IValidator<SendResetPasswordRequest> _resetPasswordRequestValidator;
     private readonly IEmailSender _emailSender;
-    private readonly IUserRepository _userRepository;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<SendResetPasswordHandler> _logger;
 
     public SendResetPasswordHandler(
         IEmailSender emailSender,
-        IUserRepository userRepository,
         UserManager<ApplicationUser> userManager,
         ILogger<SendResetPasswordHandler> logger, 
         IValidator<SendResetPasswordRequest> resetPasswordRequestValidator)
     {
         _emailSender = emailSender;
-        _userRepository = userRepository;
         _userManager = userManager;
         _logger = logger;
         _resetPasswordRequestValidator = resetPasswordRequestValidator;
