@@ -1,6 +1,8 @@
 ﻿using AuthService.Application;
+using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
 using AuthService.Application.Features.ConfirmEmail;
+using AuthService.Application.Features.Login;
 using AuthService.Application.Features.RefreshToken;
 using AuthService.Application.Features.Register;
 using AuthService.Core;
@@ -12,8 +14,10 @@ using AuthService.Domain.Entities;
 using Core.Abstractions;
 using CSharpFunctionalExtensions;
 using FluentValidation;
+using Framework.Response;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Shared.Kernel;
 
 namespace AuthService.Configuration;
@@ -49,8 +53,11 @@ public static class DependencyInjection
         services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
         
         services.AddScoped<ICommandHandler<RefreshToken, RefreshTokenRequest>, RefreshTokenHandler>();
-        services.AddScoped<ICommandHandler<Guid, RegisterRequest>, RegisterHandler>();
+        services.AddScoped<RegisterHandler>();
+        services.AddScoped<LoginHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
+        
+        services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
 
         return services;
     }
@@ -69,6 +76,9 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(
             configuration.GetSection(nameof(JwtOptions))
         );
+        
+        services.AddSingleton<IJwtOptions>(sp => 
+            sp.GetRequiredService<IOptions<JwtOptions>>().Value);
 
         services.Configure<SmtpOptions>(
             configuration.GetSection(nameof(SmtpOptions))

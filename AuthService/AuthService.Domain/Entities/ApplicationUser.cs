@@ -38,6 +38,7 @@ public class ApplicationUser : IdentityUser<Guid>
 
         var user = new ApplicationUser
         {
+            UserName = email,
             FirstName = firstName,
             LastName = lastName,
             Email = email,

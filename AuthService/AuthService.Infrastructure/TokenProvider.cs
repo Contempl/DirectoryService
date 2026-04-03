@@ -54,7 +54,7 @@ public class TokenProvider : ITokenProvider
         return token;
     }
     
-    public Result<RefreshToken, Error> GenerateRefreshToken(Guid userId, Guid jwtTokenId)
+    public Result<RefreshToken, Error> GenerateRefreshToken(Guid userId, string jwtTokenId)
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 

@@ -38,12 +38,12 @@ public class RefreshToken
     public static Result<RefreshToken, Error> Create(
         string token,
         Guid userId,
-        Guid jwtTokenId,
+        string jwtTokenId,
         DateTime expiryDate)
     {
         try
         {
-            var jwtId =  jwtTokenId.ToString();
+            var jwtId =  jwtTokenId;
         
             var refreshToken = new RefreshToken(token, userId, jwtId, expiryDate);
         
