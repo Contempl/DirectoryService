@@ -19,6 +19,6 @@ public class LogoutEndpoint : IEndpoint
             var claims = httpContext.User.Claims.Select(c => $"{c.Type} = {c.Value}");
             Console.WriteLine(string.Join("\n", claims)); 
             return await handler.HandleAsync(cancellationToken);
-        });
+        }).RequireAuthorization();
     }
 }
