@@ -7,6 +7,7 @@ using AuthService.Application.Features.Login;
 using AuthService.Application.Features.Logout;
 using AuthService.Application.Features.RefreshToken;
 using AuthService.Application.Features.Register;
+using AuthService.Application.Features.ResendConfirmation;
 using AuthService.Application.Features.ResetPassword;
 using AuthService.Application.Features.SendPassResetLink;
 using AuthService.Core;
@@ -59,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
         services.AddScoped<IValidator<SendResetPasswordRequest>, SendResetPasswordValidator>();
+        services.AddScoped<IValidator<ResendConfirmationRequest>, ResendConfirmationValidator>();
         services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
 
         services.AddScoped<RefreshTokenHandler>();
@@ -67,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<SendResetPasswordHandler>();
         services.AddScoped<ResetPasswordHandler>();
         services.AddScoped<LogoutHandler>();
+        services.AddScoped<ResendConfirmationHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
 
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
