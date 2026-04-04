@@ -8,6 +8,7 @@ public static class TokenValidationParametersFactory
 {
     public static TokenValidationParameters Create(IJwtOptions jwtOptions, bool validateLifetime = true)
     {
+        Console.WriteLine($"Factory Secret: {jwtOptions.Secret}");
         return new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
