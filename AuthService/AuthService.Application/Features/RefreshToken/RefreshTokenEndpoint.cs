@@ -1,4 +1,5 @@
-﻿using Framework.Response;
+﻿using AuthService.Application.Features.Login;
+using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -9,7 +10,7 @@ public class RefreshTokenEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/refresh", async Task<EndpointResult<Domain.Entities.RefreshToken>>(
+        app.MapPost("/auth/refresh", async Task<EndpointResult<LoginResponse>>(
             [FromBody] RefreshTokenRequest request,
             [FromServices] RefreshTokenHandler handler,
             CancellationToken cancellationToken)

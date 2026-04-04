@@ -16,7 +16,7 @@ else
     builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();

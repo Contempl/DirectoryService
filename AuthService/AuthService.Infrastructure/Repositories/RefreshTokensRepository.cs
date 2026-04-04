@@ -18,7 +18,7 @@ public class RefreshTokensRepository : IRefreshTokensRepository
         _logger = logger;
     }
 
-    public async Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, 
+    public async Task<Result<RefreshToken, Error>> GetByTokenAsync(string token, Guid userId,
         CancellationToken cancellationToken = default)
     {
         var refreshToken = await _authDbContext.RefreshTokens
@@ -34,16 +34,16 @@ public class RefreshTokensRepository : IRefreshTokensRepository
     }
 
 
-    public async Task<UnitResult<Error>> RevokeAllRefreshTokensFromUser(Guid userId)
+    public async Task<UnitResult<Error>> RevokeAllRefreshTokensFromUser(Guid userId, CancellationToken  cancellationToken = default)
     {
         var tokens = await _authDbContext.RefreshTokens
             .Where(rt => rt.UserId == userId && !rt.IsRevoked)
-            .ToListAsync();
+            .ToListAsync(cancellationToken: cancellationToken);
 
         foreach (var token in tokens)
             token.Revoke();
 
-        await _authDbContext.SaveChangesAsync();
+        await _authDbContext.SaveChangesAsync(cancellationToken);
 
         return UnitResult.Success<Error>();
     }
