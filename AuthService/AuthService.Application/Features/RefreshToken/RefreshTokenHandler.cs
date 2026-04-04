@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
+using AuthService.Application.Factories;
 using AuthService.Application.Features.Login;
 using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
@@ -49,16 +50,7 @@ public class RefreshTokenHandler : ICommandHandler<LoginResponse, RefreshTokenRe
             return GeneralErrors.Failure().ToErrors();
         }
         
-        var tokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret)),
-            ValidateIssuer = true,
-            ValidIssuer = _jwtOptions.Issuer,
-            ValidateAudience = true,
-            ValidAudience = _jwtOptions.Audience,
-            ValidateLifetime = false 
-        };
+        var tokenValidationParameters = TokenValidationParametersFactory.Create(_jwtOptions, validateLifetime: false);
 
         var principal = new JwtSecurityTokenHandler()
             .ValidateToken(request.AccessToken, tokenValidationParameters, out _);
@@ -92,7 +84,7 @@ public class RefreshTokenHandler : ICommandHandler<LoginResponse, RefreshTokenRe
             if (refreshToken.IsRevoked)
             {
                 _logger.LogInformation("Refresh token was revoked. Removing all refresh tokens for this user.");
-                await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id);
+                await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id, cancellationToken);
                 return GeneralErrors.Failure().ToErrors();
             }
             

@@ -1,3 +1,4 @@
+using AuthService.Application.Database;
 using AuthService.Contracts.Result;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Shared;
@@ -15,6 +16,7 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<ResetPasswordRequest> _validator;
+    private readonly ITransactionManager _transactionManager;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
     private readonly ILogger<ResetPasswordHandler> _logger;
 
@@ -22,12 +24,14 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
         UserManager<ApplicationUser> userManager,
         IValidator<ResetPasswordRequest> validator,
         ILogger<ResetPasswordHandler> logger, 
-        IRefreshTokensRepository refreshTokensRepository)
+        IRefreshTokensRepository refreshTokensRepository,
+        ITransactionManager transactionManager)
     {
         _userManager = userManager;
         _validator = validator;
         _logger = logger;
         _refreshTokensRepository = refreshTokensRepository;
+        _transactionManager = transactionManager;
     }
 
     public async Task<Result<PasswordResetCompleted, Errors>> HandleAsync(ResetPasswordRequest request, CancellationToken cancellationToken)
@@ -39,27 +43,54 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
             return validationResult.ToErrors();
         }
 
-        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-        if (user is null)
+        var beginTransaction = await _transactionManager.BeginTransactionAsync(cancellationToken);
+        if (beginTransaction.IsFailure)
         {
-            _logger.LogInformation("User not found.");
-            return GeneralErrors.NotFound(name: nameof(ApplicationUser)).ToErrors();
+            _logger.LogInformation("Begin Transaction failed.");
+            return beginTransaction.Error.ToErrors();
         }
 
-        var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
-        if (!result.Succeeded)
+        using var transactionScope = beginTransaction.Value;
+
+        try
         {
-            _logger.LogInformation("Reset Password failed.");
-            return result.Errors.ToErrors();
-        }
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user is null)
+            {
+                _logger.LogInformation("User not found.");
+                return GeneralErrors.NotFound(name: nameof(ApplicationUser)).ToErrors();
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                _logger.LogInformation("Reset Password failed.");
+                return result.Errors.ToErrors();
+            }
         
-        var revokeTokensResult = await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id, cancellationToken);
-        if (revokeTokensResult.IsFailure)
+            var revokeTokensResult = await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id, cancellationToken);
+            if (revokeTokensResult.IsFailure)
+            {
+                _logger.LogInformation("Revoke Tokens failed.");
+                return revokeTokensResult.Error.ToErrors();
+            }
+
+            var commitResult = transactionScope.Commit();
+            if (commitResult.IsFailure)
+            {
+                _logger.LogInformation("Failed to commit transaction.");
+                return commitResult.Error.ToErrors();
+            }
+        
+            return new PasswordResetCompleted();
+        }
+        catch (Exception ex)
         {
-            _logger.LogInformation("Revoke Tokens failed.");
-            return revokeTokensResult.Error.ToErrors();
+            _logger.LogError(ex, "Error occured during password reset.");
+            transactionScope.Rollback();
+
+            return GeneralErrors.Failure()
+                .ToErrors();
         }
-        
-        return new PasswordResetCompleted();
     }
 }
