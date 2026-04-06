@@ -43,8 +43,11 @@ public class ResendConfirmationHandler
         }
         
         var emailConfirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        
+        var subject = "Resending confirmation email";
+        var htmlBody = $"<h1>Confirm your email</h1><p>Click <a href='{emailConfirmationToken}'>here</a> to confirm.</p>";
 
-        await _emailSender.SendEmailConfirmationAsync(request.Email, emailConfirmationToken, cancellationToken);
+        await _emailSender.SendAsync(request.Email, subject, htmlBody, cancellationToken);
         
         _logger.LogInformation("Sent another confirmation email.");
 
