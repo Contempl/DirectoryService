@@ -36,4 +36,15 @@ public class ConsoleEmailSender : IEmailSender
 
         return Task.FromResult(UnitResult.Success<Error>());
     }
+
+    public Task<UnitResult<Error>> SendAsync(string to, string subject, string htmlBody, CancellationToken ct)
+    {
+        _logger.LogInformation(
+            "EMAIL CONFIRMATION | To: {Email} | Link: {Link}",
+            to, htmlBody);
+
+        Console.WriteLine($"EMAIL CONFIRMATION | To: {to} | Link: {htmlBody}");
+        
+        return Task.FromResult(UnitResult.Success<Error>());
+    }
 }

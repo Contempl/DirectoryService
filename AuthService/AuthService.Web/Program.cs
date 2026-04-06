@@ -1,9 +1,12 @@
 using AuthService.Application;
+using AuthService.Application.Factories;
 using AuthService.Configuration;
 using AuthService.Core.EmailSender;
 using AuthService.Core.Identity;
+using AuthService.Core.Options;
 using Framework.Middleware;
 using Framework.Response;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +21,9 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerConfiguration();
 
-builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+builder.Services.AddConfiguration(builder.Configuration);
 
 builder.Services.AddDatabaseWithLogging(builder.Configuration);
-
-builder.Services.AddConfiguration(builder.Configuration);
 
 builder.Services.AddHostedService<SeedDataService>();
 

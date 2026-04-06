@@ -1,10 +1,13 @@
 ﻿using AuthService.Application;
 using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
+using AuthService.Application.Factories;
 using AuthService.Application.Features.ConfirmEmail;
 using AuthService.Application.Features.Login;
+using AuthService.Application.Features.Logout;
 using AuthService.Application.Features.RefreshToken;
 using AuthService.Application.Features.Register;
+using AuthService.Application.Features.ResendConfirmation;
 using AuthService.Application.Features.ResetPassword;
 using AuthService.Application.Features.SendPassResetLink;
 using AuthService.Core;
@@ -17,6 +20,7 @@ using Core.Abstractions;
 using CSharpFunctionalExtensions;
 using FluentValidation;
 using Framework.Response;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -47,28 +51,48 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddHostedService<DeleteRevokedTokensService>();
-        
+
+        services.AddHttpContextAccessor();
+
         services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITransactionManager, TransactionManager>();
         services.AddScoped<ITokenProvider, TokenProvider>();
         services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
         services.AddScoped<IValidator<SendResetPasswordRequest>, SendResetPasswordValidator>();
+        services.AddScoped<IValidator<ResendConfirmationRequest>, ResendConfirmationValidator>();
         services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
-        
+
         services.AddScoped<RefreshTokenHandler>();
         services.AddScoped<RegisterHandler>();
         services.AddScoped<LoginHandler>();
         services.AddScoped<SendResetPasswordHandler>();
         services.AddScoped<ResetPasswordHandler>();
+        services.AddScoped<LogoutHandler>();
+        services.AddScoped<ResendConfirmationHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
-        
+
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
+
+
+        var jwtOptions = configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>();
+        services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = TokenValidationParametersFactory.Create(jwtOptions);
+            });
+
+        services.AddAuthorization();
 
         return services;
     }
 
-    public static IServiceCollection AddDatabaseWithLogging(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDatabaseWithLogging(this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddDbContext<AuthDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Database"))
@@ -82,18 +106,18 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(
             configuration.GetSection(nameof(JwtOptions))
         );
-        
-        services.AddSingleton<IJwtOptions>(sp => 
+
+        services.AddSingleton<IJwtOptions>(sp =>
             sp.GetRequiredService<IOptions<JwtOptions>>().Value);
 
         services.Configure<SmtpOptions>(
             configuration.GetSection(nameof(SmtpOptions))
         );
-        
+
         services.Configure<BackgroundServiceOptions>(
             configuration.GetSection(nameof(BackgroundServiceOptions))
         );
-        
+
         return services;
     }
 }

@@ -7,4 +7,5 @@ public interface IEmailSender
 {
     Task<UnitResult<Error>> SendEmailConfirmationAsync(string email, string confirmationLink, CancellationToken ct);
     Task<UnitResult<Error>> SendPasswordResetAsync(string email, string resetLink, CancellationToken ct);
+    Task<UnitResult<Error>> SendAsync(string to, string subject, string htmlBody, CancellationToken ct);
 }
