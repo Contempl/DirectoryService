@@ -1,4 +1,5 @@
-﻿using Framework.Response;
+﻿using AuthService.Application.Extensions;
+using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -13,6 +14,7 @@ public class RegisterEndpoint : IEndpoint
             [FromBody] RegisterRequest request,
             [FromServices] RegisterHandler handler,
             CancellationToken cancellationToken) 
-                => await handler.HandleAsync(request, cancellationToken));
+                => await handler.HandleAsync(request, cancellationToken))
+            .AllowAnonymousEndpoint();
     }
 }

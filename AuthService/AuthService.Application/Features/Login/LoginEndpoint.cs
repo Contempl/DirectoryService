@@ -1,3 +1,4 @@
+using AuthService.Application.Extensions;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,6 @@ public class LoginEndpoint : IEndpoint
                 return Results.BadRequest(result.Error);
 
             return Results.Ok(result.Value);
-        });
+        }).AllowAnonymousEndpoint();
     }
 }

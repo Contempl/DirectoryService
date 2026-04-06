@@ -1,5 +1,6 @@
 ﻿using AuthService.Application;
 using AuthService.Application.Abstractions;
+using AuthService.Application.Auth;
 using AuthService.Application.Database;
 using AuthService.Application.Factories;
 using AuthService.Application.Features.ConfirmEmail;
@@ -11,6 +12,7 @@ using AuthService.Application.Features.ResendConfirmation;
 using AuthService.Application.Features.ResetPassword;
 using AuthService.Application.Features.SendPassResetLink;
 using AuthService.Core;
+using AuthService.Core.Authorization;
 using AuthService.Core.Database;
 using AuthService.Core.Identity;
 using AuthService.Core.Options;
@@ -21,6 +23,7 @@ using CSharpFunctionalExtensions;
 using FluentValidation;
 using Framework.Response;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -53,6 +56,10 @@ public static class DependencyInjection
         services.AddHostedService<DeleteRevokedTokensService>();
 
         services.AddHttpContextAccessor();
+
+        services.AddScoped<UserScopedData>();
+        services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 
         services.AddScoped<IRefreshTokensRepository, RefreshTokensRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
