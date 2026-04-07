@@ -1,9 +1,8 @@
-﻿using CSharpFunctionalExtensions;
+﻿using AuthService.Application.Extensions;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Shared.Kernel;
 
 namespace AuthService.Application.Features.ConfirmEmail;
 
@@ -19,6 +18,6 @@ public class ConfirmEmailEndpoint : IEndpoint
         {
             var query = new ConfirmEmailQuery(userId, token);
             return await handler.HandleAsync(query, cancellationToken);
-        });
+        }).AllowAnonymousEndpoint();
     }
 } 

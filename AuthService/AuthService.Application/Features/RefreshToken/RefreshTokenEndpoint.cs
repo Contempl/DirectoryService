@@ -1,4 +1,5 @@
-﻿using AuthService.Application.Features.Login;
+﻿using AuthService.Application.Extensions;
+using AuthService.Application.Features.Login;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ public class RefreshTokenEndpoint : IEndpoint
             [FromBody] RefreshTokenRequest request,
             [FromServices] RefreshTokenHandler handler,
             CancellationToken cancellationToken)
-                => await handler.HandleAsync(request, cancellationToken));
+                => await handler.HandleAsync(request, cancellationToken))
+            .AllowAnonymousEndpoint();
     }
 }

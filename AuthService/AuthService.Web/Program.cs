@@ -1,12 +1,10 @@
 using AuthService.Application;
-using AuthService.Application.Factories;
 using AuthService.Configuration;
 using AuthService.Core.EmailSender;
 using AuthService.Core.Identity;
-using AuthService.Core.Options;
+using AuthService.Core.Middleware;
 using Framework.Middleware;
 using Framework.Response;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +52,7 @@ app.UseMigrations();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+app.UseMiddleware<UserScopedDataMiddleware>();
 app.UseAuthorization();
 
 var apiGroup = app.MapGroup("/api").WithOpenApi();

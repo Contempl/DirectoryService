@@ -1,4 +1,5 @@
-﻿using Framework.Response;
+﻿using AuthService.Application.Extensions;
+using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -15,6 +16,6 @@ public class ResendConfirmationEndpoint : IEndpoint
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(request, cancellationToken);
-        });
+        }).AllowAnonymousEndpoint();
     }
 }

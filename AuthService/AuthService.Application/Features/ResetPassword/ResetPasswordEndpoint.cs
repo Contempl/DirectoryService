@@ -1,3 +1,4 @@
+using AuthService.Application.Extensions;
 using AuthService.Contracts.Result;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
@@ -16,6 +17,6 @@ public class ResetPasswordEndpoint : IEndpoint
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(request, cancellationToken);
-        });
+        }).AllowAnonymousEndpoint();
     }
 }
