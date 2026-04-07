@@ -17,4 +17,11 @@
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\Account\AddRoles\" />
+      <Folder Include="Features\Account\DeleteUser\" />
+      <Folder Include="Features\Account\GetPagedUsers\" />
+      <Folder Include="Features\Account\RemoveRoles\" />
+    </ItemGroup>
+
 </Project>
