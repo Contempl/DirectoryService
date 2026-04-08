@@ -3,6 +3,12 @@ using AuthService.Application.Abstractions;
 using AuthService.Application.Auth;
 using AuthService.Application.Database;
 using AuthService.Application.Factories;
+using AuthService.Application.Features.Account.AddRoles;
+using AuthService.Application.Features.Account.ChangePassword;
+using AuthService.Application.Features.Account.Deactivate;
+using AuthService.Application.Features.Account.GetPagedUsers;
+using AuthService.Application.Features.Account.Profile;
+using AuthService.Application.Features.Account.RemoveRoles;
 using AuthService.Application.Features.ConfirmEmail;
 using AuthService.Application.Features.Login;
 using AuthService.Application.Features.Logout;
@@ -69,6 +75,8 @@ public static class DependencyInjection
         services.AddScoped<IValidator<SendResetPasswordRequest>, SendResetPasswordValidator>();
         services.AddScoped<IValidator<ResendConfirmationRequest>, ResendConfirmationValidator>();
         services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
+        services.AddScoped<IValidator<AssignRoleRequest>, AssignRoleValidator>();
+        services.AddScoped<IValidator<ChangePasswordRequest>, ChangePasswordValidator>();
 
         services.AddScoped<RefreshTokenHandler>();
         services.AddScoped<RegisterHandler>();
@@ -77,6 +85,12 @@ public static class DependencyInjection
         services.AddScoped<ResetPasswordHandler>();
         services.AddScoped<LogoutHandler>();
         services.AddScoped<ResendConfirmationHandler>();
+        services.AddScoped<AssignRoleHandler>();
+        services.AddScoped<ChangePasswordHandler>();
+        services.AddScoped<DeleteUserHandler>();
+        services.AddScoped<GetUsersHandler>();
+        services.AddScoped<GetProfileHandler>();
+        services.AddScoped<RemoveRolesHandler>();
         services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
 
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
