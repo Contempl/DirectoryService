@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
-namespace AuthService.Application.Features.Account.Delete;
+namespace AuthService.Application.Features.Account.Deactivate;
 
 public class DeleteUserEndpoint : IEndpoint
 {

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
 
-namespace AuthService.Application.Features.Account.Delete;
+namespace AuthService.Application.Features.Account.Deactivate;
 
 public class DeleteUserHandler
 {

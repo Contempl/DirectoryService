@@ -9,9 +9,12 @@ public class UserScopedDataMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, UserScopedData userScopedData)
     {
+        Console.WriteLine($"IsAuthenticated: {context.User.Identity?.IsAuthenticated}");
+        Console.WriteLine($"Claims: {string.Join(", ", context.User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+        
         if (context.User.Identity?.IsAuthenticated == true)
         {
-            var subClaim = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var subClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         
             if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
             {

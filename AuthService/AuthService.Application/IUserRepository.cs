@@ -10,5 +10,5 @@ public interface IUserRepository
 {
     Task<Result<ApplicationUser, Error>> GetByIdAsync(Guid userId, CancellationToken cancellationToken);
 
-    Task<PagedResult<UserDto>> GetUsersAsync(int pageNumber, int pageSize);
+    Task<PagedResult<UserDto>> GetUsersAsync(int pageNumber, int pageSize, CancellationToken cancellationToken);
 }

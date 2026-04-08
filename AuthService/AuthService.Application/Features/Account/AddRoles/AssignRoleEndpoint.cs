@@ -1,4 +1,6 @@
-﻿using Framework.Response;
+﻿using AuthService.Application.Extensions;
+using AuthService.Domain.Constants;
+using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -16,6 +18,6 @@ public class AssignRoleEndpoint : IEndpoint
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(userId, request, cancellationToken);
-        });
+        }).RequirePermissions(Permissions.USERS_MANAGE);
     }
 }

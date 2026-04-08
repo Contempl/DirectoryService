@@ -31,7 +31,8 @@ public class UserRepository : IUserRepository
     
     public async Task<PagedResult<UserDto>> GetUsersAsync(
         int pageNumber, 
-        int pageSize)
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         var query = _dbContext.Users
             .Where(u => u.IsActive)

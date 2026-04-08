@@ -13,14 +13,13 @@ public class AssignRoleHandler
 {
     private readonly IValidator<AssignRoleRequest> _validator;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly ILogger<AssignRoleHandler> _logger;
 
     public AssignRoleHandler(
         IValidator<AssignRoleRequest> validator,
         UserManager<ApplicationUser> userManager,
-        ILogger<AssignRoleHandler> logger, 
-        RoleManager<IdentityRole> roleManager)
+        ILogger<AssignRoleHandler> logger, RoleManager<IdentityRole<Guid>> roleManager)
     {
         _validator = validator;
         _userManager = userManager;

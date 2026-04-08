@@ -53,7 +53,7 @@ public class ChangePasswordHandler
             return GeneralErrors.NotFound(name: nameof(ApplicationUser));
         }
         
-        var passwordCheckResult = await _userManager.CheckPasswordAsync(user, userId);
+        var passwordCheckResult = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
         if (!passwordCheckResult)
         {
             _logger.LogInformation("Password doesn't match.");
