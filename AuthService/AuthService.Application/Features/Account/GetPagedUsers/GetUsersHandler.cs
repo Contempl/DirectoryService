@@ -19,7 +19,15 @@ public class GetUsersHandler
 
     public async Task<Result<PagedResult<UserDto>, Error>> HandleAsync(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (request.PageSize < 1 || request.PageSize > 100)
+        {
+            _logger.LogInformation("PageSize must be between 1 and 100");
+            return GeneralErrors.ValueIsInvalid(nameof(request));
+        }
+        
+        var users = await _userRepository.GetUsersAsync(request.Page, request.PageSize, cancellationToken);
+
+        return users;
     }
 
 }

@@ -1,5 +1,7 @@
-﻿using AuthService.Contracts.Dto;
+﻿using AuthService.Application.Extensions;
+using AuthService.Contracts.Dto;
 using AuthService.Contracts.Result;
+using AuthService.Domain.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +21,6 @@ public class GetUsersEndpoint : IEndpoint
         {
             var request = new GetUsersQuery(Page, PageSize);
             return await handler.HandleAsync(request, cancellationToken);
-        });
+        }).RequirePermissions(Permissions.USERS_MANAGE);
     }
 }
