@@ -1,4 +1,7 @@
 ﻿using AuthService.Application;
+using AuthService.Contracts.Dto;
+using AuthService.Contracts.Result;
+using AuthService.Core.Common;
 using AuthService.Domain.Entities;
 using CSharpFunctionalExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -24,5 +27,26 @@ public class UserRepository : IUserRepository
             return GeneralErrors.NotFound(name: nameof(ApplicationUser));
 
         return user;
+    }
+    
+    public async Task<PagedResult<UserDto>> GetUsersAsync(
+        int pageNumber, 
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var query = _dbContext.Users
+            .Where(u => u.IsActive)
+            .AsQueryable();
+        
+        var userDtoQuery = query.Select(u => new UserDto
+        {
+            Id = u.Id,
+            Email = u.Email,
+            FirstName = u.FirstName,
+            LastName = u.LastName,
+            IsActive = u.IsActive
+        });
+        
+        return await userDtoQuery.ToPagedResultAsync(pageNumber, pageSize);
     }
 }

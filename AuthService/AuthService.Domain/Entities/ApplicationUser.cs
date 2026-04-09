@@ -65,4 +65,13 @@ public class ApplicationUser : IdentityUser<Guid>
 
         return admin;
     }
+
+    public UnitResult<Error> Deactivate()
+    {
+        IsActive = false;
+        
+        UpdatedAt =  DateTime.UtcNow;
+        
+        return UnitResult.Success<Error>();
+    }
 }
