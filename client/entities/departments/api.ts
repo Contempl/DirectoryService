@@ -1,5 +1,5 @@
 import { PagedResult } from "@/shared/api/types";
-import { DepartmentShortDto } from "./types";
+import { DepartmentShortDto, DepartmentWithChildrenDto, GetDepartmentChildrenRequest, GetDepartmentRootsRequest } from "./types";
 import { apiClient } from "@/shared/api/axios-instance";
 import { infiniteQueryOptions } from "@tanstack/react-query";
 
@@ -17,6 +17,21 @@ export const departmentsApi = {
     const response = await apiClient.get<PagedResult<DepartmentShortDto>>("/departments", {
       params: query,
     });
+    return response.data;
+  },
+
+  getRoots: async (params?: GetDepartmentRootsRequest) => {
+    const response = await apiClient.get<DepartmentWithChildrenDto[]>("/departments/roots", {
+      params,
+    });
+    return response.data;
+  },
+
+  getChildren: async (parentId: string, params?: GetDepartmentChildrenRequest) => {
+    const response = await apiClient.get<DepartmentWithChildrenDto[]>(
+      `/departments/${parentId}/children`,
+      { params }
+    );
     return response.data;
   },
 };
