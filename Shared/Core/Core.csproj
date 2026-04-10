@@ -13,11 +13,19 @@
     <ItemGroup>
       <PackageReference Include="FluentValidation" Version="12.1.1" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.14" />
+      <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.14" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.Routing">
+        <HintPath>C:\Program Files\dotnet\packs\Microsoft.AspNetCore.App.Ref\9.0.13\ref\net9.0\Microsoft.AspNetCore.Routing.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <PropertyGroup>
         <PackageId>DirectoryService.Core</PackageId>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <Authors>Contempl</Authors>
         <Company>Prolongisti</Company>
         <PackageDescription>Core</PackageDescription>
