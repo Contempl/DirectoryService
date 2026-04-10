@@ -1,3 +1,5 @@
+using Core.Extensions;
+using Framework.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +18,6 @@ public class DeleteFileEndpoint : IEndpoint
         {
             var command = new DeleteFileRequest(id);
             return await handler.HandleAsync(command, cancellationToken);
-        });
+        }).RequirePermissions(Permissions.FILES_MANAGE);
     }
 }

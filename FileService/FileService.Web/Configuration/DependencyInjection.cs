@@ -5,6 +5,7 @@ using FileService.Core.Features.Download;
 using FileService.Core.Features.Upload;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
+using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
 using Shared.Kernel;
@@ -24,6 +25,8 @@ public static class DependencyInjection
         services.AddEndpoints(typeof(EndpointsExtensions).Assembly);
         
         services.AddS3(configuration);
+        
+        services.AddJwtAuthentication(configuration);
 
         services.AddScoped<ICommandHandler<Guid, DeleteFileRequest>, DeleteFileHandler>();
         services.AddScoped<ICommandHandler<Guid, UploadFileCommand>, UploadFileHandler>();

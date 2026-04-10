@@ -1,3 +1,5 @@
+using Core.Extensions;
+using Framework.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +18,8 @@ public class UploadFileEndpoint : IEndpoint
         {
             var command = new UploadFileCommand(request);
             return await handler.HandleAsync(command, cancellationToken);
-        }).DisableAntiforgery();
+        })
+            .RequirePermissions(Permissions.FILES_MANAGE)
+            .DisableAntiforgery();
     }
 }

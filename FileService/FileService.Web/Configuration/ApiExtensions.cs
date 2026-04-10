@@ -44,6 +44,12 @@ public static class ApiExtensions
         app.UseSwaggerUI();
 
         app.UseHttpsRedirection();
+        
+        app.UseAuthentication();
+        app.UseMiddleware<UserScopedDataMiddleware>();
+        app.UseAuthorization();
+        
+        app.UseDevAuth();
 
         var apiGroup = app.MapGroup("/api").WithOpenApi();
         app.MapEndpoints(apiGroup);
