@@ -12,8 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="directoryservice.core" Version="1.0.0" />
-      <PackageReference Include="directoryservice.framework" Version="1.0.1" />
+      <PackageReference Include="directoryservice.core" Version="1.0.1" />
+      <PackageReference Include="directoryservice.framework" Version="1.0.3" />
       <PackageReference Include="FluentValidation" Version="12.1.1" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     </ItemGroup>

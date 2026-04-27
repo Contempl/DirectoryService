@@ -1,6 +1,6 @@
 using DirectoryService.Application.DependencyInjection;
 using DirectoryService.Infrastructure.DI;
-using DirectoryService.Presentation.Middleware;
+using Framework.Middleware;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +10,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
@@ -33,10 +35,17 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseDevAuth();
+app.UseMiddleware<UserScopedDataMiddleware>();
+app.UseAuthorization();
+        
 
 app.MapControllers();
 
