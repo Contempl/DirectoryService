@@ -1,4 +1,5 @@
 ﻿using Amazon.S3;
+using FileService.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -23,8 +24,10 @@ public static class DependencyInjectionS3Extensions
             return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
         });
 
+        services.AddScoped<IS3Provider, S3Provider>();
+
         services.AddHostedService<S3BucketInitializationService>();
-        
+
         return services;
     }
 }

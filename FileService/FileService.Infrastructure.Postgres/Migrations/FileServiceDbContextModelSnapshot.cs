@@ -39,7 +39,6 @@ namespace FileService.Infrastructure.Postgres.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("FinalKey")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("final_key");
 

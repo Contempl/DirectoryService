@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Text.Json.Serialization;
+using CSharpFunctionalExtensions;
 using Shared.Kernel;
 
 namespace FileService.Domain.ValueObjects;
@@ -17,6 +18,7 @@ public record StorageKey
 
     private StorageKey() { }
     
+    [JsonConstructor]
     private StorageKey(string location, string key, string prefix)
     {
         Location =  location;
@@ -39,7 +41,7 @@ public record StorageKey
         if (normalizedPrefixResult.IsFailure)
             return normalizedPrefixResult.Error;
 
-        return new StorageKey(location.Trim(), normalizedPrefixResult.Value, normalizedKeyResult.Value);
+        return new StorageKey(location.Trim(), normalizedKeyResult.Value, normalizedPrefixResult.Value);
     }
 
     public Result<StorageKey, Error> AppendSegment(string segment)

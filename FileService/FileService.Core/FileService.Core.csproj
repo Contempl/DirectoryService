@@ -18,4 +18,11 @@
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\AbordMultipartUpload\" />
+      <Folder Include="Features\CompleteMultipartUpload\" />
+      <Folder Include="Features\GetChunkUploadUrl\" />
+      <Folder Include="Features\StartMultiPartUpload\" />
+    </ItemGroup>
+
 </Project>
