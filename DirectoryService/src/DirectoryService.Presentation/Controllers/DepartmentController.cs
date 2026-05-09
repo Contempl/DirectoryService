@@ -5,12 +5,14 @@ using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
-using DirectoryService.Application.Locations.Update;
+using DirectoryService.Application.Departments.Queries.GetListOfDepartments;
 using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Domain.Shared;
 using DirectoryService.Presentation.Response;
+using Framework.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
     
 namespace DirectoryService.Presentation.Controllers;
@@ -25,6 +27,7 @@ public class DepartmentController : ControllerBase
     private readonly ICommandHandler<Guid, DeleteDepartmentRequest> _deleteDepartmentHandler;
     private readonly IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> _getExpandedDepartmentsHandler;
     private readonly IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> _getChildrenHandler;
+    private readonly IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> _getDepartmentsShortHandler;
 
     public DepartmentController(
         ICommandHandler<Guid, CreateDepartmentRequest> createDepartmentHandler, 
@@ -33,6 +36,7 @@ public class DepartmentController : ControllerBase
         IQueryHandler<bool, PagedResult<DepartmentDto>> getTopDepartmentsHandler,
         IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> getExpandedDepartmentsHandler, 
         IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> getChildrenHandler, 
+        IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> getDepartmentsShortHandler,
         ICommandHandler<Guid, DeleteDepartmentRequest> deleteDepartmentHandler)
     {
         _createDepartmentHandler = createDepartmentHandler;
@@ -42,15 +46,18 @@ public class DepartmentController : ControllerBase
         _getExpandedDepartmentsHandler = getExpandedDepartmentsHandler;
         _getChildrenHandler = getChildrenHandler;
         _deleteDepartmentHandler = deleteDepartmentHandler;
+        _getDepartmentsShortHandler = getDepartmentsShortHandler;
     }
     
     [HttpPost("api/departments")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<EndpointResult<Guid>> CreateDepartment(CreateDepartmentRequest request, CancellationToken cancellationToken)
     {
         return await _createDepartmentHandler.HandleAsync(request, cancellationToken);
     }
 
     [HttpPut("api/departments/{departmentId}/locations")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<ActionResult<Result<Guid, Errors>>> UpdateLocations([FromRoute] Guid departmentId, IEnumerable<Guid> locationIds, CancellationToken cancellationToken)
     {
         var request = new UpdateLocationsRequest(departmentId, locationIds);
@@ -63,6 +70,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpPut("api/departments/{departmentId}/parent")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<EndpointResult<Guid>> MoveDepartment([FromRoute] Guid departmentId, Guid? parentId,
         CancellationToken cancellationToken)
     {  
@@ -72,6 +80,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpGet("api/departments/top-positions")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
     public async Task<ActionResult<PagedResult<DepartmentDto>>> GetTopPositions(bool sortByDescending, CancellationToken cancellationToken)
     {
         var result = await _getTopDepartmentsHandler.HandleAsync(sortByDescending, cancellationToken);
@@ -80,6 +89,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpGet("api/departments/roots")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
     public async Task<ActionResult<List<DepartmentsWithChildrenDto>>> GetExpandedDepartments(
         [FromQuery] ExtendedDepartmentsQuery query,
         CancellationToken cancellationToken)
@@ -90,6 +100,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpGet("api/departments/{parentId}/children")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
     public async Task<ActionResult<List<DepartmentsWithChildrenDto>>> Children(
         [FromRoute] Guid parentId,
         [FromQuery] GetChildrenRequest request,
@@ -102,6 +113,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpDelete("api/departments/{departmentId}")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<ActionResult<Guid>> DeleteDepartment(
         [FromRoute] Guid departmentId,
         CancellationToken cancellationToken)
@@ -109,6 +121,17 @@ public class DepartmentController : ControllerBase
         var request = new DeleteDepartmentRequest(departmentId);
         
         var result = await _deleteDepartmentHandler.HandleAsync(request, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpGet("api/departments")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
+    public async Task<ActionResult<DepartmentShortDto>> GetDepartments(
+        [FromQuery] GetDepartmentsQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _getDepartmentsShortHandler.HandleAsync(query, cancellationToken);
 
         return Ok(result);
     }

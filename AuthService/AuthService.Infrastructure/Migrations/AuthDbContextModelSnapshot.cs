@@ -127,6 +127,9 @@ namespace AuthService.Core.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -165,6 +168,8 @@ namespace AuthService.Core.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("UserId");
 
@@ -303,13 +308,15 @@ namespace AuthService.Core.Migrations
 
             modelBuilder.Entity("AuthService.Domain.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("AuthService.Domain.Entities.ApplicationUser", "User")
+                    b.HasOne("AuthService.Domain.Entities.ApplicationUser", null)
                         .WithMany("RefreshTokens")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("AuthService.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

@@ -1,3 +1,5 @@
+using Core.Extensions;
+using Framework.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,7 @@ public class DeleteFileEndpoint : IEndpoint
         app.MapDelete("/files/{id:guid}", async Task<EndpointResult<Guid>>(
             [FromRoute] Guid id,
             [FromServices] DeleteFileHandler handler,
-            CancellationToken cancellationToken) => await handler.Handle(id, cancellationToken));
+            CancellationToken cancellationToken) => await handler.Handle(id, cancellationToken))
+                .RequirePermissions(Permissions.FILES_MANAGE);
     }
 }

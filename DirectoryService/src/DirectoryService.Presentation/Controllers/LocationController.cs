@@ -7,6 +7,8 @@ using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Presentation.Response;
+using Framework.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DirectoryService.Presentation.Controllers;
@@ -32,6 +34,7 @@ public class LocationController : ControllerBase
     }
 
     [HttpPost("api/locations")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<EndpointResult<Guid>> CreateLocation(CreateLocationDto dto, CancellationToken cancellationToken)
     {
         var request = new CreateLocationRequest(dto);
@@ -39,6 +42,7 @@ public class LocationController : ControllerBase
     }
 
     [HttpGet("api/locations")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
     public async Task<ActionResult<PagedResult<LocationDto>>> GetLocations(
         [FromQuery]GetLocationsQuery query,
         CancellationToken cancellationToken)
@@ -49,6 +53,7 @@ public class LocationController : ControllerBase
     }
 
     [HttpPut("api/locations/{locationId}")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<EndpointResult<Location>> UpdateLocation(
         [FromRoute] Guid locationId,
         [FromBody] UpdateLocationDto updateLocationDto,
@@ -59,6 +64,7 @@ public class LocationController : ControllerBase
     }
 
     [HttpDelete("api/locations/{locationId}")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
     public async Task<EndpointResult<Guid>> DeleteLocation(
         [FromRoute] Guid locationId,
         CancellationToken cancellationToken)

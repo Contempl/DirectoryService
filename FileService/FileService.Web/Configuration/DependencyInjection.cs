@@ -15,6 +15,7 @@ using FluentValidation;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
 using FileService.Infrastructure.Postgres.Repositories;
+using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
 using Shared.Kernel;
@@ -36,6 +37,8 @@ public static class DependencyInjection
         services.AddEndpoints(typeof(UploadFileHandler).Assembly);
 
         services.AddS3(configuration);
+        
+        services.AddJwtAuthentication(configuration);
 
         services.AddScoped<IValidator<UploadFileCommand>, UploadFileValidator>();
 

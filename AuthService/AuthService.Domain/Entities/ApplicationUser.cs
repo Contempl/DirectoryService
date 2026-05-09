@@ -1,4 +1,6 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Security.Cryptography;
+using System.Text;
+using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Identity;
 using Shared.Kernel;
 
@@ -26,7 +28,7 @@ public class ApplicationUser : IdentityUser<Guid>
         LastName = lastName;
     }
 
-    public static Result<ApplicationUser, Error> Create(string firstName, string lastName)
+    public static Result<ApplicationUser, Error> Create(string firstName, string lastName, string email)
     {
         if (string.IsNullOrEmpty(firstName) || firstName.Length > 100)
             return GeneralErrors.ValueIsInvalid(nameof(firstName));
@@ -36,10 +38,40 @@ public class ApplicationUser : IdentityUser<Guid>
 
         var user = new ApplicationUser
         {
+            UserName = email,
             FirstName = firstName,
-            LastName = lastName
+            LastName = lastName,
+            Email = email,
         };
 
         return user;
+    }
+
+    public static Result<ApplicationUser, Error> SeedAdmin(string firstName, string lastName, string email, string username)
+    {
+        if (string.IsNullOrEmpty(email))
+            return GeneralErrors.ValueIsInvalid(nameof(email));
+        
+        var userCreationResult = ApplicationUser.Create(firstName, lastName, email);
+        
+        if (userCreationResult.IsFailure)
+            return GeneralErrors.ValueIsInvalid(nameof(ApplicationUser));
+
+        var admin = userCreationResult.Value;
+        
+        admin.Email = email;
+        admin.UserName = username;
+        admin.EmailConfirmed = true;
+
+        return admin;
+    }
+
+    public UnitResult<Error> Deactivate()
+    {
+        IsActive = false;
+        
+        UpdatedAt =  DateTime.UtcNow;
+        
+        return UnitResult.Success<Error>();
     }
 }

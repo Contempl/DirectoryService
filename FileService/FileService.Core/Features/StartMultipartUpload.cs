@@ -1,9 +1,11 @@
+using Core.Extensions;
 using CSharpFunctionalExtensions;
 using FileService.Contracts;
 using FileService.Contracts.Dto;
 using FileService.Domain.Assets;
 using FileService.Domain.Enums;
 using FileService.Domain.ValueObjects;
+using Framework.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +23,8 @@ public sealed class StartMultipartUpload : IEndpoint
         app.MapPost("/files/multipart/start", async Task<EndpointResult<StartMultipartUploadResponse>>(
             [FromBody] StartMultipartUploadRequest request,
             [FromServices] StartMultipartUploadHandler handler,
-            CancellationToken token) => await handler.Handle(request, token));
+            CancellationToken token) => await handler.Handle(request, token))
+                .RequirePermissions(Permissions.FILES_MANAGE);
     }
 }
 
