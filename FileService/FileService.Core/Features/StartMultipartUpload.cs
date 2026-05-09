@@ -71,9 +71,12 @@ public sealed class StartMultipartUploadHandler
 
         var mediaData = mediaDataResult.Value;
         var assetType = request.AssetType.ToAssetType();
-        var owner = MediaOwner.Create(request.Context, request.ContextId).Value;
 
-        var mediaAssetResult = MediaAsset.CreateForUpload(mediaData, assetType, owner);
+        var ownerResult = MediaOwner.Create(request.Context, request.ContextId);
+        if (ownerResult.IsFailure)
+            return ownerResult.Error;
+
+        var mediaAssetResult = MediaAsset.CreateForUpload(mediaData, assetType, ownerResult.Value);
         if (mediaAssetResult.IsFailure)
             return mediaAssetResult.Error;
 

@@ -44,6 +44,6 @@ public record MediaOwner
 
     public static Result<MediaOwner, Error> ForLesson(Guid lessonId) => Create("lesson", lessonId);
     public static Result<MediaOwner, Error> ForCourse(Guid courseId) => Create("course", courseId);
-    public static Result<MediaOwner, Error> ForUser(Guid userId) => Create("userId", userId);
+    public static Result<MediaOwner, Error> ForUser(Guid userId) => Create("user", userId);
     public static Result<MediaOwner, Error> ForDepartment(Guid departmentId) => Create("department", departmentId);
 }

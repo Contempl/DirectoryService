@@ -12,10 +12,6 @@ public class DeleteFileEndpoint : IEndpoint
         app.MapDelete("/files/{id:guid}", async Task<EndpointResult<Guid>>(
             [FromRoute] Guid id,
             [FromServices] DeleteFileHandler handler,
-            CancellationToken cancellationToken) =>
-        {
-            var command = new DeleteFileRequest(id);
-            return await handler.HandleAsync(command, cancellationToken);
-        });
+            CancellationToken cancellationToken) => await handler.Handle(id, cancellationToken));
     }
 }
