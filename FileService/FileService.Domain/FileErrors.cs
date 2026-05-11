@@ -80,4 +80,9 @@ public static class FileErrors
     {
         return Error.Conflict($"operation.conflict", "Conflict while changing the state of files.");
     }
+
+    public static Error InvalidChunkCount(int count)
+    {
+        return Error.Validation("chunk.count.invalid", $"Chunk count {count} is outside the valid range 1..10000.");
+    }
 }

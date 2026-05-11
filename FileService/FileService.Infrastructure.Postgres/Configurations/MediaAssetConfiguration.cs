@@ -61,10 +61,11 @@ public class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAsset>
         
         builder.Property(ma => ma.FinalKey)
             .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => JsonSerializer.Deserialize<StorageKey>(v, (JsonSerializerOptions?)null)!)
+                v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => v == null ? null : JsonSerializer.Deserialize<StorageKey>(v, (JsonSerializerOptions?)null)!)
             .HasColumnName("final_key")
-            .HasColumnType("jsonb");
+            .HasColumnType("jsonb")
+            .IsRequired(false);
 
         builder.HasIndex(ma => new
         {

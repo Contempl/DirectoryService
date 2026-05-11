@@ -80,7 +80,7 @@ public abstract class MediaAsset
         return UnitResult.Success<Error>();
     }
 
-    protected UnitResult<Error> MarkDeleted(DateTime timestamp)
+    public UnitResult<Error> MarkDeleted(DateTime timestamp)
     {
         if (Status == MediaStatus.DELETED)
             return UnitResult.Success<Error>();

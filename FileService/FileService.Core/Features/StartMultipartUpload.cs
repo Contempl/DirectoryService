@@ -1,12 +1,17 @@
 using Core.Extensions;
 using CSharpFunctionalExtensions;
 using FileService.Contracts;
+using FileService.Contracts.Dto;
+using FileService.Domain.Assets;
+using FileService.Domain.Enums;
+using FileService.Domain.ValueObjects;
 using Framework.Constants;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Shared.Kernel;
 
 namespace FileService.Core.Features;
@@ -15,7 +20,7 @@ public sealed class StartMultipartUpload : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/files/multipart-upload", async Task<EndpointResult<Guid>> (
+        app.MapPost("/files/multipart/start", async Task<EndpointResult<StartMultipartUploadResponse>>(
             [FromBody] StartMultipartUploadRequest request,
             [FromServices] StartMultipartUploadHandler handler,
             CancellationToken token) => await handler.Handle(request, token))
@@ -27,33 +32,84 @@ public sealed class StartMultipartUploadHandler
 {
     private readonly ILogger<StartMultipartUploadHandler> _logger;
     private readonly IS3Provider _s3Provider;
+    private readonly IMediaAssetsRepository _mediaAssetsRepository;
+    private readonly MultipartUploadOptions _options;
 
     public StartMultipartUploadHandler(
         ILogger<StartMultipartUploadHandler> logger,
-        IS3Provider s3Provider)
+        IS3Provider s3Provider,
+        IMediaAssetsRepository mediaAssetsRepository,
+        IOptions<MultipartUploadOptions> options)
     {
         _logger = logger;
         _s3Provider = s3Provider;
+        _mediaAssetsRepository = mediaAssetsRepository;
+        _options = options.Value;
     }
 
-    public async Task<Result<Guid, Error>> Handle(StartMultipartUploadRequest request, CancellationToken cancellationToken)
+    public async Task<Result<StartMultipartUploadResponse, Error>> Handle(
+        StartMultipartUploadRequest request,
+        CancellationToken cancellationToken)
     {
-        // выполнить валидацию
+        var fileNameResult = FileName.Create(request.FileName);
+        if (fileNameResult.IsFailure)
+            return fileNameResult.Error;
 
-        // посчитать количество чанков для загрузки файла и их размер
+        var contentTypeResult = ContentType.Create(request.ContentType);
+        if (contentTypeResult.IsFailure)
+            return contentTypeResult.Error;
 
-        // создать доменную сущность MediaAsset, вызвав метод CreateForUpload
+        var chunkCalcResult = ChunkSizeCalculator.Calculate(
+            request.Size,
+            _options.RecommendedChunkSizeBytes,
+            _options.MaxChunks);
+        if (chunkCalcResult.IsFailure)
+            return chunkCalcResult.Error;
 
-        // начать multipart загрузку
+        var (chunkSize, totalChunks) = chunkCalcResult.Value;
 
-        // сгенирировать коллекцию uploadurl для чанков
+        var mediaDataResult = MediaData.Create(fileNameResult.Value, contentTypeResult.Value, request.Size, totalChunks);
+        if (mediaDataResult.IsFailure)
+            return mediaDataResult.Error;
 
-        // если успешно, то сохранить в базу данных MediaAsset со статусов UPLOADING
+        var mediaData = mediaDataResult.Value;
+        var assetType = request.AssetType.ToAssetType();
 
-        // вернуть данные mediaasset (id), uploadId, коллекцию ссылок для загрузки чанков, размер чанка
+        var ownerResult = MediaOwner.Create(request.Context, request.ContextId);
+        if (ownerResult.IsFailure)
+            return ownerResult.Error;
 
-        //var startUploadResult = await _s3Provider.StartMultipartUploadAsync(request, cancellationToken);
+        var mediaAssetResult = MediaAsset.CreateForUpload(mediaData, assetType, ownerResult.Value);
+        if (mediaAssetResult.IsFailure)
+            return mediaAssetResult.Error;
 
-        return Guid.NewGuid();
+        var mediaAsset = mediaAssetResult.Value;
+
+        var uploadIdResult = await _s3Provider.StartMultipartUploadAsync(mediaAsset.RawKey, mediaData, cancellationToken);
+        if (uploadIdResult.IsFailure)
+            return uploadIdResult.Error;
+
+        var uploadId = uploadIdResult.Value;
+
+        var addResult = await _mediaAssetsRepository.AddAsync(mediaAsset, cancellationToken);
+        if (addResult.IsFailure)
+        {
+            await _s3Provider.AbortMultipartUploadAsync(mediaAsset.RawKey, uploadId, cancellationToken);
+            return addResult.Error;
+        }
+
+        var chunkUrlsResult = await _s3Provider.GenerateAllChunkUploadUrlsAsync(
+            mediaAsset.RawKey, uploadId, totalChunks, cancellationToken);
+        if (chunkUrlsResult.IsFailure)
+        {
+            await _s3Provider.AbortMultipartUploadAsync(mediaAsset.RawKey, uploadId, cancellationToken);
+            mediaAsset.MarkFailed(DateTime.UtcNow);
+            await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
+            return chunkUrlsResult.Error;
+        }
+
+        _logger.LogInformation("Started multipart upload {UploadId} for {FileName}", uploadId, request.FileName);
+
+        return new StartMultipartUploadResponse(mediaAsset.Id, uploadId, chunkUrlsResult.Value, chunkSize);
     }
 }

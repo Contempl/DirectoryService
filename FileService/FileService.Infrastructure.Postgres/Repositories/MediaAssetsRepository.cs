@@ -55,6 +55,13 @@ public class MediaAssetsRepository : IMediaAssetsRepository
         return asset;
     }
 
+    public async Task<IReadOnlyList<MediaAsset>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.MediaAssets
+            .Where(x => ids.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<UnitResult<Error>> RemoveAsync(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
     {
         try
