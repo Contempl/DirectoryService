@@ -59,3 +59,5 @@ var apiGroup = app.MapGroup("/api").WithOpenApi();
 app.MapEndpoints(apiGroup);
 
 app.Run();
+
+public partial class Program { }

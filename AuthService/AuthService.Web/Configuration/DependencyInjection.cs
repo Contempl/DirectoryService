@@ -91,7 +91,9 @@ public static class DependencyInjection
         services.AddScoped<GetUsersHandler>();
         services.AddScoped<GetProfileHandler>();
         services.AddScoped<RemoveRolesHandler>();
-        services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>, ConfirmEmailQueryHandler>();
+        services.AddScoped<ConfirmEmailQueryHandler>();
+        services.AddScoped<IQueryHandler<ConfirmEmailQuery, UnitResult<Error>>>(
+            sp => sp.GetRequiredService<ConfirmEmailQueryHandler>());
 
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
 
