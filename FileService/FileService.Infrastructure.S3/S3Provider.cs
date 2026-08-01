@@ -264,8 +264,16 @@ public class S3Provider : IS3Provider
     {
         try
         {
-            var result = await _s3Client.GetObjectAsync(key.Location, key.Value, cancellationToken);
-            return result.Key;
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = key.Location,
+                Key = key.Value,
+                Verb = HttpVerb.GET,
+                Expires = DateTime.UtcNow.AddHours(_s3Options.DownloadUrlExpirationHours),
+                Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
+            };
+
+            return await _s3Client.GetPreSignedURLAsync(request);
         }
         catch (Exception ex)
         {
