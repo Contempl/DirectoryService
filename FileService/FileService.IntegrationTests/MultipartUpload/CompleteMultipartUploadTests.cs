@@ -1,80 +1,42 @@
+using System.Net;
+using System.Net.Http.Json;
 using FileService.Contracts.Dto;
-using FileService.Core.Features.CompleteMultipartUpload;
 using FileService.Domain.Enums;
-using FileService.IntegrationTests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using CompleteUploadRequest = FileService.Contracts.Dto.CompleteMultipartUploadRequest;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 
-public class CompleteMultipartUploadTests : FileServiceFeatureBaseTests
+public class CompleteMultipartUploadTests : FileServiceBaseTests
 {
     public CompleteMultipartUploadTests(FileServiceTestWebFactory factory) : base(factory) { }
 
     [Fact]
-    public async Task CompleteMultipartUpload_WithValidData_ShouldMarkAssetUploaded()
+    public async Task CompleteMultipartUpload_WithWrongPartSet_ShouldReturnBadRequest()
     {
         // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var asset = await CreateMediaAssetInDb(ct);
-        var request = new CompleteMultipartUploadRequest(
-            asset.Id,
-            "fake-upload-id",
-            [new PartETagDto(1, "etag-1")]);
+        var started = await StartMultipartUploadAsync("large-video.mp4", "video", "video/mp4", 5 * 1024 * 1024 + 10);
 
         // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/complete",
+            new CompleteUploadRequest(started.MediaAssetId, started.UploadId, [new PartETagDto(1, "missing-etag")]));
+
+        await AssertErrorStatusAsync(response, HttpStatusCode.BadRequest);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal(asset.Id, result.Value.MediaAssetId);
-
-        await ExecuteInDb(async dbContext =>
-        {
-            var updated = await dbContext.MediaAssets.FirstAsync(a => a.Id == asset.Id, ct);
-            Assert.Equal(MediaStatus.UPLOADED, updated.Status);
-        });
+        var status = await GetAssetAsync(started.MediaAssetId, q => q.Select(a => a.Status));
+        Assert.Equal(MediaStatus.UPLOADING, status);
     }
 
     [Fact]
-    public async Task CompleteMultipartUpload_WithWrongPartCount_ShouldFail()
+    public async Task CompleteMultipartUpload_WithUnknownAsset_ShouldReturnNotFound()
     {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var asset = await CreateMediaAssetInDb(ct);
-        var request = new CompleteMultipartUploadRequest(
-            asset.Id,
-            "fake-upload-id",
-            [new PartETagDto(1, "etag-1"), new PartETagDto(2, "etag-2")]);
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        // Arrange & Act
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/complete",
+            new CompleteUploadRequest(Guid.NewGuid(), "missing-upload-id", [new PartETagDto(1, "missing-etag")]));
 
         // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    [Fact]
-    public async Task CompleteMultipartUpload_WithNonExistentAsset_ShouldFail()
-    {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new CompleteMultipartUploadRequest(
-            Guid.NewGuid(),
-            "fake-upload-id",
-            [new PartETagDto(1, "etag-1")]);
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
-
-        // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    private async Task<T> ExecuteHandler<T>(Func<CompleteMultipartUploadHandler, Task<T>> action)
-    {
-        await using var scope = Services.CreateAsyncScope();
-        var handler = scope.ServiceProvider.GetRequiredService<CompleteMultipartUploadHandler>();
-        return await action(handler);
+        await AssertErrorStatusAsync(response, HttpStatusCode.NotFound);
     }
 }

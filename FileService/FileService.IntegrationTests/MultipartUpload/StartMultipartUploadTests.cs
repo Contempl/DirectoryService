@@ -1,87 +1,79 @@
+using System.Net;
+using System.Net.Http.Json;
 using FileService.Contracts;
-using FileService.Core.Features;
 using FileService.Domain.Enums;
-using FileService.IntegrationTests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 
-public class StartMultipartUploadTests : FileServiceFeatureBaseTests
+public class StartMultipartUploadTests : FileServiceBaseTests
 {
     public StartMultipartUploadTests(FileServiceTestWebFactory factory) : base(factory) { }
 
     [Fact]
-    public async Task StartMultipartUpload_WithValidData_ShouldCreateAssetAndReturnUrls()
+    public async Task StartMultipartUpload_ShouldCreateUploadingAssetAndReturnPartUrl()
     {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new StartMultipartUploadRequest("video.mp4", "video", "video/mp4", 1024, "lesson", Guid.NewGuid());
+        // Arrange & Act
+        var started = await StartMultipartUploadAsync("video.mp4", "video", "video/mp4", 1024);
 
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        Assert.NotEqual(Guid.Empty, started.MediaAssetId);
+        Assert.False(string.IsNullOrWhiteSpace(started.UploadId));
+        Assert.Single(started.ChunkUrls);
+        Assert.Equal(1, started.ChunkUrls[0].PartNumber);
+        Assert.StartsWith("http://", started.ChunkUrls[0].UploadUrl, StringComparison.Ordinal);
 
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotEqual(Guid.Empty, result.Value.MediaAssetId);
-        Assert.Equal("fake-upload-id", result.Value.UploadId);
-        Assert.NotEmpty(result.Value.ChunkUrls);
-
-        await ExecuteInDb(async dbContext =>
+        var stored = await GetAssetAsync(started.MediaAssetId, q => q.Select(a => new
         {
-            var asset = await dbContext.MediaAssets.FirstAsync(a => a.Id == result.Value.MediaAssetId, ct);
-            Assert.NotNull(asset);
-            Assert.Equal(MediaStatus.UPLOADING, asset.Status);
-            Assert.Equal(AssetType.VIDEO, asset.AssetType);
-        });
+            a.Status,
+            a.AssetType,
+            Bucket = a.RawKey.Location,
+            Key = a.RawKey.Value,
+            a.MediaData.Size
+        }));
+
+        // Assert
+        Assert.NotNull(stored);
+        Assert.Equal(MediaStatus.UPLOADING, stored.Status);
+        Assert.Equal(AssetType.VIDEO, stored.AssetType);
+        Assert.Equal(FileServiceTestWebFactory.VideoBucket, stored.Bucket);
+        Assert.Equal(1024, stored.Size);
+        Assert.Contains(started.MediaAssetId.ToString(), stored.Key, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("video", "video/mp4", 1024)]
+    [InlineData("video.mp4", "video/mp4", 0)]
+    [InlineData("video.mp4", "image/png", 1024)]
+    public async Task StartMultipartUpload_WithInvalidRequest_ShouldReturnBadRequest(
+        string fileName,
+        string contentType,
+        long size)
+    {
+        // Arrange
+        var request = new StartMultipartUploadRequest(fileName, "video", contentType, size, "lesson", Guid.NewGuid());
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/api/files/multipart/start", request);
+
+        // Assert
+        await AssertErrorStatusAsync(response, HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task StartMultipartUpload_WithInvalidFileName_ShouldFail()
+    public async Task StartMultipartUpload_WithInvalidContext_ShouldReturnBadRequest()
     {
         // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new StartMultipartUploadRequest("no-extension", "video", "video/mp4", 1024, "lesson", Guid.NewGuid());
+        var request = new StartMultipartUploadRequest(
+            "video.mp4",
+            "video",
+            "video/mp4",
+            1024,
+            "invalid-context",
+            Guid.NewGuid());
 
         // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        var response = await Client.PostAsJsonAsync("/api/files/multipart/start", request);
 
         // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    [Fact]
-    public async Task StartMultipartUpload_WithInvalidContext_ShouldFail()
-    {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new StartMultipartUploadRequest("video.mp4", "video", "video/mp4", 1024, "invalid-context", Guid.NewGuid());
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
-
-        // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    [Fact]
-    public async Task StartMultipartUpload_WithZeroSize_ShouldFail()
-    {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new StartMultipartUploadRequest("video.mp4", "video", "video/mp4", 0, "lesson", Guid.NewGuid());
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
-
-        // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    private async Task<T> ExecuteHandler<T>(Func<StartMultipartUploadHandler, Task<T>> action)
-    {
-        await using var scope = Services.CreateAsyncScope();
-        var handler = scope.ServiceProvider.GetRequiredService<StartMultipartUploadHandler>();
-        return await action(handler);
+        await AssertErrorStatusAsync(response, HttpStatusCode.BadRequest);
     }
 }

@@ -1,56 +1,48 @@
-using FileService.Contracts.Dto;
-using FileService.Core.Features.AbordMultipartUpload;
+using System.Net;
+using System.Net.Http.Json;
+using Amazon.S3.Model;
 using FileService.Domain.Enums;
-using FileService.IntegrationTests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using AbortUploadRequest = FileService.Contracts.Dto.AbortMultipartUploadRequest;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 
-public class AbortMultipartUploadTests : FileServiceFeatureBaseTests
+public class AbortMultipartUploadTests : FileServiceBaseTests
 {
     public AbortMultipartUploadTests(FileServiceTestWebFactory factory) : base(factory) { }
 
     [Fact]
-    public async Task AbortMultipartUpload_WithValidAsset_ShouldMarkAssetFailed()
+    public async Task AbortMultipartUpload_ShouldMarkAssetFailedAndRemoveUpload()
     {
         // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var asset = await CreateMediaAssetInDb(ct);
-        var request = new AbortMultipartUploadRequest(asset.Id, "fake-upload-id");
+        var started = await StartMultipartUploadAsync("video.mp4", "video", "video/mp4", 1024);
 
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        // Act & Assert
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/abort",
+            new AbortUploadRequest(started.MediaAssetId, started.UploadId));
+        var aborted = await ReadOkEnvelopeAsync<bool>(response);
 
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.True(result.Value);
+        Assert.True(aborted);
 
-        await ExecuteInDb(async dbContext =>
+        var status = await GetAssetAsync(started.MediaAssetId, q => q.Select(a => a.Status));
+        Assert.Equal(MediaStatus.FAILED, status);
+
+        var uploads = await S3Client.ListMultipartUploadsAsync(new ListMultipartUploadsRequest
         {
-            var updated = await dbContext.MediaAssets.FirstAsync(a => a.Id == asset.Id, ct);
-            Assert.Equal(MediaStatus.FAILED, updated.Status);
+            BucketName = FileServiceTestWebFactory.VideoBucket
         });
+        Assert.DoesNotContain(uploads.MultipartUploads ?? [], u => u.UploadId == started.UploadId);
     }
 
     [Fact]
-    public async Task AbortMultipartUpload_WithNonExistentAsset_ShouldFail()
+    public async Task AbortMultipartUpload_WithUnknownAsset_ShouldReturnNotFound()
     {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new AbortMultipartUploadRequest(Guid.NewGuid(), "fake-upload-id");
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        // Arrange & Act
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/abort",
+            new AbortUploadRequest(Guid.NewGuid(), "missing-upload-id"));
 
         // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    private async Task<T> ExecuteHandler<T>(Func<AbortMultipartUploadHandler, Task<T>> action)
-    {
-        await using var scope = Services.CreateAsyncScope();
-        var handler = scope.ServiceProvider.GetRequiredService<AbortMultipartUploadHandler>();
-        return await action(handler);
+        await AssertErrorStatusAsync(response, HttpStatusCode.NotFound);
     }
 }

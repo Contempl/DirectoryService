@@ -1,55 +1,46 @@
+using System.Net;
+using System.Net.Http.Json;
+using Amazon.S3.Model;
 using FileService.Contracts.Dto;
-using FileService.Core.Features.CancelMultipartUpload;
-using FileService.IntegrationTests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 
-public class CancelMultipartUploadTests : FileServiceFeatureBaseTests
+public class CancelMultipartUploadTests : FileServiceBaseTests
 {
     public CancelMultipartUploadTests(FileServiceTestWebFactory factory) : base(factory) { }
 
     [Fact]
-    public async Task CancelMultipartUpload_WithValidAsset_ShouldRemoveAssetFromDb()
+    public async Task CancelMultipartUpload_ShouldRemovePendingAssetAndLeaveNoObject()
     {
         // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var asset = await CreateMediaAssetInDb(ct);
-        var request = new CancelMultipartUploadRequest(asset.Id, "fake-upload-id");
+        var started = await StartMultipartUploadAsync("video.mp4", "video", "video/mp4", 1024);
 
         // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/cancel",
+            new CancelMultipartUploadRequest(started.MediaAssetId, started.UploadId));
+        var cancelled = await ReadOkEnvelopeAsync<CancelMultipartUploadResponse>(response);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.True(result.Value.Success);
+        Assert.True(cancelled.Success);
+        Assert.False(await AssetExistsAsync(started.MediaAssetId));
 
-        await ExecuteInDb(async dbContext =>
+        var uploads = await S3Client.ListMultipartUploadsAsync(new ListMultipartUploadsRequest
         {
-            var exists = await dbContext.MediaAssets.AnyAsync(a => a.Id == asset.Id, ct);
-            Assert.False(exists);
+            BucketName = FileServiceTestWebFactory.VideoBucket
         });
+        Assert.DoesNotContain(uploads.MultipartUploads ?? [], u => u.UploadId == started.UploadId);
     }
 
     [Fact]
-    public async Task CancelMultipartUpload_WithNonExistentAsset_ShouldFail()
+    public async Task CancelMultipartUpload_WithUnknownAsset_ShouldReturnNotFound()
     {
-        // Arrange
-        var ct = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
-        var request = new CancelMultipartUploadRequest(Guid.NewGuid(), "fake-upload-id");
-
-        // Act
-        var result = await ExecuteHandler(h => h.Handle(request, ct));
+        // Arrange & Act
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/multipart/cancel",
+            new CancelMultipartUploadRequest(Guid.NewGuid(), "missing-upload-id"));
 
         // Assert
-        Assert.True(result.IsFailure);
-    }
-
-    private async Task<T> ExecuteHandler<T>(Func<CancelMultipartUploadHandler, Task<T>> action)
-    {
-        await using var scope = Services.CreateAsyncScope();
-        var handler = scope.ServiceProvider.GetRequiredService<CancelMultipartUploadHandler>();
-        return await action(handler);
+        await AssertErrorStatusAsync(response, HttpStatusCode.NotFound);
     }
 }
