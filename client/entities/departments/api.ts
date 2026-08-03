@@ -21,7 +21,7 @@ export const departmentsApi = {
   },
 
   getRoots: async (params?: GetDepartmentRootsRequest) => {
-    const response = await apiClient.get<DepartmentWithChildrenDto[]>("/departments/roots", {
+    const response = await apiClient.get<DepartmentWithChildrenDto[]>("/departments/tree", {
       params,
     });
     return response.data;

@@ -1,16 +1,23 @@
 import { departmentsApi } from "@/entities/departments/api";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
-export function useDepartmentRoots(page = 1, size = 20, prefetch = 3) {
-  const { data, isPending, isError, error } = useQuery({
-    queryKey: ["departments", "roots", { page, size, prefetch }],
-    queryFn: () => departmentsApi.getRoots({ page, size, prefetch }),
+export function useDepartmentRoots(size = 20) {
+  const query = useInfiniteQuery({
+    queryKey: ["departments", "tree", { size }],
+    queryFn: ({ pageParam }) =>
+      departmentsApi.getRoots({ page: pageParam, size }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === size ? pages.length + 1 : undefined,
   });
 
   return {
-    data,
-    isPending,
-    isError,
-    error,
+    data: query.data?.pages.flat(),
+    isPending: query.isPending,
+    isError: query.isError,
+    error: query.error,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: query.fetchNextPage,
   };
 }

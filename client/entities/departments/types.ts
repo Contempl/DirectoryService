@@ -27,7 +27,7 @@ export type DepartmentWithChildrenDto = {
   createdAt: string;
   updatedAt: string;
   children: DepartmentWithChildrenDto[];
-  hasMoreChildren: boolean;
+  hasChildren: boolean;
 };
 
 export type GetDepartmentRootsRequest = {

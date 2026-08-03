@@ -5,11 +5,23 @@ import { useDepartmentRoots } from "./model/use-department-roots";
 import { DepartmentTreeNode } from "./department-tree-node";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Button } from "@/shared/components/ui/button";
-import { useState } from "react";
+import { useTreeStore } from "../model/use-tree-store";
 
 export function DepartmentTree() {
-  const [page, setPage] = useState(1);
-  const { data, isPending, isError, error } = useDepartmentRoots(page, 20, 3);
+  const expandedIds = useTreeStore((state) => state.expandedIds);
+  const selectedId = useTreeStore((state) => state.selectedId);
+  const toggleExpanded = useTreeStore((state) => state.toggleExpanded);
+  const select = useTreeStore((state) => state.select);
+
+  const {
+    data,
+    isPending,
+    isError,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useDepartmentRoots(20);
 
   if (isPending) return <Spinner />;
 
@@ -21,7 +33,13 @@ export function DepartmentTree() {
 
   return (
     <div className="flex flex-col gap-2">
-      <TreeProvider showLines>
+      <TreeProvider
+        showLines
+        expandedIds={expandedIds}
+        onExpandedChange={toggleExpanded}
+        selectedIds={selectedId ? [selectedId] : []}
+        onSelectionChange={(ids) => select(ids.at(-1) ?? null)}
+      >
         <TreeView>
           {data.map((department, index) => (
             <DepartmentTreeNode
@@ -34,14 +52,15 @@ export function DepartmentTree() {
         </TreeView>
       </TreeProvider>
 
-      <Button
+      {hasNextPage && <Button
         variant="ghost"
         size="sm"
         className="self-start"
-        onClick={() => setPage((p) => p + 1)}
+        disabled={isFetchingNextPage}
+        onClick={() => void fetchNextPage()}
       >
         Показать ещё
-      </Button>
+      </Button>}
     </div>
   );
 }

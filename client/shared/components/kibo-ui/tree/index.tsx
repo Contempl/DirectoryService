@@ -59,6 +59,8 @@ const useTreeNode = () => {
 export type TreeProviderProps = {
   children: ReactNode;
   defaultExpandedIds?: string[];
+  expandedIds?: string[];
+  onExpandedChange?: (nodeId: string) => void;
   showLines?: boolean;
   showIcons?: boolean;
   selectable?: boolean;
@@ -73,6 +75,8 @@ export type TreeProviderProps = {
 export const TreeProvider = ({
   children,
   defaultExpandedIds = [],
+  expandedIds: controlledExpandedIds,
+  onExpandedChange,
   showLines = true,
   showIcons = true,
   selectable = true,
@@ -83,7 +87,7 @@ export const TreeProvider = ({
   animateExpand = true,
   className,
 }: TreeProviderProps) => {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(
+  const [internalExpandedIds, setInternalExpandedIds] = useState<Set<string>>(
     new Set(defaultExpandedIds)
   );
   const [internalSelectedIds, setInternalSelectedIds] = useState<string[]>(
@@ -94,8 +98,17 @@ export const TreeProvider = ({
     selectedIds !== undefined && onSelectionChange !== undefined;
   const currentSelectedIds = isControlled ? selectedIds : internalSelectedIds;
 
+  const expandedIds = controlledExpandedIds
+    ? new Set(controlledExpandedIds)
+    : internalExpandedIds;
+
   const toggleExpanded = useCallback((nodeId: string) => {
-    setExpandedIds((prev) => {
+    if (controlledExpandedIds) {
+      onExpandedChange?.(nodeId);
+      return;
+    }
+
+    setInternalExpandedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(nodeId)) {
         newSet.delete(nodeId);
@@ -104,7 +117,7 @@ export const TreeProvider = ({
       }
       return newSet;
     });
-  }, []);
+  }, [controlledExpandedIds, onExpandedChange]);
 
   const handleSelection = useCallback(
     (nodeId: string, ctrlKey = false) => {
@@ -214,7 +227,7 @@ export const TreeNode = ({
         parentPath: currentPath,
       }}
     >
-      <div className={cn("select-none", className)} {...props}>
+      <div className={cn("select-none", className)} onClick={onClick} {...props}>
         {children}
       </div>
     </TreeNodeContext.Provider>

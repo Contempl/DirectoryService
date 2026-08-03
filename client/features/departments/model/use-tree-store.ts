@@ -1,54 +1,31 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-
-type NodeState = {
-  isExpanded: boolean;
-  page: number;
-};
+import type { DepartmentWithChildrenDto } from "@/entities/departments/types";
 
 type TreeStore = {
-  nodes: Record<string, NodeState>;
-  toggle: (id: string) => void;
-  loadMore: (id: string) => void;
+  expandedIds: string[];
+  selectedId: string | null;
+  childrenByParentId: Record<string, DepartmentWithChildrenDto[]>;
+  toggleExpanded: (id: string) => void;
+  select: (id: string | null) => void;
+  setChildren: (parentId: string, children: DepartmentWithChildrenDto[]) => void;
 };
 
-export const useTreeStore = create<TreeStore>()(
-  persist(
-    (set) => ({
-      nodes: {},
-      toggle: (id) =>
-        set((state) => {
-          const node = state.nodes[id];
-          return {
-            nodes: {
-              ...state.nodes,
-              [id]: {
-                isExpanded: !node?.isExpanded,
-                page: node?.page ?? 1,
-              },
-            },
-          };
-        }),
-      loadMore: (id) => {
-      console.log("loadMore вызван для:", id);
-        set((state) => {
-          const node = state.nodes[id];
-          return {
-            nodes: {
-              ...state.nodes,
-              [id]: {
-                ...node,
-                isExpanded: true,
-                page: (node?.page ?? 1) + 1,
-              },
-            },
-          };
-        })
+export const useTreeStore = create<TreeStore>((set) => ({
+  expandedIds: [],
+  selectedId: null,
+  childrenByParentId: {},
+  toggleExpanded: (id) =>
+    set((state) => ({
+      expandedIds: state.expandedIds.includes(id)
+        ? state.expandedIds.filter((expandedId) => expandedId !== id)
+        : [...state.expandedIds, id],
+    })),
+  select: (id) => set({ selectedId: id }),
+  setChildren: (parentId, children) =>
+    set((state) => ({
+      childrenByParentId: {
+        ...state.childrenByParentId,
+        [parentId]: children,
       },
-    }),
-    {
-      name: "departments-tree-state",
-      storage: createJSONStorage(() => sessionStorage), // сохраняем в сессию
-    }
-  )
-);
+    })),
+}));

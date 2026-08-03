@@ -1,24 +1,32 @@
 import { departmentsApi } from "@/entities/departments/api";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export function useDepartmentChildren(
   parentId: string,
-  page = 1,
   size = 20,
   enabled = false
 ) {
-  const query = useQuery({
-    queryKey: ["departments", "children", parentId, { page, size }],
-    queryFn: () => departmentsApi.getChildren(parentId, { page, size }),
+  const query = useInfiniteQuery({
+    queryKey: ["departments", "children", parentId, { size }],
+    queryFn: ({ pageParam }) =>
+      departmentsApi.getChildren(parentId, { page: pageParam, size }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === size ? pages.length + 1 : undefined,
     enabled,
-    placeholderData: (previousData) => previousData, 
+    staleTime: Infinity,
   });
 
+  const data = useMemo(() => query.data?.pages.flat(), [query.data]);
+
   return {
-    data: query.data,
+    data,
     isPending: query.isPending,
-    isLoading: query.isLoading,   
     isFetching: query.isFetching,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
     isError: query.isError,
     error: query.error,
   };

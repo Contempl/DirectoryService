@@ -6,7 +6,8 @@ export function usePositionsList(
   search: string | undefined,
   pageSize: number,
   isActive: boolean,
-  departmentIds: string[]
+  departmentIds: string[],
+  enabled = true
 ) {
   const {
     data,
@@ -24,6 +25,7 @@ export function usePositionsList(
       departmentIds,
       page: 1,
     }),
+    enabled,
   });
 
   const cursorRef: React.RefCallback<HTMLDivElement> = useCallback(

@@ -14,6 +14,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Folder, FileText } from "lucide-react";
 import { useTreeStore } from "../model/use-tree-store";
+import { useEffect } from "react";
 
 type DepartmentTreeNodeProps = {
   department: DepartmentWithChildrenDto;
@@ -28,40 +29,38 @@ export function DepartmentTreeNode({
   isLast = false,
   parentPath = [],
 }: DepartmentTreeNodeProps) {
-  const nodeState = useTreeStore((state) => state.nodes[department.id]);
-  const toggle = useTreeStore((state) => state.toggle);
-  const loadMore = useTreeStore((state) => state.loadMore);
-  
-  const isNodeExpanded = nodeState?.isExpanded ?? false;
-  const page = nodeState?.page ?? 1;
+  const isNodeExpanded = useTreeStore((state) =>
+    state.expandedIds.includes(department.id)
+  );
+  const storedChildren = useTreeStore(
+    (state) => state.childrenByParentId[department.id]
+  );
+  const setChildren = useTreeStore((state) => state.setChildren);
 
-  // --- НАЧАЛО БЛОКА ОТЛАДКИ ---
-  console.log(`[${department.name}] hasMoreChildren с бэкенда:`, department.hasMoreChildren);
-  console.log(`[${department.name}] Раскрыт ли узел (isNodeExpanded):`, isNodeExpanded);
-  
-  const shouldFetch = isNodeExpanded && department.hasMoreChildren;
-  console.log(`[${department.name}] РЕШЕНИЕ: Запускать ли запрос (shouldFetch):`, shouldFetch);
-  // --- КОНЕЦ БЛОКА ОТЛАДКИ ---
+  const shouldFetch =
+    isNodeExpanded && department.hasChildren && storedChildren === undefined;
 
-  const { data: lazyChildren, isFetching } = useDepartmentChildren(
+  const {
+    data: lazyChildren,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useDepartmentChildren(
     department.id,
-    page,
     20,
-    shouldFetch // Используем нашу отладочную переменную
-  );
-  
-  //... остальной код компонента без изменений
-  const hasChildren = department.children.length > 0 || department.hasMoreChildren;
-
-  const allChildren = [
-    ...department.children,
-    ...(lazyChildren ?? []),
-  ].filter(
-    (child, index, self) => self.findIndex((c) => c.id === child.id) === index
+    shouldFetch
   );
 
-  const isExhausted = lazyChildren !== undefined && lazyChildren.length < 20;
-  const showLoadMore = department.hasMoreChildren && !isExhausted;
+  useEffect(() => {
+    if (lazyChildren !== undefined) {
+      setChildren(department.id, lazyChildren);
+    }
+  }, [department.id, lazyChildren, setChildren]);
+
+  const allChildren = storedChildren ?? lazyChildren ?? department.children;
+
+  const showLoadMore = department.hasChildren && hasNextPage;
 
   return (
     <TreeNode
@@ -70,10 +69,10 @@ export function DepartmentTreeNode({
       isLast={isLast}
       parentPath={parentPath}
     >
-      <TreeNodeTrigger onClick={() => toggle(department.id)}>
-        <TreeExpander hasChildren={hasChildren} />
+      <TreeNodeTrigger>
+        <TreeExpander hasChildren={department.hasChildren} />
         
-        {hasChildren ? (
+        {department.hasChildren ? (
           <Folder className="h-4 w-4 text-blue-500 mr-2 shrink-0" />
         ) : (
           <FileText className="h-4 w-4 text-gray-400 mr-2 shrink-0" />
@@ -103,7 +102,7 @@ export function DepartmentTreeNode({
         )}
       </TreeNodeTrigger>
 
-      <TreeNodeContent hasChildren={hasChildren}>
+      <TreeNodeContent hasChildren={department.hasChildren}>
         {allChildren.map((child, index) => (
           <DepartmentTreeNode
             key={child.id}
@@ -120,14 +119,14 @@ export function DepartmentTreeNode({
           </div>
         )}
         
-        {showLoadMore && !isFetching && (
+        {showLoadMore && !isFetchingNextPage && (
           <Button
             variant="link"
             size="sm"
             className="text-xs text-blue-600 ml-4 h-6"
             onClick={(e) => {
               e.stopPropagation();
-              loadMore(department.id) ;
+              void fetchNextPage();
             }}
           >
             Показать ещё...
