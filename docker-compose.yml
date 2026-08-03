@@ -74,6 +74,10 @@ services:
   minio_fs: 
     container_name: minio_fs
     image: minio/minio:latest
+    networks:
+      default:
+        aliases:
+          - minio
     ports:
       - "9000:9000"
       - "9002:9001"
