@@ -25,7 +25,8 @@ public class GetExpandedDepartmentsHandler : IQueryHandler<ExtendedDepartmentsQu
             $"{Constants.DEPARTMENT_CACHE_KEY}",
             $"{Constants.EXPANDED_DEPARTMENTS_TAG}",
             "page", query.Page,
-            "size", query.Size);
+            "size", query.Size,
+            "prefetch", query.Prefetch);
 
         var parameters = new DynamicParameters(new
         {
@@ -51,9 +52,9 @@ public class GetExpandedDepartmentsHandler : IQueryHandler<ExtendedDepartmentsQu
                                WHERE d."ParentId" IS NULL
                                ORDER BY d.created_at
                                LIMIT @Size OFFSET @Offset)
-                               SELECT *, (EXISTS(SELECT 1 FROM departments d where d."ParentId" = roots.id OFFSET @Prefetch LIMIT 1)) AS HasMoreChildren FROM roots
+                               SELECT *, (EXISTS(SELECT 1 FROM departments d where d."ParentId" = roots.id AND d.is_active = true)) AS HasChildren FROM roots
                                UNION ALL 
-                               SELECT c.*, (EXISTS(SELECT 1 FROM departments d WHERE d."ParentId" = c.id)) AS HasMoreChildren FROM roots r
+                               SELECT c.*, (EXISTS(SELECT 1 FROM departments d WHERE d."ParentId" = c.id AND d.is_active = true)) AS HasChildren FROM roots r
                                CROSS JOIN LATERAL(
                                SELECT 
                                d.id, 

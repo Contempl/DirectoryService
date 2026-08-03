@@ -99,6 +99,19 @@ public class DepartmentController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("api/departments/tree")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
+    public async Task<ActionResult<List<DepartmentsWithChildrenDto>>> GetDepartmentTree(
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ExtendedDepartmentsQuery(page, size, Prefetch: 0);
+        var result = await _getExpandedDepartmentsHandler.HandleAsync(query, cancellationToken);
+
+        return Ok(result);
+    }
+
     [HttpGet("api/departments/{parentId}/children")]
     [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
     public async Task<ActionResult<List<DepartmentsWithChildrenDto>>> Children(
