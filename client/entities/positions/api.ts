@@ -65,7 +65,13 @@ export const positionsQueryOptions = {
         return lastPage.page + 1;
       },
       select: (data): PagedResult<PositionDto> => ({
-        items: data.pages.flatMap((page) => page?.items ?? []),
+        items: Array.from(
+          new Map(
+            data.pages
+              .flatMap((page) => page?.items ?? [])
+              .map((position) => [position.id, position])
+          ).values()
+        ),
         totalCount: data.pages[0]?.totalCount ?? 0,
         page: data.pages[0]?.page ?? 1,
         pageSize: data.pages[0]?.pageSize ?? filter.pageSize,

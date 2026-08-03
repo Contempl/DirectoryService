@@ -24,8 +24,10 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
         var cacheKey = string.Concat(
             $"{Constants.DEPARTMENT_CACHE_KEY}",
             $"{Constants.CHILDREN_DEPARTMENTS_TAG}",
+            "parentId", query.ParentId,
             "page", query.Request.Page,
-            "size", query.Request.Size);
+            "size", query.Request.Size,
+            "schema", "hasChildren");
 
 
         var parameters = new DynamicParameters(new
@@ -49,8 +51,8 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
                                d.created_at,
                                d.updated_at,
                                d."ChildrenCount", 
-                               (EXISTS (SELECT 1 from departments WHERE "ParentId" = d.id)) 
-                                                      AS HasMoreChildren
+                               (EXISTS (SELECT 1 from departments WHERE "ParentId" = d.id AND is_active = true))
+                                                      AS HasChildren
                                FROM departments d
                                WHERE d."ParentId" = @parentId AND d.is_active = true
                                ORDER BY created_at ASC

@@ -25,16 +25,17 @@ public class GetPositionsHandler : IQueryHandler<GetPositionsQuery, PagedResult<
         
         positionsQuery = positionsQuery.Where(l => l.IsActive == query.IsActive);
 
-        if (query.PositionIds is { Length: > 0 })
+        if (query.DepartmentIds is { Length: > 0 })
         {
             positionsQuery = positionsQuery.Where(loc => 
-                loc.DepartmentPositions.Any(dl => query.PositionIds.Contains(dl.DepartmentId)));
+                loc.DepartmentPositions.Any(dl => query.DepartmentIds.Contains(dl.DepartmentId)));
         }
 
         var totalCount = await positionsQuery.LongCountAsync(cancellationToken);
 
         positionsQuery = positionsQuery
             .OrderBy(l => l.UpdatedAt)
+            .ThenBy(l => l.Id)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize);
 

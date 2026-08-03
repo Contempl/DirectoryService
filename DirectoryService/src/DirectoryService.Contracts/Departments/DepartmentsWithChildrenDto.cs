@@ -12,6 +12,8 @@ public record DepartmentsWithChildrenDto
     public string Path { get; init; } = string.Empty;
     
     public short Depth { get; init; }
+
+    public bool IsActive { get; init; }
     
     public bool IsDeleted { get; init; }
     
@@ -21,5 +23,5 @@ public record DepartmentsWithChildrenDto
     
     public List<DepartmentsWithChildrenDto> Children { get; init; } = [];
 
-    public bool HasMoreChildren {  get; init; }
+    public bool HasChildren { get; init; }
 }
