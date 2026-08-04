@@ -19,6 +19,9 @@ public class GetDepartmentsHandler : IQueryHandler<GetDepartmentsQuery, PagedRes
     {
         var departmentsQuery = _readDbContext.DepartmentsRead;
 
+        if (query.DepartmentIds is { Length: > 0 })
+            departmentsQuery = departmentsQuery.Where(d => query.DepartmentIds.Contains(d.Id));
+
         if (query.LocationsIds?.Length > 0)
             departmentsQuery = departmentsQuery.Where(d =>
                 query.LocationsIds.All(id => d.Locations.Any(l => l.LocationId == id)));

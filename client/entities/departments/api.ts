@@ -1,9 +1,10 @@
 import { PagedResult } from "@/shared/api/types";
 import { DepartmentShortDto, DepartmentWithChildrenDto, GetDepartmentChildrenRequest, GetDepartmentRootsRequest } from "./types";
 import { apiClient } from "@/shared/api/axios-instance";
-import { infiniteQueryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 export type GetDepartmentsRequest = {
+  departmentIds?: string[];
   search?: string;
   isActive?: boolean;
   pageSize: number;
@@ -18,6 +19,13 @@ export const departmentsApi = {
       params: query,
     });
     return response.data;
+  },
+
+  getDepartmentsByIds: async (departmentIds: string[]) => {
+    const params = new URLSearchParams({ page: "1", pageSize: String(departmentIds.length) });
+    departmentIds.forEach((id) => params.append("departmentIds", id));
+    const response = await apiClient.get<PagedResult<DepartmentShortDto>>("/departments", { params });
+    return response.data.items;
   },
 
   getRoots: async (params?: GetDepartmentRootsRequest) => {
@@ -40,6 +48,13 @@ export const departmentsApi = {
 
 export const departmentsQueryOptions = {
   baseKey: "departments",
+
+  byIds: (departmentIds: string[]) =>
+    queryOptions({
+      queryKey: [departmentsQueryOptions.baseKey, "byIds", departmentIds],
+      queryFn: () => departmentsApi.getDepartmentsByIds(departmentIds),
+      enabled: departmentIds.length > 0,
+    }),
 
   getDepartmentsInfiniteOptions: (filter: GetDepartmentsRequest) => {
     return infiniteQueryOptions({
