@@ -199,6 +199,7 @@ publish/
 PublishScripts/
 
 # NuGet Packages
+nuget.config
 *.nupkg
 # NuGet Symbol Packages
 *.snupkg
