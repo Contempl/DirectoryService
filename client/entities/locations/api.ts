@@ -72,6 +72,11 @@ export const locationsApi = {
     const response = await apiClient.delete(`/locations/${id}`);
     return response.data;
   },
+
+  restoreLocation: async (id: string) => {
+    const response = await apiClient.put<string>(`/locations/${id}/restore`);
+    return response.data;
+  },
 }
 
 export const locationsQueryOptions = {

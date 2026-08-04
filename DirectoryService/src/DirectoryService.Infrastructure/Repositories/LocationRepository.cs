@@ -53,4 +53,14 @@ public class LocationRepository : ILocationRepository
 
         return existingLocation;
     }
+
+    public async Task<Result<Location, Error>> GetDeletedLocationByIdAsync(Guid locationId, CancellationToken cancellationToken = default)
+    {
+        var location = await _dbContext.Locations
+            .FirstOrDefaultAsync(l => l.Id == locationId && !l.IsActive, cancellationToken);
+
+        return location is null
+            ? GeneralErrors.NotFound(locationId)
+            : location;
+    }
 }

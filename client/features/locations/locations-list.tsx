@@ -12,6 +12,7 @@ import { useGetLocationsFilter } from "./model/locations-filter-store";
 import { LocationsFilter } from "./locations-filter";
 import { DepartmentsPicker } from "../departments/departments-picker";
 import { useLocationDepartmentFilter } from "./model/use-location-department-filter";
+import { useLocationsView } from "./model/use-locations-view";
 
 export default function LocationsList() {
   const { search, pageSize } = useGetLocationsFilter();
@@ -23,7 +24,7 @@ export default function LocationsList() {
     isActive: hasDepartmentFilter,
     isRestoring: isRestoringDepartmentFilter,
   } = useLocationDepartmentFilter();
-  const [isActive, setIsActive] = useState(true);
+  const { view, setView, isArchived } = useLocationsView();
   const [createOpen, setCreateOpen] = useState(false)
   const [updateOpen, setUpdateOpen] = useState(false)
 
@@ -37,7 +38,7 @@ export default function LocationsList() {
     isFetchingNextPage,
     refetch,
     cursorRef
-  } = useLocationsList(search, pageSize, isActive, departmentIds);
+  } = useLocationsList(search, pageSize, !isArchived, departmentIds);
 
 
 
@@ -92,29 +93,25 @@ export default function LocationsList() {
       {/* 🔹 Фильтр */}
       <div className="mb-6 flex gap-2">
         <button
-          onClick={() => {
-            setIsActive(true);
-          }}
+          onClick={() => setView("active")}
           className={`px-4 py-2 rounded transition-colors ${
-            isActive
+            view === "active"
               ? "bg-blue-600 text-white"
               : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
-          Active
+          Активные
         </button>
 
         <button
-          onClick={() => {
-            setIsActive(false);
-          }}
+          onClick={() => setView("archived")}
           className={`px-4 py-2 rounded transition-colors ${
-            !isActive
+            view === "archived"
               ? "bg-blue-600 text-white"
               : "bg-gray-200 text-gray-800 hover:bg-gray-300"
           }`}
         >
-          Inactive
+          Архивные
         </button>
       </div>
 
@@ -131,7 +128,7 @@ export default function LocationsList() {
             </Button>
           </div>
         ) : (
-          <p>No locations</p>
+          <p>{isArchived ? "Архив локаций пуст." : "Локации не найдены."}</p>
         )
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,6 +140,7 @@ export default function LocationsList() {
                 setSelectedLocation(location)
                 setUpdateOpen(true)
               }}
+              archived={isArchived}
             />
           ))}
         </div>
@@ -150,11 +148,11 @@ export default function LocationsList() {
     
 
     {/* кнопка создания */}
-    <div className="mt-6">
+    {!isArchived && <div className="mt-6">
       <Button onClick={() => setCreateOpen(true)}>
         Создать локацию
       </Button>
-    </div>
+    </div>}
 
     {/* create dialog */}
     <CreateLocationDialog

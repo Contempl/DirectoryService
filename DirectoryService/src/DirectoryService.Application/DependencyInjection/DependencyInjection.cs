@@ -10,6 +10,7 @@ using DirectoryService.Application.Departments.Queries.GetTopDepartments;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Delete;
 using DirectoryService.Application.Locations.Queries;
+using DirectoryService.Application.Locations.Restore;
 using DirectoryService.Application.Locations.Update;
 using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Options;
@@ -64,6 +65,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<UpdateLocationsRequest>, UpdateLocationsHandler>();
         services.AddScoped<ICommandHandler<Guid, UpdateDepartmentRequest>, UpdateDepartmentHandler>();
         services.AddScoped<ICommandHandler<Guid, DeleteLocationRequest>, DeleteLocationHandler>();
+        services.AddScoped<ICommandHandler<Guid, RestoreLocationRequest>, RestoreLocationHandler>();
         services.AddScoped<ICommandHandler<Location, UpdateLocationRequest> , UpdateLocationHandler>();
         services.AddScoped<ICommandHandler<Position, UpdatePositionCommand> , UpdatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, DeletePositionRequest> , DeletePositionHandler>();
