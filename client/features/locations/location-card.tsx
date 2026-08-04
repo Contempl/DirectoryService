@@ -74,16 +74,37 @@ export default function LocationCard({ location, onEdit, archived = false }: Pro
       ) : (
         <div className="mt-4 flex items-center justify-between gap-2">
           <Button onClick={onEdit}>Редактировать</Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive transition-colors hover:bg-red-500! hover:text-white!"
-            onClick={() => void deleteLocation(location.id)}
-            disabled={isDeleting}
-            aria-label={`Удалить локацию ${location.name}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive transition-colors hover:bg-red-500! hover:text-white!"
+                disabled={isDeleting}
+                aria-label={`Удалить локацию ${location.name}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Переместить локацию в архив?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Локация «{location.name}» исчезнет из активного списка. Её можно будет восстановить из архива.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() => void deleteLocation(location.id)}
+                  disabled={isDeleting}
+                >
+                  Переместить в архив
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>
