@@ -74,6 +74,14 @@ public class Location
         
         return UnitResult.Success<Error>();
     }
+
+    public UnitResult<Error> Restore()
+    {
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
     
 }
 
