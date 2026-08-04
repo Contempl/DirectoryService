@@ -5,7 +5,7 @@ import { infiniteQueryOptions } from "@tanstack/react-query";
 
 
 export type GetLocationsRequest = {
-    department_ids?: string[], 
+    departmentIds?: string[],
     search?: string,
     isActive: boolean,
     page: number,
@@ -43,9 +43,17 @@ export type UpdateLocationRequest = {
 
 export const locationsApi = {
   getLocations: async (query?: GetLocationsRequest) => {
+    const params = new URLSearchParams();
+    if (query?.search) params.set("search", query.search);
+    if (query) {
+      params.set("isActive", String(query.isActive));
+      params.set("page", String(query.page));
+      params.set("pageSize", String(query.pageSize));
+      query.departmentIds?.forEach((id) => params.append("departmentIds", id));
+    }
     const response = await apiClient.get<PagedResult<LocationDto>>("/locations", {
-      params: query
-        });
+      params,
+    });
           return response.data;
   },
 
@@ -70,7 +78,7 @@ export const locationsQueryOptions = {
   baseKey: "locations",
 
     getLocationInfiniteOptions: (
-      filter: Pick<GetLocationsRequest, "search" | "pageSize" | "isActive">
+      filter: Pick<GetLocationsRequest, "departmentIds" | "search" | "pageSize" | "isActive">
     ) => {
       return infiniteQueryOptions({
         queryKey: [locationsQueryOptions.baseKey,  filter ],
@@ -80,6 +88,7 @@ export const locationsQueryOptions = {
           pageSize: filter.pageSize,
           isActive: filter.isActive,
           search: filter.search,
+          departmentIds: filter.departmentIds,
         }),
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {

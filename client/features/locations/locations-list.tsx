@@ -8,13 +8,21 @@ import { Button } from "@/shared/components/ui/button";
 import { EditLocationDialog } from "./edit-location-dialog";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { CreateLocationDialog } from "./create-location-dialog";
-import { setFilterSelectedDepartments, useGetLocationsFilter } from "./model/locations-filter-store";
+import { useGetLocationsFilter } from "./model/locations-filter-store";
 import { LocationsFilter } from "./locations-filter";
 import { DepartmentsPicker } from "../departments/departments-picker";
+import { useLocationDepartmentFilter } from "./model/use-location-department-filter";
 
 export default function LocationsList() {
-  const { search, pageSize, selectedDepartments } = useGetLocationsFilter();
-  const [page, setPage] = useState(1);
+  const { search, pageSize } = useGetLocationsFilter();
+  const {
+    departmentIds,
+    selectedDepartments,
+    setSelectedDepartments,
+    reset: resetDepartmentFilter,
+    isActive: hasDepartmentFilter,
+    isRestoring: isRestoringDepartmentFilter,
+  } = useLocationDepartmentFilter();
   const [isActive, setIsActive] = useState(true);
   const [createOpen, setCreateOpen] = useState(false)
   const [updateOpen, setUpdateOpen] = useState(false)
@@ -27,16 +35,23 @@ export default function LocationsList() {
     isError, 
     error, 
     isFetchingNextPage,
+    refetch,
     cursorRef
-  } = useLocationsList(search, pageSize, isActive);
+  } = useLocationsList(search, pageSize, isActive, departmentIds);
 
 
 
   if (isError)
     return (
-      <p className="text-red-600">
+      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <p className="font-medium text-red-800">Не удалось загрузить локации.</p>
+        <p className="mt-1 text-sm text-red-700">
         Error: {error instanceof Error ? error.message : "Ошибка"}
-      </p>
+        </p>
+        <Button className="mt-4" variant="outline" onClick={() => void refetch()}>
+          Повторить
+        </Button>
+      </div>
     );
 
   return (
@@ -56,18 +71,28 @@ export default function LocationsList() {
       </div>
 
       <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-medium">Filter by departments</h3>
+          {hasDepartmentFilter && (
+            <Button variant="ghost" size="sm" onClick={resetDepartmentFilter}>
+              Reset filter
+            </Button>
+          )}
+        </div>
         <DepartmentsPicker
           selectedDepartments={selectedDepartments}
-          onChange={setFilterSelectedDepartments}
+          onChange={setSelectedDepartments}
           multiselect
         />
+        {isRestoringDepartmentFilter && (
+          <p className="mt-2 text-sm text-muted-foreground">Restoring department filter...</p>
+        )}
       </div>
 
       {/* 🔹 Фильтр */}
       <div className="mb-6 flex gap-2">
         <button
           onClick={() => {
-            setPage(1);
             setIsActive(true);
           }}
           className={`px-4 py-2 rounded transition-colors ${
@@ -81,7 +106,6 @@ export default function LocationsList() {
 
         <button
           onClick={() => {
-            setPage(1);
             setIsActive(false);
           }}
           className={`px-4 py-2 rounded transition-colors ${
@@ -96,26 +120,33 @@ export default function LocationsList() {
 
       
       {/* 🔹 Список */}
-      {!data || data.items.length === 0 ? (
-    <p>No locations</p>
-    ) : (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {isPending ? (
         <Spinner />
+      ) : !data || data.items.length === 0 ? (
+        hasDepartmentFilter ? (
+          <div className="rounded-lg border border-dashed p-8 text-center">
+            <p className="font-medium">No locations found for the selected departments.</p>
+            <Button className="mt-4" variant="outline" onClick={resetDepartmentFilter}>
+              Reset filter
+            </Button>
+          </div>
+        ) : (
+          <p>No locations</p>
+        )
       ) : (
-        data.items.map((location) => (
-          <LocationCard
-            key={location.id}
-            location={location}
-            onEdit={() => {
-              setSelectedLocation(location)
-              setUpdateOpen(true)
-            }}
-          />
-        ))
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {data.items.map((location) => (
+            <LocationCard
+              key={location.id}
+              location={location}
+              onEdit={() => {
+                setSelectedLocation(location)
+                setUpdateOpen(true)
+              }}
+            />
+          ))}
+        </div>
       )}
-    </div>
-  )}
     
 
     {/* кнопка создания */}

@@ -2,7 +2,7 @@ import { locationsQueryOptions } from "@/entities/locations/api";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-export function useLocationsList(search: string | undefined, pageSize: number, isActive: boolean) {
+export function useLocationsList(search: string | undefined, pageSize: number, isActive: boolean, departmentIds: string[]) {
   const {
     data,
     isPending,
@@ -13,14 +13,14 @@ export function useLocationsList(search: string | undefined, pageSize: number, i
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery({
-    ...locationsQueryOptions.getLocationInfiniteOptions({ search, pageSize, isActive }),
+    ...locationsQueryOptions.getLocationInfiniteOptions({ search, pageSize, isActive, departmentIds }),
   });
 
 
   const cursorRef : React.RefCallback<HTMLDivElement> = useCallback(
     (el) => {
       const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
           fetchNextPage();
         }
       }, 
