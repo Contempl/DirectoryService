@@ -35,6 +35,7 @@ export default function LocationsList() {
     isError, 
     error, 
     isFetchingNextPage,
+    refetch,
     cursorRef
   } = useLocationsList(search, pageSize, isActive, departmentIds);
 
@@ -42,9 +43,15 @@ export default function LocationsList() {
 
   if (isError)
     return (
-      <p className="text-red-600">
+      <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <p className="font-medium text-red-800">Не удалось загрузить локации.</p>
+        <p className="mt-1 text-sm text-red-700">
         Error: {error instanceof Error ? error.message : "Ошибка"}
-      </p>
+        </p>
+        <Button className="mt-4" variant="outline" onClick={() => void refetch()}>
+          Повторить
+        </Button>
+      </div>
     );
 
   return (
