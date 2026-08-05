@@ -50,6 +50,19 @@ public class DepartmentRepository : IDepartmentRepository
         return result;
     }
 
+    public async Task<Result<Department, Errors>> GetByIdAsNoTrackingAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var department = await _dbContext.Departments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        return department is null
+            ? GeneralErrors.NotFound(id).ToErrors()
+            : department;
+    }
+
     public async Task<Result<Department, Error>> GetByIdWithLocationsAsync(Guid id, CancellationToken cancellationToken)
     {
         var department = await _dbContext.Departments
@@ -79,6 +92,7 @@ public class DepartmentRepository : IDepartmentRepository
                     d.""ChildrenCount"",
                     d.created_at, 
                     d.updated_at, 
+                    d.deleted_at,
                     d.is_active,
                     d.identifier AS ""Identifier_Value""
                 FROM departments AS d
@@ -100,6 +114,34 @@ public class DepartmentRepository : IDepartmentRepository
         return department;
     }
 
+    public async Task<List<Guid>> GetDescendantIdsAsync(
+        Guid departmentId,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+                           WITH RECURSIVE descendants AS (
+                               SELECT child.id, child.depth, child.path
+                               FROM departments child
+                               WHERE child."ParentId" = @departmentId
+                                 AND child.is_active = true
+                               UNION ALL
+                               SELECT child.id, child.depth, child.path
+                               FROM departments child
+                               JOIN descendants parent ON child."ParentId" = parent.id
+                               WHERE child.is_active = true
+                           )
+                           SELECT id
+                           FROM descendants
+                           ORDER BY depth, path
+                           """;
+
+        var connection = _dbContext.Database.GetDbConnection();
+        var descendantIds = await connection.QueryAsync<Guid>(
+            new CommandDefinition(sql, new { departmentId }, cancellationToken: cancellationToken));
+
+        return descendantIds.AsList();
+    }
+
     public async Task<bool> CheckIfDepartmentsExistAsync(List<Guid> departmentIds,
         CancellationToken cancellationToken = default)
     {
@@ -111,19 +153,26 @@ public class DepartmentRepository : IDepartmentRepository
     }
 
     public async Task<UnitResult<Error>> MoveDepartment(
+        Guid departmentId,
         Guid parentId,
         Path parentPath, Path departmentPath, CancellationToken cancellationToken = default)
     {
         string sql = """
+                     WITH RECURSIVE subtree AS (
+                         SELECT id FROM departments WHERE id = @departmentId
+                         UNION ALL
+                         SELECT child.id FROM departments child
+                         JOIN subtree parent ON child."ParentId" = parent.id
+                     )
                      UPDATE departments
                      SET path = @parentPath::ltree || subpath(path, nlevel(@departmentPath::ltree) - 1),
                          depth = nlevel(@parentPath::ltree || subpath(path, nlevel(@departmentPath::ltree) - 1)) - 1,
                          "ParentId" = CASE 
-                                        WHEN path = @departmentPath::ltree THEN @parentId 
+                                        WHEN id = @departmentId THEN @parentId 
                                         ELSE "ParentId" 
                                       END,
                          updated_at = NOW()
-                     WHERE path <@ @departmentPath::ltree
+                     WHERE id IN (SELECT id FROM subtree)
                      """;
 
         var dbConnection = _dbContext.Database.GetDbConnection();
@@ -132,6 +181,7 @@ public class DepartmentRepository : IDepartmentRepository
         {
             var sqlParams = new
             {
+                departmentId,
                 parentPath = parentPath.Value, departmentPath = departmentPath.Value, parentId = parentId,
             };
 
@@ -146,21 +196,31 @@ public class DepartmentRepository : IDepartmentRepository
     }
 
     public async Task<UnitResult<Error>> MoveDepartment(
-        Path departmentPath, CancellationToken cancellationToken = default)
+        Guid departmentId, Path departmentPath, CancellationToken cancellationToken = default)
     {
         string sql = """
+                     WITH RECURSIVE subtree AS (
+                         SELECT id FROM departments WHERE id = @departmentId
+                         UNION ALL
+                         SELECT child.id FROM departments child
+                         JOIN subtree parent ON child."ParentId" = parent.id
+                     )
                      UPDATE departments
                      SET path = subpath(path, nlevel(@departmentPath::ltree) - 1),
                      depth = nlevel(subpath(path, nlevel(@departmentPath::ltree) - 1)) - 1,
-                     "ParentId" = null
-                     WHERE path <@ @departmentPath::ltree
+                     "ParentId" = CASE
+                                      WHEN id = @departmentId THEN null
+                                      ELSE "ParentId"
+                                  END,
+                     updated_at = NOW()
+                     WHERE id IN (SELECT id FROM subtree)
                      """;
 
         var dbConnection = _dbContext.Database.GetDbConnection();
 
         try
         {
-            var sqlParams = new { departmentPath = departmentPath.Value };
+            var sqlParams = new { departmentId, departmentPath = departmentPath.Value };
 
             await dbConnection.ExecuteAsync(sql, sqlParams);
 

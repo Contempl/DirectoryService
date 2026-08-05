@@ -2,6 +2,7 @@ import { PagedResult } from "@/shared/api/types";
 import { DepartmentShortDto, DepartmentWithChildrenDto, GetDepartmentChildrenRequest, GetDepartmentRootsRequest } from "./types";
 import { apiClient } from "@/shared/api/axios-instance";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
+import type { Envelope } from "@/shared/api/envelope";
 
 export type GetDepartmentsRequest = {
   departmentIds?: string[];
@@ -41,6 +42,22 @@ export const departmentsApi = {
       { params }
     );
     return response.data;
+  },
+
+  getDescendantIds: async (departmentId: string) => {
+    const response = await apiClient.get<Envelope<string[]>>(
+      `/departments/${departmentId}/descendant-ids`
+    );
+    return response.data.result ?? [];
+  },
+
+  moveDepartment: async (departmentId: string, parentId: string | null) => {
+    const response = await apiClient.put<Envelope<string>>(
+      `/departments/${departmentId}/parent`,
+      undefined,
+      { params: parentId === null ? undefined : { parentId } }
+    );
+    return response.data.result;
   },
 };
 

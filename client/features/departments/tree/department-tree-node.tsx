@@ -12,15 +12,17 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shar
 import { useDepartmentChildren } from "./model/use-department-children";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
-import { Folder, FileText } from "lucide-react";
+import { Folder, FileText, Move } from "lucide-react";
 import { useTreeStore } from "../model/use-tree-store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { MoveDepartmentDialog } from "../move-department-dialog";
 
 type DepartmentTreeNodeProps = {
   department: DepartmentWithChildrenDto;
   level?: number;
   isLast?: boolean;
   parentPath?: boolean[];
+  currentParentName?: string | null;
 };
 
 export function DepartmentTreeNode({
@@ -28,7 +30,9 @@ export function DepartmentTreeNode({
   level = 0,
   isLast = false,
   parentPath = [],
+  currentParentName = null,
 }: DepartmentTreeNodeProps) {
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const isNodeExpanded = useTreeStore((state) =>
     state.expandedIds.includes(department.id)
   );
@@ -100,7 +104,29 @@ export function DepartmentTreeNode({
             Архив
           </span>
         )}
+        {department.isActive && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 opacity-0 group-hover:opacity-100 focus:opacity-100"
+            onClick={(event) => {
+              event.stopPropagation();
+              setMoveDialogOpen(true);
+            }}
+          >
+            <Move className="h-3.5 w-3.5" />
+            Перенести
+          </Button>
+        )}
       </TreeNodeTrigger>
+
+      <MoveDepartmentDialog
+        department={department}
+        currentParentName={currentParentName}
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+      />
 
       <TreeNodeContent hasChildren={department.hasChildren}>
         {allChildren.map((child, index) => (
@@ -110,6 +136,7 @@ export function DepartmentTreeNode({
             level={level + 1}
             isLast={index === allChildren.length - 1}
             parentPath={[...parentPath, isLast]}
+            currentParentName={department.name}
           />
         ))}
         

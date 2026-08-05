@@ -43,7 +43,7 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
         var targetParentId = request.ParentId;
 
         if (targetParentId == departmentId)
-            return GeneralErrors.ValueIsInvalid("Cannot move department into itself").ToErrors();
+            return DepartmentMoveErrors.Cycle().ToErrors();
 
         var transactionResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
         if (transactionResult.IsFailure)
@@ -55,25 +55,39 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
         {
             var departmentResult = await _departmentRepository.GetByIdWithLock(departmentId, cancellationToken);
             if (departmentResult.IsFailure)
-                return departmentResult.Error;
+                return DepartmentMoveErrors.DepartmentNotFound(departmentId).ToErrors();
 
             var department = departmentResult.Value;
 
             if (targetParentId != null)
             {
+                var parentLookupResult = await _departmentRepository.GetByIdAsNoTrackingAsync(
+                    targetParentId.Value,
+                    cancellationToken);
+
+                if (parentLookupResult.IsFailure)
+                    return DepartmentMoveErrors.DepartmentNotFound(targetParentId.Value).ToErrors();
+
+                if (!parentLookupResult.Value.IsActive)
+                    return DepartmentMoveErrors.ParentDeleted().ToErrors();
+
                 var parentResult = await _departmentRepository.GetByIdWithLock(targetParentId.Value, cancellationToken);
                 if (parentResult.IsFailure)
-                    return parentResult.Error;
+                    return DepartmentMoveErrors.ParentDeleted().ToErrors();
 
                 var newParent = parentResult.Value;
 
-                if (newParent.Path.Value == department.Path.Value ||
-                    newParent.Path.Value.StartsWith(department.Path.Value + "."))
+                var descendantIds = await _departmentRepository.GetDescendantIdsAsync(
+                    department.Id,
+                    cancellationToken);
+
+                if (descendantIds.Contains(newParent.Id))
                 {
-                    return GeneralErrors.ValueIsInvalid("Cannot move department into its own descendant").ToErrors();
+                    return DepartmentMoveErrors.Cycle().ToErrors();
                 }
 
                 var moveResult = await _departmentRepository.MoveDepartment(
+                    department.Id,
                     newParent.Id,
                     newParent.Path,
                     department.Path,
@@ -84,7 +98,8 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
             }
             else
             {
-                var moveResult = await _departmentRepository.MoveDepartment(department.Path, cancellationToken);
+                var moveResult = await _departmentRepository.MoveDepartment(
+                    department.Id, department.Path, cancellationToken);
 
                 if (moveResult.IsFailure)
                     return moveResult.Error.ToErrors();
@@ -92,16 +107,26 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
 
             transaction.Commit();
 
-            await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+            try
+            {
+                await _cache.RemoveByTagAsync(Constants.DEPARTMENT_CACHE_KEY, cancellationToken);
+            }
+            catch (Exception cacheException)
+            {
+                _logger.LogWarning(
+                    cacheException,
+                    "Department {Id} moved, but department cache invalidation failed",
+                    departmentId);
+            }
             
             _logger.LogInformation("Department {Id} moved successfully", departmentId);
             
             return departmentId;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
             transaction.Rollback();
-            _logger.LogInformation("Department {Id} failed", departmentId);
+            _logger.LogError(exception, "Department {Id} move failed", departmentId);
             return GeneralErrors.Failure().ToErrors();
         }
     }

@@ -2,7 +2,7 @@ import axios from "axios";
 import { Envelope } from "./envelope";
 import { EnvelopeError } from "./errors";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5111/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5111/api";
 
 export const apiClient = axios.create({
     baseURL: API_BASE_URL,
