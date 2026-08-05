@@ -72,6 +72,33 @@ public class MoveDepartmentTests : DepartmentsBaseTests
     }
 
     [Fact]
+    public async Task MoveDepartment_WithNullParent_ShouldPreserveSubtreeHierarchy()
+    {
+        using var source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var ct = source.Token;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
+
+        var result = await ExecuteHandler(sut => sut.HandleAsync(
+            new UpdateDepartmentRequest(departmentIds[5], null),
+            ct));
+
+        await ExecuteInDb(async dbContext =>
+        {
+            var movedDepartment = await dbContext.Departments
+                .FirstAsync(d => d.Id == departmentIds[5], ct);
+            var child = await dbContext.Departments
+                .FirstAsync(d => d.Id == departmentIds[6], ct);
+
+            Assert.True(result.IsSuccess);
+            Assert.Null(movedDepartment.ParentId);
+            Assert.Equal(0, movedDepartment.Depth);
+            Assert.Equal(movedDepartment.Id, child.ParentId);
+            Assert.Equal(1, child.Depth);
+            Assert.StartsWith(movedDepartment.Path.Value + ".", child.Path.Value);
+        });
+    }
+
+    [Fact]
     public async Task MoveDepartment_WithInvalidData_ShouldReturnError()
     {
         // Arrange
@@ -90,6 +117,7 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         // Assert
         Assert.NotNull(result.Error);
         Assert.True(result.IsFailure);
+        Assert.Contains(result.Error, error => error.Code == "department.move.cycle");
     }
     
     [Fact]
@@ -111,6 +139,29 @@ public class MoveDepartmentTests : DepartmentsBaseTests
         // Assert
         Assert.NotNull(result.Error);
         Assert.True(result.IsFailure);
+        Assert.Contains(result.Error, error => error.Code == "department.move.cycle");
+    }
+
+    [Fact]
+    public async Task MoveDepartment_ToDeletedParent_ShouldReturnStableErrorCode()
+    {
+        using var source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var ct = source.Token;
+        var departmentIds = await CreateDepartmentsHierarchy(ct);
+
+        await ExecuteInDb(async dbContext =>
+        {
+            var parent = await dbContext.Departments.FirstAsync(d => d.Id == departmentIds[1], ct);
+            parent.SoftDelete();
+            await dbContext.SaveChangesAsync(ct);
+        });
+
+        var result = await ExecuteHandler(sut => sut.HandleAsync(
+            new UpdateDepartmentRequest(departmentIds[5], departmentIds[1]),
+            ct));
+
+        Assert.True(result.IsFailure);
+        Assert.Contains(result.Error, error => error.Code == "department.move.parent_deleted");
     }
 
     private async Task<T> ExecuteHandler<T>(Func<ICommandHandler<Guid, UpdateDepartmentRequest>, Task<T>> action)

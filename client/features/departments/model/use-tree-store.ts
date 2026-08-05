@@ -8,6 +8,7 @@ type TreeStore = {
   toggleExpanded: (id: string) => void;
   select: (id: string | null) => void;
   setChildren: (parentId: string, children: DepartmentWithChildrenDto[]) => void;
+  resetChildren: () => void;
 };
 
 export const useTreeStore = create<TreeStore>((set) => ({
@@ -28,4 +29,5 @@ export const useTreeStore = create<TreeStore>((set) => ({
         [parentId]: children,
       },
     })),
+  resetChildren: () => set({ childrenByParentId: {} }),
 }));

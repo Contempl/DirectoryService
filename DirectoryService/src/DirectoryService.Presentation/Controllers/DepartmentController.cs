@@ -5,6 +5,7 @@ using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
+using DirectoryService.Application.Departments.Queries.GetDepartmentDescendants;
 using DirectoryService.Application.Departments.Queries.GetListOfDepartments;
 using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Pagination;
@@ -28,6 +29,7 @@ public class DepartmentController : ControllerBase
     private readonly IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> _getExpandedDepartmentsHandler;
     private readonly IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> _getChildrenHandler;
     private readonly IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> _getDepartmentsShortHandler;
+    private readonly IQueryHandler<GetDepartmentDescendantIdsQuery, Result<List<Guid>, Errors>> _getDescendantIdsHandler;
 
     public DepartmentController(
         ICommandHandler<Guid, CreateDepartmentRequest> createDepartmentHandler, 
@@ -37,6 +39,7 @@ public class DepartmentController : ControllerBase
         IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> getExpandedDepartmentsHandler, 
         IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> getChildrenHandler, 
         IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> getDepartmentsShortHandler,
+        IQueryHandler<GetDepartmentDescendantIdsQuery, Result<List<Guid>, Errors>> getDescendantIdsHandler,
         ICommandHandler<Guid, DeleteDepartmentRequest> deleteDepartmentHandler)
     {
         _createDepartmentHandler = createDepartmentHandler;
@@ -47,6 +50,7 @@ public class DepartmentController : ControllerBase
         _getChildrenHandler = getChildrenHandler;
         _deleteDepartmentHandler = deleteDepartmentHandler;
         _getDepartmentsShortHandler = getDepartmentsShortHandler;
+        _getDescendantIdsHandler = getDescendantIdsHandler;
     }
     
     [HttpPost("api/departments")]
@@ -123,6 +127,17 @@ public class DepartmentController : ControllerBase
         var result = await _getChildrenHandler.HandleAsync(query, cancellationToken);
         
         return Ok(result);
+    }
+
+    [HttpGet("api/departments/{departmentId}/descendant-ids")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_VIEW}")]
+    public async Task<EndpointResult<List<Guid>>> GetDescendantIds(
+        [FromRoute] Guid departmentId,
+        CancellationToken cancellationToken)
+    {
+        return await _getDescendantIdsHandler.HandleAsync(
+            new GetDepartmentDescendantIdsQuery(departmentId),
+            cancellationToken);
     }
 
     [HttpDelete("api/departments/{departmentId}")]

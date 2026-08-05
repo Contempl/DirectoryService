@@ -10,6 +10,8 @@ public interface IDepartmentRepository
     Task<Result<Guid, Errors>> CreateAsync(Department department, CancellationToken cancellationToken = default);
     
     Task<Result<Department, Errors>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<Result<Department, Errors>> GetByIdAsNoTrackingAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UnitResult<Error>> DeleteLocationsByDepAsync(Guid departmentId, CancellationToken cancellationToken = default);
 
     Task<UnitResult<Error>> AddDepLocationsRelationsAsync(List<DepartmentLocation> departmentLocations,
@@ -21,10 +23,13 @@ public interface IDepartmentRepository
     
     Task<Result<Department, Errors>> GetByIdWithLock(Guid departmentId, CancellationToken cancellationToken = default);
 
-    Task<UnitResult<Error>> MoveDepartment(Guid parentId, Path parentPath, Path departmentPath,
+    Task<List<Guid>> GetDescendantIdsAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
+    Task<UnitResult<Error>> MoveDepartment(Guid departmentId, Guid parentId, Path parentPath, Path departmentPath,
         CancellationToken cancellationToken = default);
 
-    Task<UnitResult<Error>> MoveDepartment(Path departmentPath, CancellationToken cancellationToken = default);
+    Task<UnitResult<Error>> MoveDepartment(Guid departmentId, Path departmentPath,
+        CancellationToken cancellationToken = default);
 
     Task<UnitResult<Error>> UpdateTreePathsAsync(Path oldPath, Path newPath,
         CancellationToken cancellationToken = default);

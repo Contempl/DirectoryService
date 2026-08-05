@@ -27,7 +27,7 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
             "parentId", query.ParentId,
             "page", query.Request.Page,
             "size", query.Request.Size,
-            "schema", "hasChildren");
+            "schema", "active-fields-v2");
 
 
         var parameters = new DynamicParameters(new
@@ -47,9 +47,10 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
                                d."ParentId", 
                                d.path, 
                                d.depth, 
-                               d.is_active,
-                               d.created_at,
-                               d.updated_at,
+                               d.is_active AS IsActive,
+                               (NOT d.is_active) AS IsDeleted,
+                               d.created_at AS CreatedAt,
+                               d.updated_at AS UpdatedAt,
                                d."ChildrenCount", 
                                (EXISTS (SELECT 1 from departments WHERE "ParentId" = d.id AND is_active = true))
                                                       AS HasChildren
