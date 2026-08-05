@@ -27,7 +27,7 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
             "parentId", query.ParentId,
             "page", query.Request.Page,
             "size", query.Request.Size,
-            "schema", "active-fields-v2");
+            "schema", "include-inactive-v3");
 
 
         var parameters = new DynamicParameters(new
@@ -48,14 +48,14 @@ public class GetChildrenHandler : IQueryHandler<GetChildrenQuery, List<Departmen
                                d.path, 
                                d.depth, 
                                d.is_active AS IsActive,
-                               (NOT d.is_active) AS IsDeleted,
+                               (d.deleted_at IS NOT NULL) AS IsDeleted,
                                d.created_at AS CreatedAt,
                                d.updated_at AS UpdatedAt,
                                d."ChildrenCount", 
-                               (EXISTS (SELECT 1 from departments WHERE "ParentId" = d.id AND is_active = true))
+                               (EXISTS (SELECT 1 from departments WHERE "ParentId" = d.id AND deleted_at IS NULL))
                                                       AS HasChildren
                                FROM departments d
-                               WHERE d."ParentId" = @parentId AND d.is_active = true
+                               WHERE d."ParentId" = @parentId AND d.deleted_at IS NULL
                                ORDER BY created_at ASC
                                OFFSET @offset LIMIT @size
                                """;

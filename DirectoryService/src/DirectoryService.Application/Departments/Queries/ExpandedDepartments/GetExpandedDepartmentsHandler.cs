@@ -26,7 +26,8 @@ public class GetExpandedDepartmentsHandler : IQueryHandler<ExtendedDepartmentsQu
             $"{Constants.EXPANDED_DEPARTMENTS_TAG}",
             "page", query.Page,
             "size", query.Size,
-            "prefetch", query.Prefetch);
+            "prefetch", query.Prefetch,
+            "schema", "include-inactive-v2");
 
         var parameters = new DynamicParameters(new
         {
@@ -46,15 +47,16 @@ public class GetExpandedDepartmentsHandler : IQueryHandler<ExtendedDepartmentsQu
                                d.path, 
                                d.depth, 
                                d.is_active AS IsActive,
-                               d.created_at,
-                               d.updated_at
+                               (d.deleted_at IS NOT NULL) AS IsDeleted,
+                               d.created_at AS CreatedAt,
+                               d.updated_at AS UpdatedAt
                                FROM departments d  
-                               WHERE d."ParentId" IS NULL
+                               WHERE d."ParentId" IS NULL AND d.deleted_at IS NULL
                                ORDER BY d.created_at
                                LIMIT @Size OFFSET @Offset)
-                               SELECT *, (EXISTS(SELECT 1 FROM departments d where d."ParentId" = roots.id AND d.is_active = true)) AS HasChildren FROM roots
+                               SELECT *, (EXISTS(SELECT 1 FROM departments d where d."ParentId" = roots.id AND d.deleted_at IS NULL)) AS HasChildren FROM roots
                                UNION ALL 
-                               SELECT c.*, (EXISTS(SELECT 1 FROM departments d WHERE d."ParentId" = c.id AND d.is_active = true)) AS HasChildren FROM roots r
+                               SELECT c.*, (EXISTS(SELECT 1 FROM departments d WHERE d."ParentId" = c.id AND d.deleted_at IS NULL)) AS HasChildren FROM roots r
                                CROSS JOIN LATERAL(
                                SELECT 
                                d.id, 
@@ -64,10 +66,11 @@ public class GetExpandedDepartmentsHandler : IQueryHandler<ExtendedDepartmentsQu
                                d.path, 
                                d.depth, 
                                d.is_active AS IsActive,
-                               d.created_at,
-                               d.updated_at
+                               (d.deleted_at IS NOT NULL) AS IsDeleted,
+                               d.created_at AS CreatedAt,
+                               d.updated_at AS UpdatedAt
                                FROM departments d
-                               WHERE d."ParentId" = r.id AND d.is_active = true
+                               WHERE d."ParentId" = r.id AND d.deleted_at IS NULL
                                ORDER BY d.created_at
                                LIMIT @Prefetch) c
                                """;

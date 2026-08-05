@@ -8,7 +8,7 @@ namespace DirectoryService.Domain.Entities;
 public class Department
 {
     public Department() { }
-    
+
     private readonly List<DepartmentLocation> _locations = [];
     private readonly List<DepartmentPosition> _positions = [];
     private Department(Guid id, 
@@ -134,5 +134,33 @@ public class Department
             return pathResult.Error;
         
         return pathResult.Value;
+    }
+
+    public UnitResult<Error> Activate()
+    {
+        if (DeletedAt != null)
+            return DepartmentErrors.ActivityChangeForDeleted();
+
+        if (IsActive)
+            return UnitResult.Success<Error>();
+
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Error> Deactivate()
+    {
+        if (DeletedAt != null)
+            return DepartmentErrors.ActivityChangeForDeleted();
+
+        if (!IsActive)
+            return UnitResult.Success<Error>();
+
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
     }
 }
