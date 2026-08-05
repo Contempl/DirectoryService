@@ -9,6 +9,7 @@ type TreeStore = {
   select: (id: string | null) => void;
   setChildren: (parentId: string, children: DepartmentWithChildrenDto[]) => void;
   resetChildren: () => void;
+  updateActivity: (departmentId: string, isActive: boolean) => void;
 };
 
 export const useTreeStore = create<TreeStore>((set) => ({
@@ -30,4 +31,15 @@ export const useTreeStore = create<TreeStore>((set) => ({
       },
     })),
   resetChildren: () => set({ childrenByParentId: {} }),
+  updateActivity: (departmentId, isActive) =>
+    set((state) => ({
+      childrenByParentId: Object.fromEntries(
+        Object.entries(state.childrenByParentId).map(([parentId, children]) => [
+          parentId,
+          children.map((child) =>
+            child.id === departmentId ? { ...child, isActive } : child
+          ),
+        ])
+      ),
+    })),
 }));

@@ -347,4 +347,15 @@ public class DepartmentRepository : IDepartmentRepository
         
         return UnitResult.Success<Error>();
     }
+
+    public async Task<Result<Department, Errors>> GetByIdForActivityAsync(Guid departmentId, CancellationToken cancellationToken = default)
+    {
+        var department = await _dbContext.Departments.FirstOrDefaultAsync(d => d.Id == departmentId,
+            cancellationToken: cancellationToken);
+
+        if (department is null)
+            return GeneralErrors.NotFound(departmentId, "department").ToErrors();
+
+        return department;
+    }
 }

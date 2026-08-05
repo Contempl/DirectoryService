@@ -59,6 +59,14 @@ export const departmentsApi = {
     );
     return response.data.result;
   },
+
+  toggleActivity: async (departmentId: string, isActive: boolean) => {
+    const response = await apiClient.put<Envelope<string>>(
+      `/departments/${departmentId}/activity`,
+      { isActive }
+    );
+    return response.data.result;
+  },
 };
 
 

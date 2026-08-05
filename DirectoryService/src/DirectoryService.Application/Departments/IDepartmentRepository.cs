@@ -16,7 +16,7 @@ public interface IDepartmentRepository
 
     Task<UnitResult<Error>> AddDepLocationsRelationsAsync(List<DepartmentLocation> departmentLocations,
         CancellationToken cancellationToken = default);
-    
+
     Task<bool> CheckIfDepartmentsExistAsync(List<Guid> departmentIds, CancellationToken cancellationToken = default);
 
     Task<Result<Department, Error>> GetByIdWithLocationsAsync(Guid id, CancellationToken cancellationToken = default);
@@ -38,5 +38,8 @@ public interface IDepartmentRepository
         CancellationToken cancellationToken = default);
 
     Task<UnitResult<Error>> DeactivateOrphanedPositionsAsync(Guid departmentId,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<Department, Errors>> GetByIdForActivityAsync(Guid departmentId,
         CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Application.Departments.Commands.Delete;
+using DirectoryService.Application.Departments.Commands.ToggleActivity;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
@@ -15,7 +16,7 @@ using DirectoryService.Presentation.Response;
 using Framework.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-    
+
 namespace DirectoryService.Presentation.Controllers;
 
 [ApiController]
@@ -26,6 +27,7 @@ public class DepartmentController : ControllerBase
     private readonly IQueryHandler<bool, PagedResult<DepartmentDto>> _getTopDepartmentsHandler;
     private readonly ICommandHandler<Guid, UpdateDepartmentRequest> _updateDepartmentHandler;
     private readonly ICommandHandler<Guid, DeleteDepartmentRequest> _deleteDepartmentHandler;
+    private readonly ICommandHandler<Guid, ToggleDepartmentActivityRequest> _toggleDepartmentActivityHandler;
     private readonly IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>> _getExpandedDepartmentsHandler;
     private readonly IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> _getChildrenHandler;
     private readonly IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> _getDepartmentsShortHandler;
@@ -40,7 +42,8 @@ public class DepartmentController : ControllerBase
         IQueryHandler<GetChildrenQuery, List<DepartmentsWithChildrenDto>> getChildrenHandler, 
         IQueryHandler<GetDepartmentsQuery, PagedResult<DepartmentShortDto>> getDepartmentsShortHandler,
         IQueryHandler<GetDepartmentDescendantIdsQuery, Result<List<Guid>, Errors>> getDescendantIdsHandler,
-        ICommandHandler<Guid, DeleteDepartmentRequest> deleteDepartmentHandler)
+        ICommandHandler<Guid, DeleteDepartmentRequest> deleteDepartmentHandler,
+        ICommandHandler<Guid, ToggleDepartmentActivityRequest> toggleDepartmentActivityHandler)
     {
         _createDepartmentHandler = createDepartmentHandler;
         _updateLocationHandler = updateLocationHandler;
@@ -49,6 +52,7 @@ public class DepartmentController : ControllerBase
         _getExpandedDepartmentsHandler = getExpandedDepartmentsHandler;
         _getChildrenHandler = getChildrenHandler;
         _deleteDepartmentHandler = deleteDepartmentHandler;
+        _toggleDepartmentActivityHandler = toggleDepartmentActivityHandler;
         _getDepartmentsShortHandler = getDepartmentsShortHandler;
         _getDescendantIdsHandler = getDescendantIdsHandler;
     }
@@ -162,5 +166,17 @@ public class DepartmentController : ControllerBase
         var result = await _getDepartmentsShortHandler.HandleAsync(query, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpPut("api/departments/{departmentId}/activity")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
+    public async Task<EndpointResult<Guid>> ToggleDepartmentActivity(
+        [FromRoute] Guid departmentId,
+        ToggleDepartmentActivityDto dto,
+        CancellationToken cancellationToken)
+    {
+        var request = new ToggleDepartmentActivityRequest(departmentId, dto.IsActive);
+
+        return await _toggleDepartmentActivityHandler.HandleAsync(request, cancellationToken);
     }
 }

@@ -2,6 +2,7 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Application.Departments.Commands.Delete;
+using DirectoryService.Application.Departments.Commands.ToggleActivity;
 using DirectoryService.Application.Departments.Commands.Update;
 using DirectoryService.Application.Departments.Queries.ExpandedDepartments;
 using DirectoryService.Application.Departments.Queries.GetChildrenDepartments;
@@ -70,6 +71,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<Location, UpdateLocationRequest> , UpdateLocationHandler>();
         services.AddScoped<ICommandHandler<Position, UpdatePositionCommand> , UpdatePositionHandler>();
         services.AddScoped<ICommandHandler<Guid, DeletePositionRequest> , DeletePositionHandler>();
+        services.AddScoped<ICommandHandler<Guid, ToggleDepartmentActivityRequest> , ToggleDepartmentActivityHandler>();
         services.AddScoped<IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>>, GetLocationsHandler>();
         services.AddScoped<IQueryHandler<bool, PagedResult<DepartmentDto>>, GetTopDepartmentsHandler>();
         services.AddScoped<IQueryHandler<ExtendedDepartmentsQuery, List<DepartmentsWithChildrenDto>>, GetExpandedDepartmentsHandler>();

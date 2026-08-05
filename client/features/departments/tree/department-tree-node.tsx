@@ -16,6 +16,8 @@ import { Folder, FileText, Move } from "lucide-react";
 import { useTreeStore } from "../model/use-tree-store";
 import { useEffect, useState } from "react";
 import { MoveDepartmentDialog } from "../move-department-dialog";
+import { Switch } from "@/shared/components/ui/switch";
+import { useToggleDepartmentActivity } from "../model/use-toggle-department-activity";
 
 type DepartmentTreeNodeProps = {
   department: DepartmentWithChildrenDto;
@@ -33,6 +35,7 @@ export function DepartmentTreeNode({
   currentParentName = null,
 }: DepartmentTreeNodeProps) {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const toggleActivity = useToggleDepartmentActivity(department.isActive);
   const isNodeExpanded = useTreeStore((state) =>
     state.expandedIds.includes(department.id)
   );
@@ -99,17 +102,28 @@ export function DepartmentTreeNode({
           </Tooltip>
         </TooltipProvider>
 
-        {!department.isActive && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-100 text-gray-500 ml-2">
-            Архив
+        <div
+          className="ml-auto flex items-center gap-2"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="text-xs text-muted-foreground">
+            {department.isActive ? "Активно" : "Неактивно"}
           </span>
-        )}
+          <Switch
+            checked={department.isActive}
+            disabled={toggleActivity.isPending}
+            aria-label={`Изменить активность подразделения ${department.name}`}
+            onCheckedChange={(isActive) =>
+              toggleActivity.mutate({ departmentId: department.id, isActive })
+            }
+          />
+        </div>
         {department.isActive && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="ml-auto h-7 opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="h-7 opacity-0 group-hover:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               setMoveDialogOpen(true);
