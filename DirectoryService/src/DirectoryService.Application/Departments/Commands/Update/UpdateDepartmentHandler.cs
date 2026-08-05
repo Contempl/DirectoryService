@@ -58,6 +58,9 @@ public class UpdateDepartmentHandler : ICommandHandler<Guid, UpdateDepartmentReq
                 return DepartmentMoveErrors.DepartmentNotFound(departmentId).ToErrors();
 
             var department = departmentResult.Value;
+            
+            if (!department.IsActive)
+                return DepartmentMoveErrors.DepartmentNotFound(departmentId).ToErrors();
 
             if (targetParentId != null)
             {
