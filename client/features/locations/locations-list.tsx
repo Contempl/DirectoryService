@@ -13,6 +13,8 @@ import { LocationsFilter } from "./locations-filter";
 import { DepartmentsPicker } from "../departments/departments-picker";
 import { useLocationDepartmentFilter } from "./model/use-location-department-filter";
 import { useLocationsView } from "./model/use-locations-view";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { BulkLocationActionBar } from "./bulk-location-action-bar";
 
 export default function LocationsList() {
   const { search, pageSize } = useGetLocationsFilter();
@@ -29,6 +31,11 @@ export default function LocationsList() {
   const [updateOpen, setUpdateOpen] = useState(false)
 
   const [selectedLocation, setSelectedLocation] = useState<LocationDto | undefined>(undefined);
+  const selectionScope = `${view}:${search ?? ""}:${departmentIds.join(",")}`;
+  const [selection, setSelection] = useState<{ scope: string; ids: string[] }>({
+    scope: selectionScope,
+    ids: [],
+  });
  
   const { 
     data, 
@@ -39,6 +46,27 @@ export default function LocationsList() {
     refetch,
     cursorRef
   } = useLocationsList(search, pageSize, !isArchived, departmentIds);
+
+  const selectedIds = selection.scope === selectionScope ? selection.ids : [];
+  const visibleIds = data?.items.map((location) => location.id) ?? [];
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+  const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id));
+
+  const setLocationSelected = (id: string, selected: boolean) => {
+    setSelection((current) => {
+      const ids = current.scope === selectionScope ? current.ids : [];
+      return {
+        scope: selectionScope,
+        ids: selected ? Array.from(new Set([...ids, id])) : ids.filter((value) => value !== id),
+      };
+    });
+  };
+
+  const toggleAllVisible = (selected: boolean) => {
+    setSelection({ scope: selectionScope, ids: selected ? visibleIds : [] });
+  };
+
+  const clearSelection = () => setSelection({ scope: selectionScope, ids: [] });
 
 
 
@@ -115,6 +143,19 @@ export default function LocationsList() {
         </button>
       </div>
 
+      {visibleIds.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+          <Checkbox
+            id="select-all-visible-locations"
+            checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+            onCheckedChange={(checked) => toggleAllVisible(checked === true)}
+          />
+          <label htmlFor="select-all-visible-locations" className="text-sm font-medium">
+            Выбрать все загруженные локации ({visibleIds.length})
+          </label>
+        </div>
+      )}
+
       
       {/* 🔹 Список */}
       {isPending ? (
@@ -141,6 +182,8 @@ export default function LocationsList() {
                 setUpdateOpen(true)
               }}
               archived={isArchived}
+              selected={selectedIds.includes(location.id)}
+              onSelectedChange={(selected) => setLocationSelected(location.id, selected)}
             />
           ))}
         </div>
@@ -173,6 +216,14 @@ export default function LocationsList() {
     <div ref={cursorRef} className="flex justify-center py-4">
       {isFetchingNextPage && <Spinner />}
       </div>
+
+    {selectedIds.length > 0 && (
+      <BulkLocationActionBar
+        selectedIds={selectedIds}
+        restoring={isArchived}
+        onClear={clearSelection}
+      />
+    )}
     </div>
   );
 }

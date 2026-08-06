@@ -14,20 +14,40 @@ import { Button } from "@/shared/components/ui/button";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useDeleteLocation } from "./model/use-delete-location";
 import { useRestoreLocation } from "./model/use-restore-location";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 
 interface Props {
   location: LocationDto;
   onEdit: () => void;
   archived?: boolean;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }
 
-export default function LocationCard({ location, onEdit, archived = false }: Props) {
+export default function LocationCard({
+  location,
+  onEdit,
+  archived = false,
+  selected = false,
+  onSelectedChange,
+}: Props) {
   const { deleteLocation, isPending: isDeleting } = useDeleteLocation();
   const { restoreLocation, isPending: isRestoring } = useRestoreLocation();
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-gray-300 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-      <h3 className="text-lg font-semibold text-gray-800">{location.name}</h3>
+    <div className={`relative flex flex-col gap-2 rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md ${selected ? "border-primary ring-2 ring-primary/20" : "border-gray-300"}`}>
+      <div className="absolute right-4 top-4 flex items-center gap-2">
+        <label htmlFor={`select-location-${location.id}`} className="text-xs text-gray-500">
+          Выбрать
+        </label>
+        <Checkbox
+          id={`select-location-${location.id}`}
+          checked={selected}
+          onCheckedChange={(checked) => onSelectedChange?.(checked === true)}
+          aria-label={`Выбрать локацию ${location.name}`}
+        />
+      </div>
+      <h3 className="pr-24 text-lg font-semibold text-gray-800">{location.name}</h3>
       <p className="text-sm text-gray-600">
         {location.address.city}, {location.address.street}
       </p>

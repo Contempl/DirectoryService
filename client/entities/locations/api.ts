@@ -2,6 +2,7 @@ import { apiClient } from "@/shared/api/axios-instance";
 import { LocationDto } from "./types";
 import { PagedResult } from "@/shared/api/types";
 import { infiniteQueryOptions } from "@tanstack/react-query";
+import type { Envelope } from "@/shared/api/envelope";
 
 
 export type GetLocationsRequest = {
@@ -40,6 +41,21 @@ export type UpdateLocationRequest = {
   timezone: string;
 }
 
+export type BulkUpdateLocationsActivityRequest = {
+  locationIds: string[];
+  isActive: boolean;
+};
+
+export type BulkLocationError = {
+  locationId: string;
+  message: string;
+};
+
+export type BulkUpdateLocationsActivityResult = {
+  processedCount: number;
+  errors: BulkLocationError[];
+};
+
 
 export const locationsApi = {
   getLocations: async (query?: GetLocationsRequest) => {
@@ -76,6 +92,19 @@ export const locationsApi = {
   restoreLocation: async (id: string) => {
     const response = await apiClient.put<string>(`/locations/${id}/restore`);
     return response.data;
+  },
+
+  updateLocationsActivity: async (request: BulkUpdateLocationsActivityRequest) => {
+    const response = await apiClient.put<Envelope<BulkUpdateLocationsActivityResult>>(
+      "/locations/bulk/activity",
+      request,
+    );
+
+    if (!response.data.result) {
+      throw new Error("Bulk location operation returned no result.");
+    }
+
+    return response.data.result;
   },
 }
 

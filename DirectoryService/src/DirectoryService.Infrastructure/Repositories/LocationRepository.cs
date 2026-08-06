@@ -63,4 +63,11 @@ public class LocationRepository : ILocationRepository
             ? GeneralErrors.NotFound(locationId)
             : location;
     }
+
+    public async Task<List<Location>> GetLocationsByIdsAsync(IReadOnlyCollection<Guid> locationIds, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Locations
+            .Where(location => locationIds.Contains(location.Id))
+            .ToListAsync(cancellationToken);
+    }
 }

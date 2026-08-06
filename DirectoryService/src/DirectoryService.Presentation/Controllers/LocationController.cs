@@ -1,4 +1,5 @@
 using DirectoryService.Application.Abstractions;
+using DirectoryService.Application.Locations.BulkActivityUpdate;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Application.Locations.Delete;
 using DirectoryService.Application.Locations.Queries;
@@ -21,6 +22,7 @@ public class LocationController : ControllerBase
     private readonly ICommandHandler<Location, UpdateLocationRequest> _updateLocationHandler;
     private readonly ICommandHandler<Guid, DeleteLocationRequest> _deleteLocationHandler;
     private readonly ICommandHandler<Guid, RestoreLocationRequest> _restoreLocationHandler;
+    private readonly ICommandHandler<BulkUpdateLocationsActivityResult, BulkUpdateLocationsActivityRequest> _bulkUpdateActivityHandler;
     private readonly IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>> _getLocationsHandler;
 
     public LocationController(
@@ -28,13 +30,15 @@ public class LocationController : ControllerBase
         IQueryHandler<GetLocationsQuery, PagedResult<LocationDto>> getLocationsHandler,
         ICommandHandler<Location, UpdateLocationRequest> updateLocationHandler, 
         ICommandHandler<Guid, DeleteLocationRequest> deleteLocationHandler,
-        ICommandHandler<Guid, RestoreLocationRequest> restoreLocationHandler)
+        ICommandHandler<Guid, RestoreLocationRequest> restoreLocationHandler,
+        ICommandHandler<BulkUpdateLocationsActivityResult, BulkUpdateLocationsActivityRequest> bulkUpdateActivityHandler)
     {
         _createLocationHandler = createLocationHandler;
         _getLocationsHandler = getLocationsHandler;
         _updateLocationHandler = updateLocationHandler;
         _deleteLocationHandler = deleteLocationHandler;
         _restoreLocationHandler = restoreLocationHandler;
+        _bulkUpdateActivityHandler = bulkUpdateActivityHandler;
     }
 
     [HttpPost("api/locations")]
@@ -86,5 +90,15 @@ public class LocationController : ControllerBase
         return await _restoreLocationHandler.HandleAsync(
             new RestoreLocationRequest(locationId),
             cancellationToken);
+    }
+
+    [HttpPut("api/locations/bulk/activity")]
+    [Authorize(Policy = $"Permission:{Permissions.CONTENT_MANAGE}")]
+    public async Task<EndpointResult<BulkUpdateLocationsActivityResult>>
+        BulkUpdateActivity(
+            BulkUpdateLocationsActivityRequest request,
+            CancellationToken cancellationToken)
+    {
+        return await _bulkUpdateActivityHandler.HandleAsync(request, cancellationToken);
     }
 }
