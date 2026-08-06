@@ -22,6 +22,7 @@ using DirectoryService.Application.Positions.Delete;
 using DirectoryService.Application.Positions.GetById;
 using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Application.Positions.Update;
+using DirectoryService.Application.Search.GlobalSearch;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Contracts.Positions;
@@ -80,5 +81,6 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetDepartmentDescendantIdsQuery, Result<List<Guid>, Errors>>, GetDepartmentDescendantIdsHandler>();
         services.AddScoped<IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>>, GetPositionsHandler>();
         services.AddScoped<IQueryHandler<Guid, Result<PositionDto, Error>>, GetPositionHandler>();
+        services.AddScoped<IQueryHandler<SearchQuery, Result<List<SearchResultDto>, Errors>>, GlobalSearchHandler>();
     }
 }
