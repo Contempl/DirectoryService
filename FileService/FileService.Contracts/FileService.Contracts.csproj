@@ -6,4 +6,20 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="DirectoryService.SharedKernel" Version="1.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.14" />
+      <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.14" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <PackageId>DirectoryService.FileService.Communication</PackageId>
+        <Version>1.0.2</Version>
+        <Authors>Contempl</Authors>
+        <Company>Prolongisti</Company>
+        <PackageDescription>Communication FileService project</PackageDescription>
+        <RepositoryUrl>https://github.com/contempl/DirectoryService</RepositoryUrl>
+    </PropertyGroup>
+
 </Project>

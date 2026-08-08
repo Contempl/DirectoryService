@@ -6,6 +6,7 @@ using DirectoryService.Infrastructure.BackgroundServices;
 using DirectoryService.Infrastructure.Database;
 using DirectoryService.Infrastructure.Options;
 using DirectoryService.Infrastructure.Repositories;
+using FileService.Contracts.HttpCommunication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,5 +29,7 @@ public static class DependencyInjection
         services.AddScoped<ITransactionManager, TransactionManager>();
         services.Configure<BackgroundServiceOptions>(
             configuration.GetSection(BackgroundServiceOptions.SectionName));
+
+        services.AddFileServiceHttpCommunication(configuration);
     }
 }
