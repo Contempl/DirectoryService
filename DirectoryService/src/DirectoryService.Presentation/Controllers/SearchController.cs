@@ -1,7 +1,7 @@
 ﻿using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Search.GlobalSearch;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using DirectoryService.Presentation.Response;
 using Framework.Constants;
 using Microsoft.AspNetCore.Authorization;

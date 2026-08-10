@@ -8,7 +8,7 @@ using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FileService.Contracts.Dto;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

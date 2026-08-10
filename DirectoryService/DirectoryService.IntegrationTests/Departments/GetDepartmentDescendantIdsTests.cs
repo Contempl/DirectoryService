@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Departments.Queries.GetDepartmentDescendants;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using DirectoryService.IntegrationTests.Departments.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation.Results;
 
 namespace DirectoryService.Application.Validation;

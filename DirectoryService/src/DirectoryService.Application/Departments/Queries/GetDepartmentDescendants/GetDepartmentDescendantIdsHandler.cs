@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 
 namespace DirectoryService.Application.Departments.Queries.GetDepartmentDescendants;
 

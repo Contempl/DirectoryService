@@ -1,7 +1,7 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Locations;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

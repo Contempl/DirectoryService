@@ -2,7 +2,7 @@ using CSharpFunctionalExtensions;
 using Dapper;
 using DirectoryService.Application.Departments;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;

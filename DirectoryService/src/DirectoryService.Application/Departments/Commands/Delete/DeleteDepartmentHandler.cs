@@ -3,7 +3,7 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 

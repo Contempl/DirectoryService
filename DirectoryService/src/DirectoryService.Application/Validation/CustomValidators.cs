@@ -1,6 +1,6 @@
 using System.Text.Json;
 using CSharpFunctionalExtensions;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 
 namespace DirectoryService.Application.Validation;

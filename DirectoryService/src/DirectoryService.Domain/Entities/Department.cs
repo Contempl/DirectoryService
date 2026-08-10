@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Domain.Entities.VO;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Path = DirectoryService.Domain.Entities.VO.Path;
 
 namespace DirectoryService.Domain.Entities;

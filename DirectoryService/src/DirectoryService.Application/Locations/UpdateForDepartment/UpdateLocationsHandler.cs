@@ -5,7 +5,7 @@ using DirectoryService.Application.Departments;
 using DirectoryService.Application.Validation;
 using DirectoryService.Contracts.Constants;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;

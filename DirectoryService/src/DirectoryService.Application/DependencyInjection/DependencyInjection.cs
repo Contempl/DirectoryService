@@ -31,7 +31,7 @@ using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Contracts.Positions;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
