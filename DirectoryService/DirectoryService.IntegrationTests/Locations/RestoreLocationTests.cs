@@ -56,7 +56,7 @@ public class RestoreLocationTests : DirectoryBaseTests
         return result.Value;
     }
 
-    private async Task<CSharpFunctionalExtensions.Result<Guid, DirectoryService.Domain.Shared.Errors>> ExecuteCommand<TCommand>(
+    private async Task<CSharpFunctionalExtensions.Result<Guid, Shared.Kernel.Errors>> ExecuteCommand<TCommand>(
         TCommand command,
         CancellationToken cancellationToken)
         where TCommand : ICommand

@@ -3,7 +3,7 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Validation;
 using DirectoryService.Domain.Entities;
 using DirectoryService.Domain.Entities.VO;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 

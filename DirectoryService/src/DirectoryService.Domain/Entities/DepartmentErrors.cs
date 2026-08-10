@@ -1,4 +1,4 @@
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 
 namespace DirectoryService.Domain.Entities;
 

@@ -2,7 +2,7 @@ using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Application.Validation;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 

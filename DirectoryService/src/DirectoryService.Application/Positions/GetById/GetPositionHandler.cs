@@ -1,7 +1,7 @@
 ﻿using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
 using DirectoryService.Contracts.Positions;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 
 namespace DirectoryService.Application.Positions.GetById;
 

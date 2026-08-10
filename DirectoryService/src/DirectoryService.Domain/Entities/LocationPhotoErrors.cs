@@ -1,4 +1,6 @@
-namespace DirectoryService.Domain.Shared;
+using Shared.Kernel;
+
+namespace DirectoryService.Domain.Entities;
 
 public static class LocationPhotoErrors
 {

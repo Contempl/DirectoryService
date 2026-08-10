@@ -7,7 +7,7 @@ using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Application.Positions.Update;
 using DirectoryService.Contracts.Positions;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using DirectoryService.Presentation.Response;
 using Microsoft.AspNetCore.Mvc;
 

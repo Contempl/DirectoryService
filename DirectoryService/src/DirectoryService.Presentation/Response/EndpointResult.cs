@@ -1,6 +1,6 @@
 using System.Reflection;
 using CSharpFunctionalExtensions;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Microsoft.AspNetCore.Http.Metadata;
 using IResult = Microsoft.AspNetCore.Http.IResult;
 

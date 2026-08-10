@@ -11,7 +11,7 @@ using DirectoryService.Application.Departments.Queries.GetListOfDepartments;
 using DirectoryService.Application.Locations.UpdateForDepartment;
 using DirectoryService.Application.Pagination;
 using DirectoryService.Contracts.Departments;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using DirectoryService.Presentation.Response;
 using Framework.Constants;
 using Microsoft.AspNetCore.Authorization;

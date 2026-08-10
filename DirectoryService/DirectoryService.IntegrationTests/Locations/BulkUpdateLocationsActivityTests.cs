@@ -3,7 +3,7 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Locations.BulkActivityUpdate;
 using DirectoryService.Application.Locations.Create;
 using DirectoryService.Contracts.Locations;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

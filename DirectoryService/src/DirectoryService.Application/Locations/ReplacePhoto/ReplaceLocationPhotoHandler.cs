@@ -3,7 +3,7 @@ using DirectoryService.Application.Abstractions;
 using DirectoryService.Application.Database;
 using DirectoryService.Application.Validation;
 using DirectoryService.Domain.Entities;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FileService.Contracts;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -53,7 +53,7 @@ public sealed class ReplaceLocationPhotoHandler : ICommandHandler<Guid, ReplaceP
 
         var assetResult = await _fileCommunicationService.GetMediaAsset(request.AssetId, cancellationToken);
         if (assetResult.IsFailure)
-            return FileServiceErrorMapper.ToDirectoryError(assetResult.Error).ToErrors();
+            return assetResult.Error.ToErrors();
 
         var photoResult = LocationPhotoFactory.Create(assetResult.Value);
         if (photoResult.IsFailure)

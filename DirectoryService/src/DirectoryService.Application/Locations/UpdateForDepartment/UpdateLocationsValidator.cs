@@ -1,5 +1,5 @@
 using DirectoryService.Application.Validation;
-using DirectoryService.Domain.Shared;
+using Shared.Kernel;
 using FluentValidation;
 
 namespace DirectoryService.Application.Locations.UpdateForDepartment;
