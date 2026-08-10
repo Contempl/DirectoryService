@@ -16,4 +16,6 @@ public record LocationDto
 
     public DateTime? UpdatedAt { get; init; }
 
+    public LocationPhotoDto? Photo { get; init; }
+
 }

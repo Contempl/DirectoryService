@@ -6,12 +6,14 @@ namespace DirectoryService.IntegrationTests;
 public class DirectoryBaseTests : IClassFixture<DirectoryServiceTestWebFactory>, IAsyncLifetime
 {
     private readonly Func<Task> _resetDatabase;
+    protected FakeFileCommunicationService FileService { get; }
     protected IServiceProvider Services { get; set; }
 
     protected DirectoryBaseTests(DirectoryServiceTestWebFactory factory)
     {
         Services = factory.Services;
         _resetDatabase = factory.ResetDatabaseAsync;
+        FileService = factory.FileService;
     }
 
     protected async Task<T> ExecuteInDb<T>(Func<ApplicationDbContext, Task<T>> action)
@@ -36,6 +38,7 @@ public class DirectoryBaseTests : IClassFixture<DirectoryServiceTestWebFactory>,
 
     public async Task DisposeAsync()
     {
+        FileService.Reset();
         await _resetDatabase();
     }
 }
