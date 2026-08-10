@@ -61,6 +61,30 @@ public class LocationConfiguration : IEntityTypeConfiguration<Location>
                 .IsUnique()
                 .HasDatabaseName("ix_locations_name");
         });
+
+        builder.OwnsOne(l => l.Photo, photo =>
+        {
+            photo.Property(p => p.AssetId)
+                .HasColumnName("photo_asset_id");
+
+            photo.Property(p => p.FileName)
+                .HasMaxLength(500)
+                .HasColumnName("photo_file_name");
+
+            photo.Property(p => p.ContentType)
+                .HasMaxLength(255)
+                .HasColumnName("photo_content_type");
+
+            photo.Property(p => p.Size)
+                .HasColumnName("photo_size");
+
+            photo.Property(p => p.VerifiedAt)
+                .HasColumnName("photo_verified_at");
+
+            photo.HasIndex(p => p.AssetId)
+                .IsUnique()
+                .HasDatabaseName("ix_locations_photo_asset_id");
+        });
         
         builder.Property(l => l.IsActive)
             .HasColumnName("is_active");

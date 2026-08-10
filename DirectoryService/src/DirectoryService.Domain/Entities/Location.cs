@@ -31,6 +31,8 @@ public class Location
 
     public Timezone Timezone { get; private set; }
 
+    public LocationPhoto? Photo { get; private set; }
+
     public bool IsActive { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
@@ -78,6 +80,39 @@ public class Location
     public UnitResult<Error> Restore()
     {
         IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Error> AttachPhoto(LocationPhoto photo)
+    {
+        if (Photo is not null)
+            return LocationPhotoErrors.AlreadyAttached();
+
+        Photo = photo;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Error> ReplacePhoto(LocationPhoto photo)
+    {
+        if (Photo is null)
+            return LocationPhotoErrors.NotAttached();
+
+        Photo = photo;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Error> RemovePhoto()
+    {
+        if (Photo is null)
+            return LocationPhotoErrors.NotAttached();
+
+        Photo = null;
         UpdatedAt = DateTime.UtcNow;
 
         return UnitResult.Success<Error>();

@@ -1,8 +1,10 @@
 using System.Data.Common;
 using DirectoryService.Infrastructure;
 using DirectoryService.Presentation;
+using FileService.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,8 @@ using Testcontainers.PostgreSql;
 namespace DirectoryService.IntegrationTests;
 public class DirectoryServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public FakeFileCommunicationService FileService { get; } = new();
+
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres")
         .WithDatabase("directory_service_db")
@@ -58,9 +62,13 @@ public class DirectoryServiceTestWebFactory : WebApplicationFactory<Program>, IA
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<ApplicationDbContext>();
+            services.RemoveAll<IFileCommunicationService>();
+            services.RemoveAll<IDistributedCache>();
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(_dbContainer.GetConnectionString()));
+            services.AddSingleton<IFileCommunicationService>(FileService);
+            services.AddDistributedMemoryCache();
         });
     }
 
