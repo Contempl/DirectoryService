@@ -38,4 +38,24 @@ public class GetMediaAssetsInfoTests : FileServiceBaseTests
 
         await AssertErrorStatusAsync(response, HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task BatchQuery_ShouldReturnAssetWhileUploadIsInProgress()
+    {
+        var uploading = await StartMultipartUploadAsync(
+            "uploading.mp4",
+            "video",
+            "video/mp4",
+            10);
+
+        var response = await Client.PostAsJsonAsync(
+            "/api/files/batch",
+            new GetMediaAssetsInfoRequest([uploading.MediaAssetId]));
+        var result = await ReadOkEnvelopeAsync<GetMediaAssetsInfoResponse>(response);
+
+        var asset = Assert.Single(result.MediaAssets);
+        Assert.Equal(uploading.MediaAssetId, asset.Id);
+        Assert.Equal("uploading", asset.Status);
+        Assert.Null(asset.DownloadUrl);
+    }
 }

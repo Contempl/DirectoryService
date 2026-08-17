@@ -6,12 +6,6 @@ namespace FileService.Core.Caching;
 
 public static class DownloadUrlCacheExtensions
 {
-    private static readonly HybridCacheEntryOptions EntryOptions = new()
-    {
-        Expiration = FileCacheKeys.DownloadUrlExpiration,
-        LocalCacheExpiration = FileCacheKeys.DownloadUrlLocalExpiration
-    };
-
     public static async Task<Result<string, Error>> GetDownloadUrlAsync(
         this HybridCache cache,
         Guid mediaAssetId,
@@ -30,7 +24,6 @@ public static class DownloadUrlCacheExtensions
 
                     return result.Value;
                 },
-                EntryOptions,
                 cancellationToken: cancellationToken);
 
             return url;

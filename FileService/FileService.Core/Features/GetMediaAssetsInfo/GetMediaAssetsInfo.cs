@@ -52,7 +52,8 @@ public sealed class GetMediaAssetsInfoHandler
 
         var assets = await _mediaAssetsRepository.GetByIdsAsync(request.MediaAssetIds, cancellationToken);
 
-        var ready = assets.Where(a => a.Status == MediaStatus.READY).ToList();
+        var visible = assets.Where(a => a.Status != MediaStatus.DELETED).ToList();
+        var ready = visible.Where(a => a.Status == MediaStatus.READY).ToList();
         var urlTasks = ready.Select(async asset =>
         {
             var urlResult = await _cache.GetDownloadUrlAsync(
@@ -60,13 +61,16 @@ public sealed class GetMediaAssetsInfoHandler
                 token => _s3Provider.DownloadFileAsync(asset.RawKey, token),
                 cancellationToken);
 
-            return new MediaAssetBriefDto(
-                asset.Id,
-                asset.Status.ToString().ToLower(),
-                urlResult.IsSuccess ? urlResult.Value : null);
+            return (asset.Id, Url: urlResult.IsSuccess ? urlResult.Value : null);
         });
 
-        var dtos = (await Task.WhenAll(urlTasks)).ToList();
+        var urlMap = (await Task.WhenAll(urlTasks)).ToDictionary(result => result.Id, result => result.Url);
+        var dtos = visible
+            .Select(asset => new MediaAssetBriefDto(
+                asset.Id,
+                asset.Status.ToString().ToLowerInvariant(),
+                urlMap.GetValueOrDefault(asset.Id)))
+            .ToList();
 
         return new GetMediaAssetsInfoResponse(dtos);
     }
