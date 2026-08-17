@@ -18,6 +18,7 @@ using FileService.Infrastructure.Postgres.Repositories;
 using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Shared.Kernel;
 
 namespace FileService.Configuration;
@@ -55,6 +56,26 @@ public static class DependencyInjection
         services.AddScoped<DeleteFileHandler>();
 
         services.Configure<MultipartUploadOptions>(configuration.GetSection(nameof(S3Options)));
+
+        var cacheOptions = configuration
+                               .GetRequiredSection(CacheOptions.SectionName)
+                               .Get<CacheOptions>()
+                           ?? throw new InvalidOperationException(
+                               $"{CacheOptions.SectionName} configuration is missing");
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = cacheOptions.RedisConnectionString;
+        });
+
+        services.AddHybridCache(options =>
+        {
+            options.DefaultEntryOptions = new HybridCacheEntryOptions
+            {
+                Expiration = TimeSpan.FromMinutes(cacheOptions.ExpirationTimeInMinutes),
+                LocalCacheExpiration = TimeSpan.FromMinutes(cacheOptions.LocalCacheExpiration)
+            };
+        });
 
         return services;
     }

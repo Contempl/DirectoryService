@@ -1,11 +1,13 @@
 using CSharpFunctionalExtensions;
 using FileService.Contracts.Dto;
+using FileService.Core.Caching;
 using FileService.Domain;
 using FileService.Domain.Enums;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
 
@@ -27,15 +29,18 @@ public sealed class GetMediaAssetsInfoHandler
     private readonly ILogger<GetMediaAssetsInfoHandler> _logger;
     private readonly IS3Provider _s3Provider;
     private readonly IMediaAssetsRepository _mediaAssetsRepository;
+    private readonly HybridCache _cache;
 
     public GetMediaAssetsInfoHandler(
         ILogger<GetMediaAssetsInfoHandler> logger,
         IS3Provider s3Provider,
-        IMediaAssetsRepository mediaAssetsRepository)
+        IMediaAssetsRepository mediaAssetsRepository,
+        HybridCache cache)
     {
         _logger = logger;
         _s3Provider = s3Provider;
         _mediaAssetsRepository = mediaAssetsRepository;
+        _cache = cache;
     }
 
     public async Task<Result<GetMediaAssetsInfoResponse, Error>> Handle(
@@ -49,25 +54,22 @@ public sealed class GetMediaAssetsInfoHandler
 
         var visible = assets.Where(a => a.Status != MediaStatus.DELETED).ToList();
         var ready = visible.Where(a => a.Status == MediaStatus.READY).ToList();
-
-        var urlMap = new Dictionary<Guid, string>();
-        if (ready.Count > 0)
+        var urlTasks = ready.Select(async asset =>
         {
-            var urlsResult = await _s3Provider.GenerateDownloadUrlsAsync(
-                ready.Select(a => a.RawKey), cancellationToken);
+            var urlResult = await _cache.GetDownloadUrlAsync(
+                asset.Id,
+                token => _s3Provider.DownloadFileAsync(asset.RawKey, token),
+                cancellationToken);
 
-            if (urlsResult.IsSuccess)
-            {
-                for (var i = 0; i < ready.Count; i++)
-                    urlMap[ready[i].Id] = urlsResult.Value[i];
-            }
-        }
+            return (asset.Id, Url: urlResult.IsSuccess ? urlResult.Value : null);
+        });
 
+        var urlMap = (await Task.WhenAll(urlTasks)).ToDictionary(result => result.Id, result => result.Url);
         var dtos = visible
-            .Select(a => new MediaAssetBriefDto(
-                a.Id,
-                a.Status.ToString().ToLower(),
-                urlMap.TryGetValue(a.Id, out var url) ? url : null))
+            .Select(asset => new MediaAssetBriefDto(
+                asset.Id,
+                asset.Status.ToString().ToLowerInvariant(),
+                urlMap.GetValueOrDefault(asset.Id)))
             .ToList();
 
         return new GetMediaAssetsInfoResponse(dtos);

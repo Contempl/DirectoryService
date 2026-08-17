@@ -1,6 +1,8 @@
 using CSharpFunctionalExtensions;
+using FileService.Core.Caching;
 using FileService.Domain.Enums;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Hybrid;
 using Shared.Kernel;
 
 namespace FileService.Core.Features.Delete;
@@ -10,15 +12,18 @@ public class DeleteFileHandler
     private readonly IMediaAssetsRepository _mediaAssetsRepository;
     private readonly IS3Provider _s3Provider;
     private readonly ILogger<DeleteFileHandler> _logger;
+    private readonly HybridCache _cache;
 
     public DeleteFileHandler(
         IMediaAssetsRepository mediaAssetsRepository,
         IS3Provider s3Provider,
-        ILogger<DeleteFileHandler> logger)
+        ILogger<DeleteFileHandler> logger,
+        HybridCache cache)
     {
         _mediaAssetsRepository = mediaAssetsRepository;
         _s3Provider = s3Provider;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task<Result<Guid, Error>> Handle(Guid mediaAssetId, CancellationToken cancellationToken)
@@ -34,6 +39,7 @@ public class DeleteFileHandler
 
         asset.MarkDeleted(DateTime.UtcNow);
         await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
+        await _cache.RemoveAsync(FileCacheKeys.DownloadUrl(mediaAssetId), cancellationToken);
 
         var deleteTasks = new List<Task<Result<string, Error>>>
         {

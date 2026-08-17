@@ -1,10 +1,12 @@
 using CSharpFunctionalExtensions;
 using FileService.Contracts.Dto;
+using FileService.Core.Caching;
 using FileService.Domain.Enums;
 using Framework.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
 
@@ -26,15 +28,18 @@ public sealed class GetMediaAssetInfoHandler
     private readonly ILogger<GetMediaAssetInfoHandler> _logger;
     private readonly IS3Provider _s3Provider;
     private readonly IMediaAssetsRepository _mediaAssetsRepository;
+    private readonly HybridCache _cache;
 
     public GetMediaAssetInfoHandler(
         ILogger<GetMediaAssetInfoHandler> logger,
         IS3Provider s3Provider,
-        IMediaAssetsRepository mediaAssetsRepository)
+        IMediaAssetsRepository mediaAssetsRepository,
+        HybridCache cache)
     {
         _logger = logger;
         _s3Provider = s3Provider;
         _mediaAssetsRepository = mediaAssetsRepository;
+        _cache = cache;
     }
 
     public async Task<Result<MediaAssetInfoResponse, Error>> Handle(
@@ -53,7 +58,10 @@ public sealed class GetMediaAssetInfoHandler
         string? downloadUrl = null;
         if (asset.Status == MediaStatus.READY)
         {
-            var urlResult = await _s3Provider.DownloadFileAsync(asset.RawKey, cancellationToken);
+            var urlResult = await _cache.GetDownloadUrlAsync(
+                asset.Id,
+                token => _s3Provider.DownloadFileAsync(asset.RawKey, token),
+                cancellationToken);
             if (urlResult.IsSuccess)
                 downloadUrl = urlResult.Value;
         }

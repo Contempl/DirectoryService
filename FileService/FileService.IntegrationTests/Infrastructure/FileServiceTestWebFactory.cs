@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Caching.Distributed;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -126,8 +128,17 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
                 ["JwtOptions:Secret"] = "superlongsecrettobeatleast32characters",
                 ["JwtOptions:AccessTokenLifetimeMinutes"] = "15",
                 ["JwtOptions:RefreshTokenLifetime"] = "7",
-                ["DevAuth:Enabled"] = "true"
+                ["DevAuth:Enabled"] = "true",
+                ["CacheOptions:RedisConnectionString"] = "unused-in-integration-tests",
+                ["CacheOptions:ExpirationTimeInMinutes"] = "35",
+                ["CacheOptions:LocalCacheExpiration"] = "5"
             });
+        });
+
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IDistributedCache>();
+            services.AddDistributedMemoryCache();
         });
     }
 
