@@ -8,4 +8,5 @@ public record CachingOptions
 
     public int Expiration { get; set; } = 5;
     public int LocalCacheExpiration { get; set; } = 5;
+    public bool RedisEnabled { get; set; } = true;
 }

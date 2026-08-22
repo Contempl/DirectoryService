@@ -5,11 +5,20 @@ services:
     build:
       context: ./DirectoryService
       dockerfile: Dockerfile
+      args:
+        - NUGET_USERNAME=${NUGET_USERNAME}
+        - NUGET_PASSWORD=${NUGET_PASSWORD}
     ports:
       - "5353:5353"
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
+      - FileServiceOptions__Url=http://file-service-ds:5353
+      - CachingOptions__RedisConnectionString=redis:6379
+      - CachingOptions__RedisEnabled=true
+    depends_on:
+      redis:
+        condition: service_healthy
 
   postgres_ds:
     container_name: postgres-ds
@@ -39,10 +48,18 @@ services:
   redis:
     container_name: redis
     image: redis:alpine
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     restart: 
       always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
     
   file-service:
     container_name: file-service-ds
@@ -119,3 +136,4 @@ volumes:
   seq_data:
   postgres-data-fs:
   postgres-data-as:
+  redis-data:

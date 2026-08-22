@@ -50,11 +50,14 @@ public static class DependencyInjection
         
         services.AddValidatorsFromAssemblyContaining<CreateDepartmentHandler>();
 
-        services.AddStackExchangeRedisCache(setup =>
+        if (cacheOptions!.RedisEnabled)
         {
-            setup.Configuration = cacheOptions!.RedisConnectionString;
-        });
-            
+            services.AddStackExchangeRedisCache(setup =>
+            {
+                setup.Configuration = cacheOptions.RedisConnectionString;
+            });
+        }
+        
         services.AddHybridCache(options =>
         {
             options.DefaultEntryOptions = new HybridCacheEntryOptions()
