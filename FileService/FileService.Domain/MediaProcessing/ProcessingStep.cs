@@ -47,9 +47,9 @@ public class ProcessingStep
 
     internal UnitResult<Error> Complete(string? resultData = null)
     {
-        if (Status != StepStatus.PENDING)
+        if (Status != StepStatus.PROCESSING)
             return Error.Validation("step.invalid.status",
-                $"Can only start step from pending status. Current: {Status}");
+                $"Can only complete step from processing status. Current: {Status}");
         
         Status = StepStatus.COMPLETED;
         ResultData = resultData;

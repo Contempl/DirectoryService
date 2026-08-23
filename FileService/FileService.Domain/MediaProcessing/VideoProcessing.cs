@@ -188,7 +188,7 @@ public class VideoProcessing
             return Error.Validation("processing.invalid.status",
                 $"Can only complete from PROCESSING status, current: {Status}");
         
-        bool allStepsCompleted = _steps.All(s => s.Status == StepStatus.PROCESSING);
+        bool allStepsCompleted = _steps.All(s => s.Status == StepStatus.COMPLETED);
         if (!allStepsCompleted)
             return Error.Validation("processing.incomplete.steps",
                 $"Cannot complete processing when not all steps are completed.");
