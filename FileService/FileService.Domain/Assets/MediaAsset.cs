@@ -24,7 +24,13 @@ public abstract class MediaAsset
     public MediaOwner Owner { get; protected set; } = null!;
     
     public MediaStatus Status { get; protected set; }
+
+    public string? UploadId { get; protected set; }
+
+    public StorageKey UploadKey => RequiresProcessing() ? RawKey : FinalKey;
+
     
+
     protected  MediaAsset()
     {}
 
@@ -43,6 +49,8 @@ public abstract class MediaAsset
         Owner = owner;
         RawKey = key;
     }
+    
+    public virtual bool RequiresProcessing() => false;
 
     public UnitResult<Error> MarkUploaded(DateTime timestamp)
     {
