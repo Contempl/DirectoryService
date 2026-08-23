@@ -107,6 +107,26 @@ public class VideoProcessing
         ProgressPercentage = totalProgress;
     }
 
+    public UnitResult<Error> CompleteCurrentStep(string? resultData = null)
+    {
+        if (Status != ProcessingStatus.PROCESSING)
+            return Error.Validation("processing.invalid.status",
+                $"Cannot complete step when status is {Status}");
+
+        ProcessingStep? currentStep = CurrentStep;
+        if (currentStep is null)
+            return Error.Validation("processing.no.active.step",
+                "No active step to complete.");
+
+        UnitResult<Error> completeResult = currentStep.Complete(resultData);
+        if (completeResult.IsFailure)
+            return completeResult.Error;
+
+        RecalculateProgress();
+
+        return UnitResult.Success<Error>();
+    }
+
     public bool CanRetry() => RetryCount < MaxRetries && !IsCriticalError;
 
     public UnitResult<Error> Reset()
