@@ -73,7 +73,7 @@ public class VideoAsset : MediaAsset
         if (validationResult.IsFailure)
             return validationResult.Error;
 
-        Result<StorageKey, Error> key = StorageKey.Create(LOCATION, null, id.ToString());
+        Result<StorageKey, Error> key = StorageKey.Create(LOCATION, RAW_PREFIX, id.ToString());
         if (key.IsFailure)
             return key.Error;
 
