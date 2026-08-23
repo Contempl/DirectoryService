@@ -85,7 +85,10 @@ public class VideoProcessing
 
         if (nextStep is null)
         {
-            Complete();
+            UnitResult<Error> completeResult = Complete();
+            if (completeResult.IsFailure)
+                return completeResult.Error;
+
             return Result.Success<ProcessingStep?, Error>(null);
         }
         
@@ -183,7 +186,7 @@ public class VideoProcessing
         if (failResult.IsFailure)
             return failResult.Error;
 
-        return UnitResult.Success<Error>();
+        return Fail(errorMessage);
     }
     
     internal UnitResult<Error> Fail(string errorMessage, bool isCritical = false)
