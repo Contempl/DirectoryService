@@ -21,6 +21,7 @@ public class FileServiceDbContext : DbContext, IReadDbContext
         modelBuilder.Ignore<StorageKey>(); // без этого миграция не накатывается из-за того что мы ручками настроили сериализацию в конфигурации
         
         modelBuilder.ApplyConfiguration(new MediaAssetConfiguration());
+        modelBuilder.ApplyConfiguration(new VideoAssetConfiguration());
         modelBuilder.ApplyConfiguration(new VideoProcessingConfiguration());
     }
 }

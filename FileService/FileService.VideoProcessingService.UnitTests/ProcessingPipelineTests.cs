@@ -90,7 +90,7 @@ public class ProcessingPipelineTests
     }
 
     [Fact]
-    public async Task ProcessAllStepsAsync_WhenCancelled_ShouldStopBeforeExecutingFurtherSteps()
+    public async Task ProcessAllStepsAsync_WhenCancelled_ShouldStopAndMarkVideoAsFailed()
     {
         //Arrange
         var videoAsset = CreateUploadedVideoAsset();
@@ -104,14 +104,20 @@ public class ProcessingPipelineTests
         cancellationTokenSource.Cancel();
 
         //Act
-        var act = () => fixture.Pipeline.ProcessAllStepsAsync(
+        var result = await fixture.Pipeline.ProcessAllStepsAsync(
             videoAsset.Id,
             cancellationTokenSource.Token);
 
         //Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(act);
+        Assert.True(result.IsFailure);
+        Assert.Equal("pipeline.step.cancelled", result.Error.Code);
         Assert.Single(executedSteps);
         Assert.Equal(StepType.INITIALIZE, executedSteps[0]);
+        Assert.Equal(ProcessingStatus.FAILED, fixture.VideoProcessingRepository.VideoProcessing!.Status);
+        Assert.Equal(MediaStatus.FAILED, videoAsset.Status);
+        Assert.Contains(
+            fixture.VideoProcessingRepository.VideoProcessing.Steps,
+            step => step.Status == StepStatus.FAILED);
     }
 
     [Fact]

@@ -84,7 +84,10 @@ public class ProcessingPipeline : IProcessingPipeline
                 if (assetFailResult.IsFailure)
                     return assetFailResult.Error;
 
-                var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+                var saveCancellationToken = cancellationToken.IsCancellationRequested
+                    ? CancellationToken.None
+                    : cancellationToken;
+                var saveResult = await _transactionManager.SaveChangesAsync(saveCancellationToken);
                 if (saveResult.IsFailure)
                     return saveResult.Error;
 
@@ -114,7 +117,13 @@ public class ProcessingPipeline : IProcessingPipeline
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            throw;
+            _logger.LogWarning(
+                "Video processing step {StepType} was cancelled",
+                handler.StepType);
+
+            return Error.Failure(
+                "pipeline.step.cancelled",
+                "Video processing was cancelled.");
         }
         catch (Exception exception)
         {
