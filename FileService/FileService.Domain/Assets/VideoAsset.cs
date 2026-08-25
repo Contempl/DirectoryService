@@ -13,8 +13,9 @@ public class VideoAsset : MediaAsset
     public const string HLS_PREFIX = "hls";
     public const string MASTER_PLAYLIST_NAME = "master.m3u8";
     public static readonly string[] AllowedExtensions = ["mp4", "mkv", "avi", "mov"];
+    public VideoMetadata? Metadata { get; private set; }
 
-    public StorageKey HlsRootKey { get; protected set; }
+    public StorageKey HlsRootKey { get; private set; } = null!;
 
     private VideoAsset() { }
 
@@ -23,10 +24,11 @@ public class VideoAsset : MediaAsset
         MediaData mediaData,
         MediaStatus mediaStatus,
         MediaOwner owner,
-        StorageKey key)
+        StorageKey key,
+        StorageKey hlsRootKey)
         : base (id, mediaData, mediaStatus, AssetType.VIDEO, owner, key)
     {
-        
+        HlsRootKey = hlsRootKey;
     }
 
     public static UnitResult<Error> ValidateForUpload(MediaData mediaData)
@@ -67,6 +69,8 @@ public class VideoAsset : MediaAsset
         return UnitResult.Success<Error>();
     }
 
+    public override bool RequiresProcessing() => true;
+
     public static Result<VideoAsset, Error> CreateMediaForUpload(Guid id, MediaData mediaData, MediaOwner owner)
     {
         UnitResult<Error> validationResult = ValidateForUpload(mediaData);
@@ -77,11 +81,34 @@ public class VideoAsset : MediaAsset
         if (key.IsFailure)
             return key.Error;
 
+        Result<StorageKey, Error> hlsRootKey = StorageKey.Create(LOCATION, HLS_PREFIX, id.ToString());
+        if (hlsRootKey.IsFailure)
+            return hlsRootKey.Error;
+
         return new VideoAsset(
             id,
             mediaData,
             MediaStatus.UPLOADING,
             owner,
-            key.Value);
+            key.Value,
+            hlsRootKey.Value);
+    }
+
+    public void SetMetadata(VideoMetadata metadata)
+    {
+        Metadata = metadata;
+    }
+
+    public UnitResult<Error> StartProcessing()
+    {
+        if (Status != MediaStatus.UPLOADED)
+            return Error.Validation("asset.invalid.status.transaction", "Can only start processing from UPLOADED status");
+
+        if (!RequiresProcessing())
+            return Error.Validation("asset.processing.not.required", "This asset type does not require processing");
+
+        Status = MediaStatus.PROCESSING;
+        UpdatedAt = DateTime.UtcNow;
+        return UnitResult.Success<Error>();
     }
 }

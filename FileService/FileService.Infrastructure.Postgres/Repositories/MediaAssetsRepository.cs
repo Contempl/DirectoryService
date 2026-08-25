@@ -1,6 +1,7 @@
 ﻿using CSharpFunctionalExtensions;
 using FileService.Core;
 using FileService.Domain.Assets;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -19,31 +20,10 @@ public class MediaAssetsRepository : IMediaAssetsRepository
         _logger = logger;
     }
 
-    public async Task<Result<Guid, Error>> AddAsync(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
+    public UnitResult<Error> Add(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
     {
         _dbContext.MediaAssets.Add(mediaAsset);
-        
-        try
-        {
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            return mediaAsset.Id;
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx)
-        {
-            return GeneralErrors.Failure();
-        }
-        catch (OperationCanceledException ex)
-        {
-            _logger.LogError(ex, "Operation was cancelled while creating mediaAsset");
-            return GeneralErrors.Failure();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected error while creating mediaAsset");
-
-            return GeneralErrors.Failure();
-        }
+        return UnitResult.Success<Error>();
     }
 
     public async Task<Result<MediaAsset, Error>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -53,6 +33,20 @@ public class MediaAssetsRepository : IMediaAssetsRepository
             return GeneralErrors.NotFound(id);
 
         return asset;
+    }
+
+    public async Task<Result<VideoAsset, Error>> GetVideoBy(
+        Expression<Func<VideoAsset, bool>> predicate,
+        CancellationToken cancellationToken = default)
+    {
+        var videoAsset = await _dbContext.MediaAssets
+            .OfType<VideoAsset>()
+            .FirstOrDefaultAsync(predicate, cancellationToken);
+
+        if (videoAsset is null)
+            return GeneralErrors.NotFound();
+
+        return videoAsset;
     }
 
     public async Task<IReadOnlyList<MediaAsset>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)

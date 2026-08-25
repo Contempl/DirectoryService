@@ -91,7 +91,7 @@ public sealed class StartMultipartUploadHandler
 
         var uploadId = uploadIdResult.Value;
 
-        var addResult = await _mediaAssetsRepository.AddAsync(mediaAsset, cancellationToken);
+        var addResult = _mediaAssetsRepository.Add(mediaAsset, cancellationToken);
         if (addResult.IsFailure)
         {
             await _s3Provider.AbortMultipartUploadAsync(mediaAsset.RawKey, uploadId, cancellationToken);

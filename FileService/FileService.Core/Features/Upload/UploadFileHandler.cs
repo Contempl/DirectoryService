@@ -68,7 +68,7 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
             
         
         var mediaAsset = mediaAssetResult.Value;
-        var addResult = await _mediaAssetRepository.AddAsync(mediaAsset, cancellationToken);
+        var addResult = _mediaAssetRepository.Add(mediaAsset, cancellationToken);
         if (addResult.IsFailure)
         {
             _logger.LogInformation("Failed to upload file {fileName}", fileName);
@@ -94,6 +94,6 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
 
         _logger.LogInformation($"Uploaded file {file.Name}");
 
-        return addResult.Value;
+        return mediaAsset.Id;
     }
 }
