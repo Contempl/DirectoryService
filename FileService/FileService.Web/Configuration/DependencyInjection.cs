@@ -17,6 +17,8 @@ using FileService.Infrastructure.Postgres;
 using FileService.Infrastructure.Postgres.Repositories;
 using FileService.VideoProcessing.Pipeline;
 using FileService.VideoProcessing.Pipeline.Steps;
+using FileService.VideoProcessing.ProcessRunner;
+using FileService.VideoProcessing.FfmpegProcess;
 using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
@@ -40,12 +42,17 @@ public static class DependencyInjection
         services.AddScoped<ITransactionManager, TransactionManager>();
         services.AddScoped<IProcessingPipeline, ProcessingPipeline>();
         services.AddScoped<FileService.VideoProcessing.VideoProcessingService>();
+        services.AddScoped<IProcessRunner, ProcessRunner>();
+        services.AddScoped<IFfmpegProcessRunner, FfmpegProcessRunner>();
         services.AddScoped<IProcessingStepHandler, InitializeStepHandler>();
         services.AddScoped<IProcessingStepHandler, ExtractMetadataStepHandler>();
         services.AddScoped<IProcessingStepHandler, GenerateHlsStepHandler>();
         services.AddScoped<IProcessingStepHandler, UploadHlsStepHandler>();
         services.AddScoped<IProcessingStepHandler, GeneratePreviewStepHandler>();
         services.AddScoped<IProcessingStepHandler, CleanupStepHandler>();
+
+        services.Configure<FileService.VideoProcessing.VideoProcessingOptions>(
+            configuration.GetSection(FileService.VideoProcessing.VideoProcessingOptions.SectionName));
 
         services.AddEndpoints(typeof(UploadFileHandler).Assembly);
 

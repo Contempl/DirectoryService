@@ -12,6 +12,8 @@ public class VideoAsset : MediaAsset
     public const string RAW_PREFIX = "raw";
     public const string HLS_PREFIX = "hls";
     public const string MASTER_PLAYLIST_NAME = "master.m3u8";
+    public const string STREAM_PLAYLIST_PATTERN = "stream_%v.m3u8";
+    public const string SEGMENT_FILE_PATTERN = "segment_%v_%03d.ts";
     public static readonly string[] AllowedExtensions = ["mp4", "mkv", "avi", "mov"];
     public VideoMetadata? Metadata { get; private set; }
 
@@ -52,24 +54,57 @@ public class VideoAsset : MediaAsset
     }
 
 
-    public UnitResult<Error> CompleteProcessing(DateTime timestamp)
+    public UnitResult<Error> CompleteProcessing()
     {
-        var finalKeyResult = HlsRootKey.AppendSegment(MASTER_PLAYLIST_NAME);
-        
-        if (finalKeyResult.IsFailure)
-            return finalKeyResult.Error;
+        if (Status != MediaStatus.PROCESSING)
+        {
+            return Error.Validation(
+                "video.invalid.status",
+                "Can only complete processing from PROCESSING status");
+        }
 
-        var finalKey = finalKeyResult.Value;
-        
-        var result = MarkReady(finalKey, timestamp);
+        if (FinalKey is null)
+        {
+            var masterPlaylistKey = GetHlsMasterPlaylistKey();
+            if (masterPlaylistKey.IsFailure)
+                return masterPlaylistKey.Error;
 
-        if (result.IsFailure)
-            return result.Error;
-        
-        return UnitResult.Success<Error>();
+            FinalKey = masterPlaylistKey.Value;
+        }
+
+        return MarkReady(FinalKey, DateTime.UtcNow);
     }
 
     public override bool RequiresProcessing() => true;
+
+    public Result<StorageKey, Error> GetHlsRootKey()
+    {
+        return StorageKey.Create(LOCATION, HLS_PREFIX, Id.ToString());
+    }
+
+    public Result<StorageKey, Error> GetHlsMasterPlaylistKey()
+    {
+        var hlsRoot = GetHlsRootKey();
+        if (hlsRoot.IsFailure)
+            return hlsRoot.Error;
+
+        return hlsRoot.Value.AppendSegment(MASTER_PLAYLIST_NAME);
+    }
+
+    public UnitResult<Error> SetHlsMasterPlaylistKey(StorageKey value)
+    {
+        if (Status != MediaStatus.PROCESSING)
+        {
+            return Error.Validation(
+                "video.invalid.status",
+                "Can only set processed data during processing");
+        }
+
+        FinalKey = value;
+        UpdatedAt = DateTime.UtcNow;
+
+        return UnitResult.Success<Error>();
+    }
 
     public static Result<VideoAsset, Error> CreateMediaForUpload(Guid id, MediaData mediaData, MediaOwner owner)
     {

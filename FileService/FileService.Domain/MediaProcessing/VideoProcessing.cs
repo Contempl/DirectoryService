@@ -189,7 +189,7 @@ public class VideoProcessing
         return Fail(errorMessage);
     }
     
-    internal UnitResult<Error> Fail(string errorMessage, bool isCritical = false)
+    public UnitResult<Error> Fail(string errorMessage, bool isCritical = false)
     {
         if (Status != ProcessingStatus.PROCESSING)
             return Error.Validation("step.invalid.status",$"Can only fail from PROCESSING. Current: {Status}");

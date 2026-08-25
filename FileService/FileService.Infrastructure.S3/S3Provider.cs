@@ -260,6 +260,33 @@ public class S3Provider : IS3Provider
         return UnitResult.Success<Error>();
     }
 
+    public async Task<UnitResult<Error>> UploadFileAsync(
+        StorageKey key,
+        FileStream fileStream,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new PutObjectRequest
+            {
+                BucketName = key.Location,
+                Key = key.Value,
+                InputStream = fileStream,
+                ContentType = contentType ?? "application/octet-stream"
+            };
+
+            await _s3Client.PutObjectAsync(request, cancellationToken);
+
+            return UnitResult.Success<Error>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file to {Key}", key.Value);
+            return S3ErrorMapper.ToError(ex);
+        }
+    }
+
     public async Task<Result<string, Error>> DownloadFileAsync(StorageKey key, CancellationToken cancellationToken = default)
     {
         try
@@ -282,16 +309,25 @@ public class S3Provider : IS3Provider
         }
     }
 
-    public async Task<Result<string, Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default)
+    public async Task<UnitResult<Error>> DeleteFileAsync(
+        StorageKey key,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await _s3Client.DeleteObjectAsync(key.Location, key.Value, cancellationToken);
-            return result.DeleteMarker;
+            var request = new DeleteObjectRequest
+            {
+                BucketName = key.Location,
+                Key = key.Value
+            };
+
+            await _s3Client.DeleteObjectAsync(request, cancellationToken);
+
+            return UnitResult.Success<Error>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting file");
+            _logger.LogError(ex, "Error deleting file {Key}", key.Value);
             return S3ErrorMapper.ToError(ex);
         }
     }

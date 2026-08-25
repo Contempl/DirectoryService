@@ -11,9 +11,15 @@ public interface IS3Provider
 
     Task<UnitResult<Error>> UploadFileAsync(StorageKey key, Stream stream, MediaData mediaData, CancellationToken cancellationToken = default);
 
+    Task<UnitResult<Error>> UploadFileAsync(
+        StorageKey key,
+        FileStream fileStream,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
     Task<Result<string, Error>> DownloadFileAsync(StorageKey key, CancellationToken cancellationToken = default);
 
-    Task<Result<string, Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default);
+    Task<UnitResult<Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default);
 
     Task<Result<IReadOnlyList<string>, Error>> GenerateDownloadUrlsAsync(IEnumerable<StorageKey> keys, CancellationToken cancellationToken = default);
 

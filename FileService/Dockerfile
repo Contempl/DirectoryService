@@ -1,4 +1,8 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -22,6 +26,7 @@ COPY ["FileService.Domain/FileService.Domain.csproj", "FileService.Domain/"]
 COPY ["FileService.Infrastructure.Postgres/FileService.Infrastructure.Postgres.csproj", "FileService.Infrastructure.Postgres/"]
 COPY ["FileService.Infrastructure.S3/FileService.Infrastructure.S3.csproj", "FileService.Infrastructure.S3/"]
 COPY ["FileService.Contracts/FileService.Contracts.csproj", "FileService.Contracts/"]
+COPY ["FileService.VideoProcessingService/FileService.VideoProcessingService.csproj", "FileService.VideoProcessingService/"]
 RUN dotnet restore "FileService.Web/FileService.Web.csproj"
 COPY . .
 WORKDIR "/src/FileService.Web"
