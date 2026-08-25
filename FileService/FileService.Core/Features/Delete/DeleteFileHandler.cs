@@ -41,7 +41,7 @@ public class DeleteFileHandler
         await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
         await _cache.RemoveAsync(FileCacheKeys.DownloadUrl(mediaAssetId), cancellationToken);
 
-        var deleteTasks = new List<Task<Result<string, Error>>>
+        var deleteTasks = new List<Task<UnitResult<Error>>>
         {
             _s3Provider.DeleteFileAsync(asset.RawKey, cancellationToken)
         };

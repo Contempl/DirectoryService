@@ -36,37 +36,36 @@ public class ProcessingPipeline : IProcessingPipeline
             return contextResult.Error;
 
         var context = contextResult.Value;
-        
+
+        var executionResult = await ExecuteAllStepsAsync(context, cancellationToken);
+        if (executionResult.IsFailure)
+            return await FinalizeWithFailureAsync(context, executionResult.Error, cancellationToken);
+
+        return await FinalizeAsync(context, cancellationToken);
+    }
+
+    private async Task<UnitResult<Error>> ExecuteAllStepsAsync(
+        ProcessingContext context,
+        CancellationToken cancellationToken)
+    {
         while (true)
         {
             var stepResult = context.VideoProcessing.ProcessNextStep();
-            
+
             if (stepResult.IsFailure)
                 return stepResult.Error;
-            
+
             if (stepResult.Value is null)
-            {
-                var assetCompleteResult = context.VideoAsset.CompleteProcessing(DateTime.UtcNow);
-                if (assetCompleteResult.IsFailure)
-                    return assetCompleteResult.Error;
-
-                var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
-                if (saveResult.IsFailure)
-                    return saveResult.Error;
-
                 return UnitResult.Success<Error>();
-            }
-            
+
             var currentStep = stepResult.Value;
-            
+
             var stepHandler = _stepHandlers.FirstOrDefault(s => s.StepType == currentStep.Type);
             if (stepHandler is null)
             {
-                // код на ошибку
-                context.VideoProcessing.FailCurrentStep("No handler found for step type");
-                context.VideoAsset.MarkFailed(DateTime.UtcNow);
-                var savedResult = await _transactionManager.SaveChangesAsync(cancellationToken);
-                return Error.Failure("pipeline.handler.not.found", "Not handler for step type");
+                return Error.Failure(
+                    "pipeline.handler.not.found",
+                    $"No handler found for step type {currentStep.Type}");
             }
 
             var executeResult = await ExecuteStepSafelyAsync(
@@ -75,24 +74,7 @@ public class ProcessingPipeline : IProcessingPipeline
                 cancellationToken);
 
             if (executeResult.IsFailure)
-            {
-                var failResult = context.VideoProcessing.FailCurrentStep(executeResult.Error.Message);
-                if (failResult.IsFailure)
-                    return failResult.Error;
-
-                var assetFailResult = context.VideoAsset.MarkFailed(DateTime.UtcNow);
-                if (assetFailResult.IsFailure)
-                    return assetFailResult.Error;
-
-                var saveCancellationToken = cancellationToken.IsCancellationRequested
-                    ? CancellationToken.None
-                    : cancellationToken;
-                var saveResult = await _transactionManager.SaveChangesAsync(saveCancellationToken);
-                if (saveResult.IsFailure)
-                    return saveResult.Error;
-
                 return executeResult.Error;
-            }
 
             context = executeResult.Value;
 
@@ -103,6 +85,82 @@ public class ProcessingPipeline : IProcessingPipeline
             var stepSaveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
             if (stepSaveResult.IsFailure)
                 return stepSaveResult.Error;
+        }
+    }
+
+    private async Task<UnitResult<Error>> FinalizeAsync(
+        ProcessingContext context,
+        CancellationToken cancellationToken)
+    {
+        var assetCompleteResult = context.VideoAsset.CompleteProcessing();
+        if (assetCompleteResult.IsFailure)
+            return assetCompleteResult.Error;
+
+        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
+
+        _logger.LogInformation(
+            "Video processing completed for VideoAssetId: {VideoAssetId}",
+            context.VideoAsset.Id);
+
+        return UnitResult.Success<Error>();
+    }
+
+    private async Task<UnitResult<Error>> FinalizeWithFailureAsync(
+        ProcessingContext context,
+        Error error,
+        CancellationToken cancellationToken)
+    {
+        var processingFailResult = context.VideoProcessing.CurrentStep is not null
+            ? context.VideoProcessing.FailCurrentStep(error.Message)
+            : context.VideoProcessing.Fail(error.Message);
+
+        if (processingFailResult.IsFailure)
+            return processingFailResult.Error;
+
+        var assetFailResult = context.VideoAsset.MarkFailed(DateTime.UtcNow);
+        if (assetFailResult.IsFailure)
+            return assetFailResult.Error;
+
+        CleanupLocalWorkspace(context);
+
+        var saveCancellationToken = cancellationToken.IsCancellationRequested
+            ? CancellationToken.None
+            : cancellationToken;
+
+        var saveResult = await _transactionManager.SaveChangesAsync(saveCancellationToken);
+        if (saveResult.IsFailure)
+            return saveResult.Error;
+
+        _logger.LogError(
+            "Video processing failed for VideoAssetId: {VideoAssetId}. Error: {Error}",
+            context.VideoAsset.Id,
+            error.Message);
+
+        return error;
+    }
+
+    private void CleanupLocalWorkspace(ProcessingContext context)
+    {
+        string? workingDirectory = context.WorkingDirectory;
+        if (string.IsNullOrWhiteSpace(workingDirectory))
+            return;
+
+        try
+        {
+            if (Directory.Exists(workingDirectory))
+                Directory.Delete(workingDirectory, recursive: true);
+
+            context.Cleanup();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Failed to clean local workspace {WorkingDirectory} for VideoAssetId: {VideoAssetId}",
+                workingDirectory,
+                context.VideoAsset.Id);
         }
     }
 

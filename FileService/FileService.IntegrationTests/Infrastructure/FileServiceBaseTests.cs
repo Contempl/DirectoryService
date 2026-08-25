@@ -33,6 +33,8 @@ public abstract class FileServiceBaseTests : IAsyncLifetime
 
     protected HttpClient Client { get; }
 
+    protected IServiceProvider Services => _factory.Services;
+
     protected IAmazonS3 S3Client => _factory.Services.GetRequiredService<IAmazonS3>();
 
     public Task InitializeAsync() => Task.CompletedTask;
