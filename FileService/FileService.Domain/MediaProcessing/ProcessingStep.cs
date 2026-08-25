@@ -24,6 +24,8 @@ public class ProcessingStep
 
     public DateTime? CompletedAt { get; private set; }
 
+    private ProcessingStep() { }
+
     public ProcessingStep(StepType stepType, int order, int weight)
     {
         Id = Guid.NewGuid();

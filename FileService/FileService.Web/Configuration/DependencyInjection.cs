@@ -15,6 +15,8 @@ using FluentValidation;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
 using FileService.Infrastructure.Postgres.Repositories;
+using FileService.VideoProcessing.Pipeline;
+using FileService.VideoProcessing.Pipeline.Steps;
 using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +36,16 @@ public static class DependencyInjection
                 .LogTo(Console.WriteLine, LogLevel.Information));
 
         services.AddScoped<IMediaAssetsRepository, MediaAssetsRepository>();
+        services.AddScoped<IVideoProcessingRepository, VideoProcessingRepository>();
+        services.AddScoped<ITransactionManager, TransactionManager>();
+        services.AddScoped<IProcessingPipeline, ProcessingPipeline>();
+        services.AddScoped<FileService.VideoProcessing.VideoProcessingService>();
+        services.AddScoped<IProcessingStepHandler, InitializeStepHandler>();
+        services.AddScoped<IProcessingStepHandler, ExtractMetadataStepHandler>();
+        services.AddScoped<IProcessingStepHandler, GenerateHlsStepHandler>();
+        services.AddScoped<IProcessingStepHandler, UploadHlsStepHandler>();
+        services.AddScoped<IProcessingStepHandler, GeneratePreviewStepHandler>();
+        services.AddScoped<IProcessingStepHandler, CleanupStepHandler>();
 
         services.AddEndpoints(typeof(UploadFileHandler).Assembly);
 

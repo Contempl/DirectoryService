@@ -69,6 +69,7 @@ public abstract class MediaAsset
         if (Status == MediaStatus.READY)
             return UnitResult.Success<Error>();
 
+        FinalKey = finalKey;
         Status = MediaStatus.READY;
         
         UpdatedAt =  timestamp;

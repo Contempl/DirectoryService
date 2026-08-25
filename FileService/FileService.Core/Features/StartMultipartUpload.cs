@@ -91,7 +91,7 @@ public sealed class StartMultipartUploadHandler
 
         var uploadId = uploadIdResult.Value;
 
-        var addResult = await _mediaAssetsRepository.AddAsync(mediaAsset, cancellationToken);
+        var addResult = _mediaAssetsRepository.Add(mediaAsset, cancellationToken);
         if (addResult.IsFailure)
         {
             await _s3Provider.AbortMultipartUploadAsync(mediaAsset.RawKey, uploadId, cancellationToken);
@@ -107,6 +107,8 @@ public sealed class StartMultipartUploadHandler
             await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
             return chunkUrlsResult.Error;
         }
+
+        await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Started multipart upload {UploadId} for {FileName}", uploadId, request.FileName);
 
