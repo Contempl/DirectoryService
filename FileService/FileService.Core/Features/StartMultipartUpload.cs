@@ -108,6 +108,8 @@ public sealed class StartMultipartUploadHandler
             return chunkUrlsResult.Error;
         }
 
+        await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
+
         _logger.LogInformation("Started multipart upload {UploadId} for {FileName}", uploadId, request.FileName);
 
         return new StartMultipartUploadResponse(mediaAsset.Id, uploadId, chunkUrlsResult.Value, chunkSize);
