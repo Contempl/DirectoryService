@@ -64,27 +64,25 @@ public abstract class MediaAsset
         return UnitResult.Success<Error>();
     }
 
-    protected UnitResult<Error> MarkReady(StorageKey finalKey, DateTime timestamp)
+    public UnitResult<Error> MarkReady()
     {
-        if (Status == MediaStatus.READY)
-            return UnitResult.Success<Error>();
-
-        FinalKey = finalKey;
+        if (Status != MediaStatus.UPLOADED && Status != MediaStatus.PROCESSING)
+            return Error.Validation("asset.invalid.status.transition",
+                "Can only mark as ready from UPLOADED or PROCESSING status");
+        
         Status = MediaStatus.READY;
-        
-        UpdatedAt =  timestamp;
-        
+        UpdatedAt = DateTime.UtcNow;
         return UnitResult.Success<Error>();
     }
 
-    public UnitResult<Error> MarkFailed(DateTime timestamp)
+    public UnitResult<Error> MarkFailed()
     {
         if (Status == MediaStatus.FAILED)
             return UnitResult.Success<Error>();
         
         Status = MediaStatus.FAILED;
         
-        UpdatedAt = timestamp;
+        UpdatedAt = DateTime.UtcNow;
         
         return UnitResult.Success<Error>();
     }

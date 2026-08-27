@@ -1,5 +1,4 @@
 using Core.Abstractions;
-using CSharpFunctionalExtensions;
 using FileService.Core;
 using FileService.Core.Features;
 using FileService.Core.Features.AbordMultipartUpload;
@@ -11,19 +10,22 @@ using FileService.Core.Features.GetMediaAssetInfo;
 using FileService.Core.Features.GetMediaAssetsInfo;
 using FileService.Core.Features.GetChunkUploadUrl;
 using FileService.Core.Features.Upload;
+using FileService.Core.Processing;
 using FluentValidation;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
 using FileService.Infrastructure.Postgres.Repositories;
+using FileService.VideoProcessing;
 using FileService.VideoProcessing.Pipeline;
 using FileService.VideoProcessing.Pipeline.Steps;
 using FileService.VideoProcessing.ProcessRunner;
 using FileService.VideoProcessing.FfmpegProcess;
+using FileService.VideoProcessing.Jobs;
 using Framework.Middleware;
 using Framework.Response;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
-using Shared.Kernel;
+using Quartz;
 
 namespace FileService.Configuration;
 
@@ -40,8 +42,11 @@ public static class DependencyInjection
         services.AddScoped<IMediaAssetsRepository, MediaAssetsRepository>();
         services.AddScoped<IVideoProcessingRepository, VideoProcessingRepository>();
         services.AddScoped<ITransactionManager, TransactionManager>();
+        services.AddScoped<QuartzDbInitializer>();
         services.AddScoped<IProcessingPipeline, ProcessingPipeline>();
         services.AddScoped<FileService.VideoProcessing.VideoProcessingService>();
+        services.AddScoped<IVideoProcessingService>(serviceProvider =>
+            serviceProvider.GetRequiredService<FileService.VideoProcessing.VideoProcessingService>());
         services.AddScoped<IProcessRunner, ProcessRunner>();
         services.AddScoped<IFfmpegProcessRunner, FfmpegProcessRunner>();
         services.AddScoped<IProcessingStepHandler, InitializeStepHandler>();
@@ -50,9 +55,24 @@ public static class DependencyInjection
         services.AddScoped<IProcessingStepHandler, UploadHlsStepHandler>();
         services.AddScoped<IProcessingStepHandler, GeneratePreviewStepHandler>();
         services.AddScoped<IProcessingStepHandler, CleanupStepHandler>();
+        services.AddScoped<VideoProcessingJobFactory>();
+        services.AddScoped<IProcessingJobFactory>(serviceProvider =>
+            serviceProvider.GetRequiredService<VideoProcessingJobFactory>());
+        services.AddScoped<ProcessingJobScheduler>();
 
         services.Configure<FileService.VideoProcessing.VideoProcessingOptions>(
             configuration.GetSection(FileService.VideoProcessing.VideoProcessingOptions.SectionName));
+
+        services.AddQuartz(options =>
+        {
+            options.UsePersistentStore(storeOptions =>
+            {
+                storeOptions.UsePostgres(configuration.GetConnectionString("Database")!);
+                storeOptions.UseNewtonsoftJsonSerializer();
+                storeOptions.UseProperties = true;
+            });
+        });
+        services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
 
         services.AddEndpoints(typeof(UploadFileHandler).Assembly);
 

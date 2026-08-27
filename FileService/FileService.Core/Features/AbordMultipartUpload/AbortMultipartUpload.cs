@@ -52,7 +52,7 @@ public sealed class AbortMultipartUploadHandler
         if (abortResult.IsFailure)
             return abortResult.Error;
 
-        mediaAsset.MarkFailed(DateTime.UtcNow);
+        mediaAsset.MarkFailed();
         await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Aborted multipart upload {UploadId} for asset {AssetId}", request.UploadId, mediaAsset.Id);

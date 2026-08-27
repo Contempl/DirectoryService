@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using FileService.Core;
+using FileService.Domain.MediaProcessing;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
 using VideoProcessingEntity = FileService.Domain.MediaProcessing.VideoProcessing;
@@ -119,7 +120,7 @@ public class ProcessingPipeline : IProcessingPipeline
         if (processingFailResult.IsFailure)
             return processingFailResult.Error;
 
-        var assetFailResult = context.VideoAsset.MarkFailed(DateTime.UtcNow);
+        var assetFailResult = context.VideoAsset.MarkFailed();
         if (assetFailResult.IsFailure)
             return assetFailResult.Error;
 
@@ -169,6 +170,9 @@ public class ProcessingPipeline : IProcessingPipeline
         ProcessingContext context,
         CancellationToken cancellationToken)
     {
+        // FS-12: Каждый background-step логирует asset, название шага и фактическую длительность.
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         try
         {
             return await handler.ExecuteAsync(context, cancellationToken);
@@ -193,6 +197,15 @@ public class ProcessingPipeline : IProcessingPipeline
             return Error.Failure(
                 "pipeline.step.execution.failed",
                 exception.Message);
+        }
+        finally
+        {
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "Video processing step {StepType} finished for VideoAssetId: {VideoAssetId} in {DurationMs} ms",
+                handler.StepType,
+                context.VideoAsset.Id,
+                stopwatch.ElapsedMilliseconds);
         }
     }
 
@@ -225,6 +238,25 @@ public class ProcessingPipeline : IProcessingPipeline
         
         if (assetResult.IsFailure)
             return assetResult.Error;
+
+        // FS-12: FAILED processing можно перезапустить только по наступившему Quartz retry.
+        if (videoProcess.Status == ProcessingStatus.FAILED)
+        {
+            if (videoProcess.NextRetryAt is null || videoProcess.NextRetryAt > DateTime.UtcNow)
+            {
+                return Error.Validation(
+                    "processing.retry.not.scheduled",
+                    "Failed processing can only restart when its scheduled retry is due");
+            }
+
+            var prepareRetryResult = assetResult.Value.PrepareProcessingRetry();
+            if (prepareRetryResult.IsFailure)
+                return prepareRetryResult.Error;
+
+            var resetResult = videoProcess.Reset();
+            if (resetResult.IsFailure)
+                return resetResult.Error;
+        }
 
         var startResult = assetResult.Value.StartProcessing();
         if (startResult.IsFailure)

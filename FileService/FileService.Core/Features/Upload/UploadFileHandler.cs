@@ -4,6 +4,7 @@ using CSharpFunctionalExtensions;
 using FileService.Domain.Assets;
 using FileService.Domain.Enums;
 using FileService.Domain.ValueObjects;
+using FileService.Core.Processing;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
@@ -16,17 +17,20 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
     private readonly IS3Provider _s3Provider;
     private readonly IValidator<UploadFileCommand> _validator;
     private readonly ILogger<UploadFileHandler> _logger;
+    private readonly ProcessingJobScheduler _processingJobScheduler;
 
     public UploadFileHandler(
         IMediaAssetsRepository mediaAssetRepository,
         IS3Provider s3Provider,
         IValidator<UploadFileCommand> validator,
-        ILogger<UploadFileHandler> logger)
+        ILogger<UploadFileHandler> logger,
+        ProcessingJobScheduler processingJobScheduler)
     {
         _mediaAssetRepository = mediaAssetRepository;
         _s3Provider = s3Provider;
         _validator = validator;
         _logger = logger;
+        _processingJobScheduler = processingJobScheduler;
     }
 
     public async Task<Result<Guid, Errors>> HandleAsync(UploadFileCommand command, CancellationToken cancellationToken)
@@ -82,15 +86,30 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
             cancellationToken);
         if (uploadResult.IsFailure)
         {
-            mediaAsset.MarkFailed(DateTime.UtcNow);
+            mediaAsset.MarkFailed();
             await _mediaAssetRepository.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Failed to upload file {fileName}", fileName);
             return uploadResult.Error.ToErrors();
         }
         
         mediaAsset.MarkUploaded(DateTime.UtcNow);
+
+        if (!mediaAsset.RequiresProcessing())
+        {
+            var markReadyResult = mediaAsset.MarkReady();
+            if (markReadyResult.IsFailure)
+                return markReadyResult.Error.ToErrors();
+        }
         
         await _mediaAssetRepository.SaveChangesAsync(cancellationToken);
+
+        // FS-12: Обычная загрузка видео ставит ту же фоновую job, что и multipart upload.
+        if (mediaAsset.RequiresProcessing())
+        {
+            var scheduleResult = await _processingJobScheduler.ScheduleAsync(mediaAsset, cancellationToken);
+            if (scheduleResult.IsFailure)
+                return scheduleResult.Error.ToErrors();
+        }
 
         _logger.LogInformation($"Uploaded file {file.Name}");
 

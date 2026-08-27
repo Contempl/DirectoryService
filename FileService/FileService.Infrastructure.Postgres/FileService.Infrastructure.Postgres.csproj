@@ -15,4 +15,8 @@
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Scripts\quartz_tables.sql" />
+    </ItemGroup>
+
 </Project>
