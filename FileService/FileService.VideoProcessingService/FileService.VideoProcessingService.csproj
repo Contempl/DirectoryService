@@ -11,4 +11,8 @@
       <ProjectReference Include="..\FileService.Core\FileService.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Quartz" Version="3.18.2" />
+    </ItemGroup>
+
 </Project>

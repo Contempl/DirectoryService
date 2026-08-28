@@ -72,7 +72,7 @@ public class VideoAsset : MediaAsset
             FinalKey = masterPlaylistKey.Value;
         }
 
-        return MarkReady(FinalKey, DateTime.UtcNow);
+        return MarkReady();
     }
 
     public override bool RequiresProcessing() => true;
@@ -136,6 +136,9 @@ public class VideoAsset : MediaAsset
 
     public UnitResult<Error> StartProcessing()
     {
+        if (Status == MediaStatus.PROCESSING)
+            return UnitResult.Success<Error>();
+
         if (Status != MediaStatus.UPLOADED)
             return Error.Validation("asset.invalid.status.transaction", "Can only start processing from UPLOADED status");
 
@@ -144,6 +147,20 @@ public class VideoAsset : MediaAsset
 
         Status = MediaStatus.PROCESSING;
         UpdatedAt = DateTime.UtcNow;
+        return UnitResult.Success<Error>();
+    }
+
+    public UnitResult<Error> PrepareProcessingRetry()
+    {
+        // FS-12: Возвращаем только FAILED-видео в исходную точку повторного pipeline.
+        if (Status != MediaStatus.FAILED)
+            return Error.Validation(
+                "asset.invalid.retry.status",
+                "Can only prepare processing retry from FAILED status");
+
+        Status = MediaStatus.UPLOADED;
+        UpdatedAt = DateTime.UtcNow;
+
         return UnitResult.Success<Error>();
     }
 }

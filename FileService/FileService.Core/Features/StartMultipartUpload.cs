@@ -103,7 +103,7 @@ public sealed class StartMultipartUploadHandler
         if (chunkUrlsResult.IsFailure)
         {
             await _s3Provider.AbortMultipartUploadAsync(mediaAsset.RawKey, uploadId, cancellationToken);
-            mediaAsset.MarkFailed(DateTime.UtcNow);
+            mediaAsset.MarkFailed();
             await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
             return chunkUrlsResult.Error;
         }

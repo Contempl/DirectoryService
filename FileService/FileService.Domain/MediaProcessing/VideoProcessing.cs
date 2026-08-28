@@ -143,6 +143,8 @@ public class VideoProcessing
         CompletedAt = null;
         ErrorMessage = null;
         IsCriticalError = false;
+        NextRetryAt = null;
+        StartedAt = DateTime.UtcNow;
 
         foreach (var step in _steps)
         {
