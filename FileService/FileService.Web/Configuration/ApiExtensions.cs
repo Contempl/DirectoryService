@@ -34,7 +34,8 @@ public static class ApiExtensions
 
         app.UseCors(bld =>
         {
-            bld.WithOrigins("http://localhost:3000")
+            bld.WithOrigins("http://localhost:3000",
+                    "http://localhost:8002")
                 .AllowCredentials()
                 .AllowAnyHeader()
                 .AllowAnyMethod();
@@ -46,10 +47,9 @@ public static class ApiExtensions
         app.UseHttpsRedirection();
         
         app.UseAuthentication();
+        app.UseDevAuth();
         app.UseMiddleware<UserScopedDataMiddleware>();
         app.UseAuthorization();
-        
-        app.UseDevAuth();
 
         var apiGroup = app.MapGroup("/api").WithOpenApi();
         app.MapEndpoints(apiGroup);

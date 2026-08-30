@@ -61,6 +61,11 @@ public class ProcessingPipeline : IProcessingPipeline
 
             var currentStep = stepResult.Value;
 
+            // FS-13: Сохраняем PROCESSING до долгого handler-а, чтобы GET и SSE увидели текущий шаг.
+            var startStepSaveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+            if (startStepSaveResult.IsFailure)
+                return startStepSaveResult.Error;
+
             var stepHandler = _stepHandlers.FirstOrDefault(s => s.StepType == currentStep.Type);
             if (stepHandler is null)
             {
