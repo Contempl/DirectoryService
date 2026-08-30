@@ -20,7 +20,16 @@ public sealed class VideoProcessingJob(
     public async Task Execute(IJobExecutionContext context)
     {
         JobDataMap dataMap = context.MergedJobDataMap;
-        Guid videoAssetId = dataMap.GetGuid(VideoAssetIdKey.Name);
+        var videoAssetIdValue = dataMap.GetString(VideoAssetIdKey.Name);
+        if (!Guid.TryParse(videoAssetIdValue, out var videoAssetId))
+        {
+            logger.LogError(
+                "Quartz job data does not contain a valid {VideoAssetIdKey}. Value: {VideoAssetIdValue}",
+                VideoAssetIdKey.Name,
+                videoAssetIdValue);
+
+            throw new JobExecutionException(refireImmediately: false);
+        }
 
         logger.LogInformation(
             "Starting video processing job for VideoAsset: {VideoAssetId}",
