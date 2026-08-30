@@ -8,6 +8,8 @@ using FileService.Core.Features.Delete;
 using FileService.Core.Features.GetDownloadUrl;
 using FileService.Core.Features.GetMediaAssetInfo;
 using FileService.Core.Features.GetMediaAssetsInfo;
+using FileService.Core.Features.GetVideoProcessingStatus;
+using FileService.Core.Features.StreamVideoProcessingStatus;
 using FileService.Core.Features.GetChunkUploadUrl;
 using FileService.Core.Features.Upload;
 using FileService.Core.Processing;
@@ -63,6 +65,16 @@ public static class DependencyInjection
         services.Configure<FileService.VideoProcessing.VideoProcessingOptions>(
             configuration.GetSection(FileService.VideoProcessing.VideoProcessingOptions.SectionName));
 
+        services.AddOptions<VideoProcessingStatusStreamOptions>()
+            .Bind(configuration.GetSection(VideoProcessingStatusStreamOptions.SectionName))
+            .Validate(
+                options => options.PollingIntervalSeconds > 0,
+                "PollingIntervalSeconds must be greater than zero")
+            .Validate(
+                options => options.HeartbeatIntervalSeconds > 0,
+                "HeartbeatIntervalSeconds must be greater than zero")
+            .ValidateOnStart();
+
         services.AddQuartz(options =>
         {
             options.UsePersistentStore(storeOptions =>
@@ -82,7 +94,9 @@ public static class DependencyInjection
 
         services.AddScoped<IValidator<UploadFileCommand>, UploadFileValidator>();
 
-        services.AddScoped<ICommandHandler<Guid, UploadFileCommand>, UploadFileHandler>();
+        services.AddScoped<UploadFileHandler>();
+        services.AddScoped<ICommandHandler<Guid, UploadFileCommand>>(serviceProvider =>
+            serviceProvider.GetRequiredService<UploadFileHandler>());
 
         services.AddScoped<StartMultipartUploadHandler>();
         services.AddScoped<GetChunkUploadUrlHandler>();
@@ -91,6 +105,8 @@ public static class DependencyInjection
         services.AddScoped<CancelMultipartUploadHandler>();
         services.AddScoped<GetMediaAssetInfoHandler>();
         services.AddScoped<GetMediaAssetsInfoHandler>();
+        services.AddScoped<GetVideoProcessingStatusHandler>();
+        services.AddScoped<VideoProcessingStatusReader>();
         services.AddScoped<GetDownloadUrlHandler>();
         services.AddScoped<DeleteFileHandler>();
 
