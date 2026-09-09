@@ -68,7 +68,7 @@ namespace FileService.Infrastructure.Postgres.Migrations
 
                     b.HasIndex("Status", "CreatedAt");
 
-                    b.ToTable("media_assets", null, t =>
+                    b.ToTable("media_assets", t =>
                         {
                             t.Property("asset_type")
                                 .HasColumnName("asset_type1");
@@ -168,7 +168,7 @@ namespace FileService.Infrastructure.Postgres.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("video_metadata");
 
-                    b.ToTable("media_assets", t =>
+                    b.ToTable("media_assets", null, t =>
                         {
                             t.Property("asset_type")
                                 .HasColumnName("asset_type1");
