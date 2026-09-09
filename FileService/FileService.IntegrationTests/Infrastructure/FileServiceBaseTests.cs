@@ -101,7 +101,7 @@ public abstract class FileServiceBaseTests : IAsyncLifetime
     protected async Task<Guid> UploadOnePartAssetAsync(string fileName, string content)
     {
         var payload = Encoding.UTF8.GetBytes(content);
-        var started = await StartMultipartUploadAsync(fileName, "video", "video/mp4", payload.Length);
+        var started = await StartMultipartUploadAsync(fileName, "preview", "image/png", payload.Length);
         var eTag = await PutPartAsync(started.ChunkUrls.Single().UploadUrl, payload);
         var completed = await CompleteMultipartUploadAsync(started.MediaAssetId, started.UploadId, [new PartETagDto(1, eTag)]);
         return completed.MediaAssetId;
@@ -113,7 +113,7 @@ public abstract class FileServiceBaseTests : IAsyncLifetime
         string contentType,
         long size)
     {
-        var request = new StartMultipartUploadRequest(fileName, assetType, contentType, size, "lesson", Guid.NewGuid());
+        var request = new StartMultipartUploadRequest(fileName, assetType, contentType, size, "location", Guid.NewGuid());
         var response = await Client.PostAsJsonAsync("/api/files/multipart/start", request);
         return await ReadOkEnvelopeAsync<StartMultipartUploadResponse>(response);
     }

@@ -2,12 +2,14 @@ using System.Data;
 using System.Linq.Expressions;
 using CSharpFunctionalExtensions;
 using FileService.Core;
+using FileService.Core.Messaging;
 using FileService.Domain.Assets;
 using FileService.Domain.Enums;
 using FileService.Domain.MediaProcessing;
 using FileService.Domain.ValueObjects;
 using FileService.VideoProcessing.Pipeline;
 using Microsoft.Extensions.Logging.Abstractions;
+using RabbitMqMessaging.IntegrationEvents.Files.Events;
 using Shared.Kernel;
 using VideoProcessingEntity = FileService.Domain.MediaProcessing.VideoProcessing;
 
@@ -50,6 +52,10 @@ public class ProcessingPipelineTests
         Assert.Equal(MediaStatus.READY, videoAsset.Status);
         Assert.Equal(100, fixture.VideoProcessingRepository.VideoProcessing.ProgressPercentage);
         Assert.Equal("master.m3u8", videoAsset.FinalKey.Key);
+        Assert.Contains(fixture.Publisher.PublishedEvents, message =>
+            message is VideoProcessingCompletedIntegrationEvent);
+        Assert.Contains(fixture.Publisher.PublishedEvents, message =>
+            message is FileReadyIntegrationEvent);
     }
 
     [Fact]
@@ -87,6 +93,8 @@ public class ProcessingPipelineTests
             fixture.VideoProcessingRepository.VideoProcessing.Steps
                 .Single(step => step.Type == StepType.UPLOAD_HLS)
                 .Status);
+        Assert.Contains(fixture.Publisher.PublishedEvents, message =>
+            message is VideoProcessingFailedIntegrationEvent);
     }
 
     [Fact]
@@ -118,6 +126,8 @@ public class ProcessingPipelineTests
         Assert.Contains(
             fixture.VideoProcessingRepository.VideoProcessing.Steps,
             step => step.Status == StepStatus.FAILED);
+        Assert.Contains(fixture.Publisher.PublishedEvents, message =>
+            message is VideoProcessingFailedIntegrationEvent);
     }
 
     [Fact]
@@ -152,15 +162,17 @@ public class ProcessingPipelineTests
         var videoProcessingRepository = new FakeVideoProcessingRepository();
         var mediaAssetsRepository = new FakeMediaAssetsRepository(videoAsset);
         var transactionManager = new FakeTransactionManager();
+        var publisher = new FakeIntegrationEventPublisher();
 
         var pipeline = new ProcessingPipeline(
             handlers,
             NullLogger<ProcessingPipeline>.Instance,
             videoProcessingRepository,
             mediaAssetsRepository,
-            transactionManager);
+            transactionManager,
+            publisher);
 
-        return new PipelineFixture(pipeline, videoProcessingRepository);
+        return new PipelineFixture(pipeline, videoProcessingRepository, publisher);
     }
 
     private static VideoAsset CreateUploadedVideoAsset()
@@ -177,7 +189,8 @@ public class ProcessingPipelineTests
 
     private sealed record PipelineFixture(
         ProcessingPipeline Pipeline,
-        FakeVideoProcessingRepository VideoProcessingRepository);
+        FakeVideoProcessingRepository VideoProcessingRepository,
+        FakeIntegrationEventPublisher Publisher);
 
     private sealed class RecordingStepHandler : IProcessingStepHandler
     {
@@ -277,10 +290,28 @@ public class ProcessingPipelineTests
 
     private sealed class FakeTransactionManager : ITransactionManager
     {
-        public Task<Result<int, Error>> SaveChangesAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(Result.Success<int, Error>(1));
+        public Task<UnitResult<Error>> SaveChangesAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(UnitResult.Success<Error>());
 
-        public Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        public Task<UnitResult<Error>> BeginTransactionAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(UnitResult.Success<Error>());
+
+        public Task<UnitResult<Error>> CommitTransactionAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(UnitResult.Success<Error>());
+    }
+
+    private sealed class FakeIntegrationEventPublisher : IIntegrationEventPublisher
+    {
+        public List<object> PublishedEvents { get; } = [];
+
+        public Task PublishAsync<TEvent>(
+            TEvent integrationEvent,
+            CancellationToken cancellationToken = default)
+            where TEvent : notnull
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PublishedEvents.Add(integrationEvent);
+            return Task.CompletedTask;
+        }
     }
 }

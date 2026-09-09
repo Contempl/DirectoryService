@@ -25,13 +25,7 @@ public sealed class VideoProcessingTests : FileServiceBaseTests
         Guid videoAssetId = await UploadVideoAsync("sample.mp4", video);
 
         // Act
-        await using (var scope = Services.CreateAsyncScope())
-        {
-            var service = scope.ServiceProvider.GetRequiredService<VideoProcessingService>();
-            var result = await service.ProcessVideoAsync(videoAssetId);
-
-            Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : string.Empty);
-        }
+        await WaitForProcessingToFinishAsync(videoAssetId);
 
         // Assert
         await using var assertScope = Services.CreateAsyncScope();
@@ -72,13 +66,7 @@ public sealed class VideoProcessingTests : FileServiceBaseTests
         Guid videoAssetId = await UploadVideoAsync("invalid.mp4", invalidVideo);
 
         // Act
-        await using (var scope = Services.CreateAsyncScope())
-        {
-            var service = scope.ServiceProvider.GetRequiredService<VideoProcessingService>();
-            var result = await service.ProcessVideoAsync(videoAssetId);
-
-            Assert.True(result.IsFailure);
-        }
+        await WaitForProcessingToFinishAsync(videoAssetId);
 
         // Assert
         await using var assertScope = Services.CreateAsyncScope();
@@ -114,6 +102,30 @@ public sealed class VideoProcessingTests : FileServiceBaseTests
             [new PartETagDto(1, eTag)]);
 
         return completed.MediaAssetId;
+    }
+
+    // FS-12/14: Multipart completion уже ставит Quartz job, поэтому не запускаем pipeline второй раз.
+    private async Task WaitForProcessingToFinishAsync(Guid videoAssetId)
+    {
+        var timeout = Stopwatch.StartNew();
+
+        while (timeout.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            await using var scope = Services.CreateAsyncScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<FileServiceDbContext>();
+            var status = await dbContext.VideoProcesses
+                .AsNoTracking()
+                .Where(processing => processing.VideoAssetId == videoAssetId)
+                .Select(processing => (ProcessingStatus?)processing.Status)
+                .SingleOrDefaultAsync();
+
+            if (status is ProcessingStatus.COMPLETED or ProcessingStatus.FAILED)
+                return;
+
+            await Task.Delay(200);
+        }
+
+        Assert.Fail($"Video processing did not finish for asset {videoAssetId}");
     }
 
     private async Task<byte[]> CreateSampleVideoAsync()
