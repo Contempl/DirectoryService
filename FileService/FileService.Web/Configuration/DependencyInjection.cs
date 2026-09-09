@@ -12,10 +12,12 @@ using FileService.Core.Features.GetVideoProcessingStatus;
 using FileService.Core.Features.StreamVideoProcessingStatus;
 using FileService.Core.Features.GetChunkUploadUrl;
 using FileService.Core.Features.Upload;
+using FileService.Core.Messaging;
 using FileService.Core.Processing;
 using FluentValidation;
 using FileService.Infrastructure;
 using FileService.Infrastructure.Postgres;
+using FileService.Infrastructure.Postgres.Messaging;
 using FileService.Infrastructure.Postgres.Repositories;
 using FileService.VideoProcessing;
 using FileService.VideoProcessing.Pipeline;
@@ -61,6 +63,8 @@ public static class DependencyInjection
         services.AddScoped<IProcessingJobFactory>(serviceProvider =>
             serviceProvider.GetRequiredService<VideoProcessingJobFactory>());
         services.AddScoped<ProcessingJobScheduler>();
+
+        services.AddScoped<IIntegrationEventPublisher, IntegrationEventPublisher>();
 
         services.Configure<FileService.VideoProcessing.VideoProcessingOptions>(
             configuration.GetSection(FileService.VideoProcessing.VideoProcessingOptions.SectionName));
