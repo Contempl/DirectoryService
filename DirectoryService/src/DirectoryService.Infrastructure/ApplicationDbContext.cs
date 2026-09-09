@@ -5,11 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Wolverine.EntityFrameworkCore;
 
 namespace DirectoryService.Infrastructure;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options), IReadDbContext
 {
+    public const string WOLVERINE_SCHEMA = "wolverine";
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
@@ -27,6 +29,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DepartmentConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LocationConfiguration).Assembly);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PositionConfiguration).Assembly);
+        
+        // FS-14: Служебные envelope-модели Wolverine для transactional inbox.
+        modelBuilder.MapWolverineEnvelopeStorage(WOLVERINE_SCHEMA);
     }
 
 
