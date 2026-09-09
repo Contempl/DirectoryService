@@ -6,10 +6,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Framework", "Framework\Fram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Kernel", "Shared.Kernel\Shared.Kernel.csproj", "{3027FCBC-B6C2-41F1-A380-2B68ABFE359F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMqMessaging", "Messaging\RabbitMqMessaging.csproj", "{B88A6627-699E-4DD5-A8E8-E08119515002}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFolder", "SolutionFolder", "{4DB664FD-FEB8-4A17-AFF3-E6B1EFA8812A}"
 	ProjectSection(SolutionItems) = preProject
 		..\.env = ..\.env
 		..\nuget.config = ..\nuget.config
+		..\docker-compose.yml = ..\docker-compose.yml
 	EndProjectSection
 EndProject
 Global
@@ -30,5 +33,9 @@ Global
 		{3027FCBC-B6C2-41F1-A380-2B68ABFE359F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3027FCBC-B6C2-41F1-A380-2B68ABFE359F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3027FCBC-B6C2-41F1-A380-2B68ABFE359F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B88A6627-699E-4DD5-A8E8-E08119515002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B88A6627-699E-4DD5-A8E8-E08119515002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B88A6627-699E-4DD5-A8E8-E08119515002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B88A6627-699E-4DD5-A8E8-E08119515002}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

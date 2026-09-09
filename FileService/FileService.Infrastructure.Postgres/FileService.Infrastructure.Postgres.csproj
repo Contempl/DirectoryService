@@ -7,16 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\FileService.Core\FileService.Core.csproj" />
+        <ProjectReference Include="..\FileService.Core\FileService.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.14" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.14"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
+        <PackageReference Include="WolverineFx.Postgresql" Version="5.41.0"/>
+        <PackageReference Include="WolverineFx.EntityFrameworkCore" Version="5.41.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Scripts\quartz_tables.sql" />
+        <EmbeddedResource Include="Scripts\quartz_tables.sql"/>
     </ItemGroup>
 
 </Project>
