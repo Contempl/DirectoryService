@@ -1,7 +1,9 @@
 using DirectoryService.Application.DependencyInjection;
 using DirectoryService.Infrastructure.DI;
+using DirectoryService.Presentation.Configuration;
 using Framework.Middleware;
 using Serilog;
+using Wolverine.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,9 +17,22 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));
 
+builder.Host.AddRabbitMqMessaging(builder.Configuration);
+
+// FS-14: Проверяем runtime Wolverine и принимающий RabbitMQ listener.
+builder.Services.AddHealthChecks()
+    .AddWolverine(tags: ["live", "ready"])
+    .AddWolverineListeners(
+        name: "wolverine-rabbitmq-listeners",
+        filter: listener => listener.Uri.Scheme == "rabbitmq",
+        tags: ["ready"]);
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// FS-14: Общая проверка готовности messaging-инфраструктуры.
+app.MapHealthChecks("/health");
 
 app.UseExceptionHandlingMiddleware();
 
