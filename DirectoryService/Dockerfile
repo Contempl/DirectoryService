@@ -5,15 +5,25 @@ EXPOSE 5353
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG NUGET_USERNAME
+ARG NUGET_PASSWORD
 WORKDIR /src
-COPY ["src/DirectoryService.Presentation/DirectoryService.Presentation.csproj", "src/DirectoryService.Presentation/"]
-COPY ["src/DirectoryService.Application/DirectoryService.Application.csproj", "src/DirectoryService.Application/"]
-COPY ["src/DirectoryService.Domain/DirectoryService.Domain.csproj", "src/DirectoryService.Domain/"]
-COPY ["src/DirectoryService.Contracts/DirectoryService.Contracts.csproj", "src/DirectoryService.Contracts/"]
-COPY ["src/DirectoryService.Infrastructure/DirectoryService.Infrastructure.csproj", "src/DirectoryService.Infrastructure/"]
-RUN dotnet restore "src/DirectoryService.Presentation/DirectoryService.Presentation.csproj"
+
+RUN dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
+    -n github \
+    --username $NUGET_USERNAME \
+    --password $NUGET_PASSWORD \
+    --store-password-in-clear-text
+
+COPY ["DirectoryService/src/DirectoryService.Presentation/DirectoryService.Presentation.csproj", "DirectoryService/src/DirectoryService.Presentation/"]
+COPY ["DirectoryService/src/DirectoryService.Application/DirectoryService.Application.csproj", "DirectoryService/src/DirectoryService.Application/"]
+COPY ["DirectoryService/src/DirectoryService.Domain/DirectoryService.Domain.csproj", "DirectoryService/src/DirectoryService.Domain/"]
+COPY ["DirectoryService/src/DirectoryService.Contracts/DirectoryService.Contracts.csproj", "DirectoryService/src/DirectoryService.Contracts/"]
+COPY ["DirectoryService/src/DirectoryService.Infrastructure/DirectoryService.Infrastructure.csproj", "DirectoryService/src/DirectoryService.Infrastructure/"]
+COPY ["Shared/Messaging/RabbitMqMessaging.csproj", "Shared/Messaging/"]
+RUN dotnet restore "DirectoryService/src/DirectoryService.Presentation/DirectoryService.Presentation.csproj"
 COPY . .
-WORKDIR "/src/src/DirectoryService.Presentation"
+WORKDIR "/src/DirectoryService/src/DirectoryService.Presentation"
 RUN dotnet build "DirectoryService.Presentation.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
