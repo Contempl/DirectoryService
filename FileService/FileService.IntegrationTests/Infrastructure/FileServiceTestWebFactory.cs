@@ -7,15 +7,15 @@ using FileService.Infrastructure.Postgres;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Caching.Distributed;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
 
-namespace FileService.IntegrationTests;
+namespace FileService.IntegrationTests.Infrastructure;
 
 public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -104,6 +104,10 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
+        // FS-14: Wolverine читает connection string во время построения host-а,
+        // поэтому передаём Testcontainers-БД как host setting до запуска Program.cs.
+        builder.UseSetting("ConnectionStrings:Database", _dbContainer.GetConnectionString());
 
         builder.ConfigureAppConfiguration((_, config) =>
         {

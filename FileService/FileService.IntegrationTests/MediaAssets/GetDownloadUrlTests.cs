@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using FileService.Contracts.Dto;
+using FileService.IntegrationTests.Infrastructure;
 
 namespace FileService.IntegrationTests.MediaAssets;
 

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FileService.Contracts;
 using FileService.Domain.Enums;
+using FileService.IntegrationTests.Infrastructure;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 

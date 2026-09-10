@@ -2,10 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Amazon.S3;
-using Amazon.S3.Model;
 using FileService.Contracts;
 using FileService.Contracts.Dto;
 using FileService.Domain.Assets;
@@ -16,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using CompleteUploadRequest = FileService.Contracts.Dto.CompleteMultipartUploadRequest;
 using CompleteUploadResponse = FileService.Contracts.Dto.CompleteMultipartUploadResponse;
 
-namespace FileService.IntegrationTests;
+namespace FileService.IntegrationTests.Infrastructure;
 
 [Collection(FileServiceTestCollection.Name)]
 public abstract class FileServiceBaseTests : IAsyncLifetime

@@ -6,6 +6,7 @@ using FileService.Domain.Assets;
 using FileService.Domain.Enums;
 using FileService.Domain.MediaProcessing;
 using FileService.Infrastructure.Postgres;
+using FileService.IntegrationTests.Infrastructure;
 using FileService.VideoProcessing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
