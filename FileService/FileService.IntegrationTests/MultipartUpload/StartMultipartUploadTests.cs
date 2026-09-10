@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FileService.Contracts;
 using FileService.Domain.Enums;
+using FileService.IntegrationTests.Infrastructure;
 
 namespace FileService.IntegrationTests.MultipartUpload;
 
@@ -49,7 +50,7 @@ public class StartMultipartUploadTests : FileServiceBaseTests
         long size)
     {
         // Arrange
-        var request = new StartMultipartUploadRequest(fileName, "video", contentType, size, "lesson", Guid.NewGuid());
+        var request = new StartMultipartUploadRequest(fileName, "video", contentType, size, "location", Guid.NewGuid());
 
         // Act
         var response = await Client.PostAsJsonAsync("/api/files/multipart/start", request);

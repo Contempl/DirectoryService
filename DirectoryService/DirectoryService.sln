@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E1D64BF7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DirectoryService.IntegrationTests", "DirectoryService.IntegrationTests\DirectoryService.IntegrationTests.csproj", "{61342B20-1B7C-4F21-818E-E970B9821D2D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMqMessaging", "..\Shared\Messaging\RabbitMqMessaging.csproj", "{B2EFEE3A-B83D-4D54-A574-A55D0488343C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{61342B20-1B7C-4F21-818E-E970B9821D2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61342B20-1B7C-4F21-818E-E970B9821D2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61342B20-1B7C-4F21-818E-E970B9821D2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2EFEE3A-B83D-4D54-A574-A55D0488343C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2EFEE3A-B83D-4D54-A574-A55D0488343C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2EFEE3A-B83D-4D54-A574-A55D0488343C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2EFEE3A-B83D-4D54-A574-A55D0488343C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{087589DF-A4F7-4D4C-88A9-8822998051E4} = {320F992C-357F-427A-9B33-F0D89E9D3B54}

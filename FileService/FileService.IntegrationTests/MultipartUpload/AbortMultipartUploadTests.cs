@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Amazon.S3.Model;
 using FileService.Domain.Enums;
+using FileService.IntegrationTests.Infrastructure;
 using AbortUploadRequest = FileService.Contracts.Dto.AbortMultipartUploadRequest;
 
 namespace FileService.IntegrationTests.MultipartUpload;

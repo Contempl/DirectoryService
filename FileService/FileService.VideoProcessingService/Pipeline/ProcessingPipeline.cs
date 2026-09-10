@@ -1,7 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
 using FileService.Core;
+using FileService.Core.Messaging;
 using FileService.Domain.MediaProcessing;
 using Microsoft.Extensions.Logging;
+using RabbitMqMessaging.IntegrationEvents.Files.Events;
 using Shared.Kernel;
 using VideoProcessingEntity = FileService.Domain.MediaProcessing.VideoProcessing;
 
@@ -14,18 +16,21 @@ public class ProcessingPipeline : IProcessingPipeline
     private readonly IVideoProcessingRepository _videoProcessingRepository;
     private readonly IMediaAssetsRepository _mediaAssetsRepository;
     private readonly ITransactionManager _transactionManager;
+    private readonly IIntegrationEventPublisher _integrationEventPublisher;
 
     public ProcessingPipeline(IEnumerable<IProcessingStepHandler> stepHandlers,
         ILogger<ProcessingPipeline> logger,
         IVideoProcessingRepository videoProcessingRepository,
         IMediaAssetsRepository mediaAssetsRepository,
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager,
+        IIntegrationEventPublisher integrationEventPublisher)
     {
         _stepHandlers = stepHandlers;
         _logger = logger;
         _videoProcessingRepository = videoProcessingRepository;
         _mediaAssetsRepository = mediaAssetsRepository;
         _transactionManager = transactionManager;
+        _integrationEventPublisher = integrationEventPublisher;
     }
 
     public async Task<UnitResult<Error>> ProcessAllStepsAsync(
@@ -102,6 +107,18 @@ public class ProcessingPipeline : IProcessingPipeline
         if (assetCompleteResult.IsFailure)
             return assetCompleteResult.Error;
 
+        await _integrationEventPublisher.PublishAsync(
+            new VideoProcessingCompletedIntegrationEvent(
+                context.VideoAsset.Id,
+                context.VideoAsset.Owner.Context),
+            cancellationToken);
+
+        await _integrationEventPublisher.PublishAsync(
+            new FileReadyIntegrationEvent(
+                context.VideoAsset.Id,
+                context.VideoAsset.Owner.Context),
+            cancellationToken);
+        
         var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
         if (saveResult.IsFailure)
             return saveResult.Error;
@@ -121,6 +138,10 @@ public class ProcessingPipeline : IProcessingPipeline
         var processingFailResult = context.VideoProcessing.CurrentStep is not null
             ? context.VideoProcessing.FailCurrentStep(error.Message)
             : context.VideoProcessing.Fail(error.Message);
+        
+        var saveCancellationToken = cancellationToken.IsCancellationRequested
+            ? CancellationToken.None
+            : cancellationToken;
 
         if (processingFailResult.IsFailure)
             return processingFailResult.Error;
@@ -129,11 +150,15 @@ public class ProcessingPipeline : IProcessingPipeline
         if (assetFailResult.IsFailure)
             return assetFailResult.Error;
 
+        await _integrationEventPublisher.PublishAsync(
+            new VideoProcessingFailedIntegrationEvent(
+                context.VideoAsset.Id,
+                context.VideoAsset.Owner.Context),
+            saveCancellationToken);
+        
         CleanupLocalWorkspace(context);
 
-        var saveCancellationToken = cancellationToken.IsCancellationRequested
-            ? CancellationToken.None
-            : cancellationToken;
+        
 
         var saveResult = await _transactionManager.SaveChangesAsync(saveCancellationToken);
         if (saveResult.IsFailure)

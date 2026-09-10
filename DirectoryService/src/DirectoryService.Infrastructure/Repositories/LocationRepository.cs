@@ -70,4 +70,13 @@ public class LocationRepository : ILocationRepository
             .Where(location => locationIds.Contains(location.Id))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Location?> GetByPhotoAssetIdAsync(Guid assetId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Locations
+            .FirstOrDefaultAsync(
+                location => location.Photo != null &&
+                            location.Photo.AssetId == assetId,
+                cancellationToken);
+    }
 }

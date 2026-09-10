@@ -3,8 +3,8 @@ services:
   directory-service:
     container_name: directory-service
     build:
-      context: ./DirectoryService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: DirectoryService/Dockerfile
       args:
         - NUGET_USERNAME=${NUGET_USERNAME}
         - NUGET_PASSWORD=${NUGET_PASSWORD}
@@ -13,11 +13,16 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
+      - DevAuth__Enabled=true
+      - RabbitMq__Host=rabbitmq
       - FileServiceOptions__Url=http://file-service-ds:5353
       - CachingOptions__RedisConnectionString=redis:6379
       - CachingOptions__RedisEnabled=true
+      - ConnectionStrings__Database=Server=postgres_ds;Port=5432;Username=postgres;Password=postgres;Database=directory_service_db
     depends_on:
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   postgres_ds:
@@ -62,10 +67,13 @@ services:
       - redis-data:/data
     
   file-service:
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     container_name: file-service-ds
     build:
-      context: ./FileService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: FileService/Dockerfile
       args:
         - NUGET_USERNAME=${NUGET_USERNAME}
         - NUGET_PASSWORD=${NUGET_PASSWORD}
@@ -74,6 +82,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
+      - RabbitMq__Host=rabbitmq
   
   postgres_fs:
     container_name: postgres-fs
@@ -130,6 +139,23 @@ services:
       - "5440:5432"
     volumes:
       - postgres-data-as:/var/lib/postgressql/data    
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: fileservice
+      RABBITMQ_DEFAULT_PASS: fileservice
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
   
 volumes: 
   postgres-data:
@@ -137,3 +163,4 @@ volumes:
   postgres-data-fs:
   postgres-data-as:
   redis-data:
+  rabbitmq-data:

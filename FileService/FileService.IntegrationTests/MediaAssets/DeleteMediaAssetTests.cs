@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using FileService.Contracts.Dto;
 using FileService.Domain.Enums;
+using FileService.IntegrationTests.Infrastructure;
 
 namespace FileService.IntegrationTests.MediaAssets;
 
@@ -15,7 +16,7 @@ public class DeleteMediaAssetTests : FileServiceBaseTests
     {
         // Arrange
         var payload = Encoding.UTF8.GetBytes("delete me");
-        var started = await StartMultipartUploadAsync("video.mp4", "video", "video/mp4", payload.Length);
+        var started = await StartMultipartUploadAsync("image.png", "preview", "image/png", payload.Length);
         var eTag = await PutPartAsync(started.ChunkUrls.Single().UploadUrl, payload);
         await CompleteMultipartUploadAsync(started.MediaAssetId, started.UploadId, [new PartETagDto(1, eTag)]);
 
@@ -52,7 +53,7 @@ public class DeleteMediaAssetTests : FileServiceBaseTests
     public async Task DeleteMediaAsset_WithAlreadyDeletedAsset_ShouldReturnNotFound()
     {
         // Arrange
-        var assetId = await UploadOnePartAssetAsync("deleted-twice.mp4", "delete twice");
+        var assetId = await UploadOnePartAssetAsync("deleted-twice.png", "delete twice");
         await ReadOkEnvelopeAsync<Guid>(await Client.DeleteAsync($"/api/files/{assetId}"));
 
         // Act

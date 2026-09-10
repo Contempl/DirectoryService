@@ -1,4 +1,4 @@
-namespace FileService.IntegrationTests;
+namespace FileService.IntegrationTests.Infrastructure;
 
 [CollectionDefinition(Name)]
 public sealed class FileServiceTestCollection : ICollectionFixture<FileServiceTestWebFactory>

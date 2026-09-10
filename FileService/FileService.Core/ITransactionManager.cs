@@ -6,6 +6,7 @@ namespace FileService.Core;
 
 public interface ITransactionManager
 {
-    Task<Result<int, Error>> SaveChangesAsync(CancellationToken cancellationToken);
-    Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken);
+    Task<UnitResult<Error>> SaveChangesAsync(CancellationToken cancellationToken);
+    Task<UnitResult<Error>> BeginTransactionAsync(CancellationToken cancellationToken);
+    Task<UnitResult<Error>> CommitTransactionAsync(CancellationToken cancellationToken);
 }

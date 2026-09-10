@@ -20,16 +20,17 @@ RUN dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
     --password $NUGET_PASSWORD \
     --store-password-in-clear-text
 
-COPY ["FileService.Web/FileService.Web.csproj", "FileService.Web/"]
-COPY ["FileService.Core/FileService.Core.csproj", "FileService.Core/"]
-COPY ["FileService.Domain/FileService.Domain.csproj", "FileService.Domain/"]
-COPY ["FileService.Infrastructure.Postgres/FileService.Infrastructure.Postgres.csproj", "FileService.Infrastructure.Postgres/"]
-COPY ["FileService.Infrastructure.S3/FileService.Infrastructure.S3.csproj", "FileService.Infrastructure.S3/"]
-COPY ["FileService.Contracts/FileService.Contracts.csproj", "FileService.Contracts/"]
-COPY ["FileService.VideoProcessingService/FileService.VideoProcessingService.csproj", "FileService.VideoProcessingService/"]
-RUN dotnet restore "FileService.Web/FileService.Web.csproj"
+COPY ["FileService/FileService.Web/FileService.Web.csproj", "FileService/FileService.Web/"]
+COPY ["FileService/FileService.Core/FileService.Core.csproj", "FileService/FileService.Core/"]
+COPY ["FileService/FileService.Domain/FileService.Domain.csproj", "FileService/FileService.Domain/"]
+COPY ["FileService/FileService.Infrastructure.Postgres/FileService.Infrastructure.Postgres.csproj", "FileService/FileService.Infrastructure.Postgres/"]
+COPY ["FileService/FileService.Infrastructure.S3/FileService.Infrastructure.S3.csproj", "FileService/FileService.Infrastructure.S3/"]
+COPY ["FileService/FileService.Contracts/FileService.Contracts.csproj", "FileService/FileService.Contracts/"]
+COPY ["FileService/FileService.VideoProcessingService/FileService.VideoProcessingService.csproj", "FileService/FileService.VideoProcessingService/"]
+COPY ["Shared/Messaging/RabbitMqMessaging.csproj", "Shared/Messaging/"]
+RUN dotnet restore "FileService/FileService.Web/FileService.Web.csproj"
 COPY . .
-WORKDIR "/src/FileService.Web"
+WORKDIR "/src/FileService/FileService.Web"
 RUN dotnet build "./FileService.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

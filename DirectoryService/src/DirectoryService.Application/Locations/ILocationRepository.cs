@@ -17,4 +17,8 @@ public interface ILocationRepository
     Task<List<Location>> GetLocationsByIdsAsync(
         IReadOnlyCollection<Guid> locationIds,
         CancellationToken cancellationToken = default);
+    
+    Task<Location?> GetByPhotoAssetIdAsync(
+          Guid assetId,
+          CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FileService.Contracts.Dto;
+using FileService.IntegrationTests.Infrastructure;
 
 namespace FileService.IntegrationTests.MediaAssets;
 
@@ -12,9 +13,9 @@ public class GetMediaAssetsInfoTests : FileServiceBaseTests
     public async Task BatchQuery_ShouldReturnVisibleAssetsAndOmitDeletedAssets()
     {
         // Arrange
-        var first = await UploadOnePartAssetAsync("first.mp4", "first");
-        var second = await UploadOnePartAssetAsync("second.mp4", "second");
-        var deleted = await UploadOnePartAssetAsync("deleted.mp4", "deleted");
+        var first = await UploadOnePartAssetAsync("first.png", "first");
+        var second = await UploadOnePartAssetAsync("second.png", "second");
+        var deleted = await UploadOnePartAssetAsync("deleted.png", "deleted");
         await ReadOkEnvelopeAsync<Guid>(await Client.DeleteAsync($"/api/files/{deleted}"));
 
         // Act
@@ -24,8 +25,8 @@ public class GetMediaAssetsInfoTests : FileServiceBaseTests
         var result = await ReadOkEnvelopeAsync<GetMediaAssetsInfoResponse>(response);
 
         // Assert
-        Assert.Contains(result.MediaAssets, a => a.Id == first && a.Status == "uploaded");
-        Assert.Contains(result.MediaAssets, a => a.Id == second && a.Status == "uploaded");
+        Assert.Contains(result.MediaAssets, a => a.Id == first && a.Status == "ready");
+        Assert.Contains(result.MediaAssets, a => a.Id == second && a.Status == "ready");
         Assert.DoesNotContain(result.MediaAssets, a => a.Id == deleted);
     }
 

@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using FileService.Contracts.Dto;
+using FileService.Core.Messaging;
 using FileService.Core.Processing;
 using FileService.Domain;
 using Framework.Response;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using RabbitMqMessaging.IntegrationEvents.Files.Events;
 using Shared.Kernel;
 
 namespace FileService.Core.Features.CompleteMultipartUpload;
@@ -29,19 +31,22 @@ public sealed class CompleteMultipartUploadHandler
     private readonly IMediaAssetsRepository _mediaAssetsRepository;
     private readonly ProcessingJobScheduler _processingJobScheduler;
     private readonly ITransactionManager _transactionManager;
+    private readonly IIntegrationEventPublisher _integrationEventPublisher;
 
     public CompleteMultipartUploadHandler(
         ILogger<CompleteMultipartUploadHandler> logger,
         IS3Provider s3Provider,
         IMediaAssetsRepository mediaAssetsRepository,
         ProcessingJobScheduler processingJobScheduler,
-        ITransactionManager transactionManager)
+        ITransactionManager transactionManager,
+        IIntegrationEventPublisher integrationEventPublisher)
     {
         _logger = logger;
         _s3Provider = s3Provider;
         _mediaAssetsRepository = mediaAssetsRepository;
         _processingJobScheduler = processingJobScheduler;
         _transactionManager = transactionManager;
+        _integrationEventPublisher = integrationEventPublisher;
     }
 
     public async Task<Result<CompleteMultipartUploadResponse, Error>> Handle(
@@ -71,8 +76,7 @@ public sealed class CompleteMultipartUploadHandler
         try
         {
             // FS-12: Сначала фиксируем UPLOADED в Postgres, чтобы StartNow-job увидела актуальный статус.
-            using (var transaction = await _transactionManager.BeginTransactionAsync(cancellationToken))
-            {
+            // FS-14: SaveChangesAndFlushMessagesAsync сам управляет транзакцией asset + outbox.
                 mediaAsset.MarkUploaded(DateTime.UtcNow);
 
                 if (!mediaAsset.RequiresProcessing())
@@ -80,14 +84,23 @@ public sealed class CompleteMultipartUploadHandler
                     var markReadyResult = mediaAsset.MarkReady();
                     if (markReadyResult.IsFailure)
                         return markReadyResult.Error;
+                    
+                    await _integrationEventPublisher.PublishAsync(
+                        new FileReadyIntegrationEvent(
+                            mediaAsset.Id,
+                            mediaAsset.Owner.Context),
+                        cancellationToken);
                 }
 
-                var saveChangesResult = await _transactionManager.SaveChangesAsync(cancellationToken);
-                if (saveChangesResult.IsFailure)
-                    return saveChangesResult.Error;
+                // FS-14: Commit сохраняет asset и envelope, фиксирует транзакцию и затем делает flush.
+                var beginTransactionResult = await _transactionManager.BeginTransactionAsync(cancellationToken);
+                if (beginTransactionResult.IsFailure)
+                    return beginTransactionResult.Error;
 
-                transaction.Commit();
-            }
+                var commitTransactionResult = await _transactionManager.CommitTransactionAsync(cancellationToken);
+                if (commitTransactionResult.IsFailure)
+                    return commitTransactionResult.Error;
+
 
             // FS-12: Долгий pipeline запускается фоново уже после commit, а HTTP-запрос быстро завершается.
             if (mediaAsset.RequiresProcessing())

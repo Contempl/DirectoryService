@@ -4,31 +4,32 @@ using FileService.Domain.Assets;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using Shared.Kernel;
+using Wolverine.EntityFrameworkCore;
 
 namespace FileService.Infrastructure.Postgres.Repositories;
 
 public class MediaAssetsRepository : IMediaAssetsRepository
 {
-    private readonly FileServiceDbContext _dbContext;
+    private readonly IDbContextOutbox<FileServiceDbContext> _dbContextOutbox;
     private readonly ILogger<MediaAssetsRepository> _logger;
 
-    public MediaAssetsRepository(FileServiceDbContext dbContext, ILogger<MediaAssetsRepository> logger)
+    public MediaAssetsRepository(ILogger<MediaAssetsRepository> logger,
+        IDbContextOutbox<FileServiceDbContext> dbContextOutbox)
     {
-        _dbContext = dbContext;
         _logger = logger;
+        _dbContextOutbox = dbContextOutbox;
     }
 
     public UnitResult<Error> Add(MediaAsset mediaAsset, CancellationToken cancellationToken = default)
     {
-        _dbContext.MediaAssets.Add(mediaAsset);
+        _dbContextOutbox.DbContext.MediaAssets.Add(mediaAsset);
         return UnitResult.Success<Error>();
     }
 
     public async Task<Result<MediaAsset, Error>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var asset = await _dbContext.MediaAssets.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var asset = await _dbContextOutbox.DbContext.MediaAssets.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (asset is null)
             return GeneralErrors.NotFound(id);
 
@@ -39,7 +40,7 @@ public class MediaAssetsRepository : IMediaAssetsRepository
         Expression<Func<VideoAsset, bool>> predicate,
         CancellationToken cancellationToken = default)
     {
-        var videoAsset = await _dbContext.MediaAssets
+        var videoAsset = await _dbContextOutbox.DbContext.MediaAssets
             .OfType<VideoAsset>()
             .FirstOrDefaultAsync(predicate, cancellationToken);
 
@@ -51,7 +52,7 @@ public class MediaAssetsRepository : IMediaAssetsRepository
 
     public async Task<IReadOnlyList<MediaAsset>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.MediaAssets
+        return await _dbContextOutbox.DbContext.MediaAssets
             .Where(x => ids.Contains(x.Id))
             .ToListAsync(cancellationToken);
     }
@@ -60,12 +61,12 @@ public class MediaAssetsRepository : IMediaAssetsRepository
     {
         try
         {
-            _dbContext.MediaAssets.Remove(mediaAsset);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            _dbContextOutbox.DbContext.MediaAssets.Remove(mediaAsset);
+            await _dbContextOutbox.SaveChangesAndFlushMessagesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Failed to remove mediaAsset. {ex}", ex);
+            _logger.LogError(ex, "Failed to remove mediaAsset.");
             return GeneralErrors.Failure();
         }
         return UnitResult.Success<Error>();
@@ -75,11 +76,12 @@ public class MediaAssetsRepository : IMediaAssetsRepository
     {
         try
         {
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContextOutbox.SaveChangesAndFlushMessagesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Failed to save changes of mediaAsset. {ex}", ex);
+            _logger.LogError(ex,"Failed to save changes of mediaAsset.");
+            throw;
         }
     }
 }

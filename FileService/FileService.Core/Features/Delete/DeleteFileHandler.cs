@@ -1,8 +1,10 @@
 using CSharpFunctionalExtensions;
 using FileService.Core.Caching;
+using FileService.Core.Messaging;
 using FileService.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Hybrid;
+using RabbitMqMessaging.IntegrationEvents.Files.Events;
 using Shared.Kernel;
 
 namespace FileService.Core.Features.Delete;
@@ -13,17 +15,20 @@ public class DeleteFileHandler
     private readonly IS3Provider _s3Provider;
     private readonly ILogger<DeleteFileHandler> _logger;
     private readonly HybridCache _cache;
+    private readonly IIntegrationEventPublisher _integrationEventPublisher;
 
     public DeleteFileHandler(
         IMediaAssetsRepository mediaAssetsRepository,
         IS3Provider s3Provider,
         ILogger<DeleteFileHandler> logger,
-        HybridCache cache)
+        HybridCache cache, 
+        IIntegrationEventPublisher integrationEventPublisher)
     {
         _mediaAssetsRepository = mediaAssetsRepository;
         _s3Provider = s3Provider;
         _logger = logger;
         _cache = cache;
+        _integrationEventPublisher = integrationEventPublisher;
     }
 
     public async Task<Result<Guid, Error>> Handle(Guid mediaAssetId, CancellationToken cancellationToken)
@@ -37,8 +42,18 @@ public class DeleteFileHandler
         if (asset.Status == MediaStatus.DELETED)
             return GeneralErrors.NotFound(mediaAssetId);
 
-        asset.MarkDeleted(DateTime.UtcNow);
+        var markDeletedResult =  asset.MarkDeleted(DateTime.UtcNow);
+        if (markDeletedResult.IsFailure)
+            return markDeletedResult.Error;
+
+        await _integrationEventPublisher.PublishAsync(
+            new FileDeletedIntegrationEvent(
+                asset.Id,
+                asset.Owner.Context),
+            cancellationToken);
+        
         await _mediaAssetsRepository.SaveChangesAsync(cancellationToken);
+        
         await _cache.RemoveAsync(FileCacheKeys.DownloadUrl(mediaAssetId), cancellationToken);
 
         var deleteTasks = new List<Task<UnitResult<Error>>>

@@ -1,12 +1,14 @@
 using Core.Abstractions;
 using Core.Validation;
 using CSharpFunctionalExtensions;
+using FileService.Core.Messaging;
 using FileService.Domain.Assets;
 using FileService.Domain.Enums;
 using FileService.Domain.ValueObjects;
 using FileService.Core.Processing;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using RabbitMqMessaging.IntegrationEvents.Files.Events;
 using Shared.Kernel;
 
 namespace FileService.Core.Features.Upload;
@@ -18,19 +20,22 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
     private readonly IValidator<UploadFileCommand> _validator;
     private readonly ILogger<UploadFileHandler> _logger;
     private readonly ProcessingJobScheduler _processingJobScheduler;
+    private readonly IIntegrationEventPublisher _integrationEventPublisher;
 
     public UploadFileHandler(
         IMediaAssetsRepository mediaAssetRepository,
         IS3Provider s3Provider,
         IValidator<UploadFileCommand> validator,
         ILogger<UploadFileHandler> logger,
-        ProcessingJobScheduler processingJobScheduler)
+        ProcessingJobScheduler processingJobScheduler, 
+        IIntegrationEventPublisher integrationEventPublisher)
     {
         _mediaAssetRepository = mediaAssetRepository;
         _s3Provider = s3Provider;
         _validator = validator;
         _logger = logger;
         _processingJobScheduler = processingJobScheduler;
+        _integrationEventPublisher = integrationEventPublisher;
     }
 
     public async Task<Result<Guid, Errors>> HandleAsync(UploadFileCommand command, CancellationToken cancellationToken)
@@ -92,13 +97,21 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
             return uploadResult.Error.ToErrors();
         }
         
-        mediaAsset.MarkUploaded(DateTime.UtcNow);
+        var eventUploadedResult = mediaAsset.MarkUploaded(DateTime.UtcNow);
+        if (eventUploadedResult.IsFailure)
+            return eventUploadedResult.Error.ToErrors();
 
         if (!mediaAsset.RequiresProcessing())
         {
             var markReadyResult = mediaAsset.MarkReady();
             if (markReadyResult.IsFailure)
                 return markReadyResult.Error.ToErrors();
+            
+            await _integrationEventPublisher.PublishAsync(
+                new FileReadyIntegrationEvent(
+                    mediaAsset.Id,
+                    mediaAsset.Owner.Context),
+                cancellationToken);
         }
         
         await _mediaAssetRepository.SaveChangesAsync(cancellationToken);

@@ -9,6 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\FileService.Contracts\FileService.Contracts.csproj" />
       <ProjectReference Include="..\FileService.Domain\FileService.Domain.csproj" />
+      <ProjectReference Include="..\..\Shared\Messaging\RabbitMqMessaging.csproj" />
     </ItemGroup>
 
     <ItemGroup>
