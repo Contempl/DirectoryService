@@ -99,7 +99,7 @@ public class UploadFileHandler : ICommandHandler<Guid, UploadFileCommand>
         
         var eventUploadedResult = mediaAsset.MarkUploaded(DateTime.UtcNow);
         if (eventUploadedResult.IsFailure)
-            eventUploadedResult.Error.ToErrors();
+            return eventUploadedResult.Error.ToErrors();
 
         if (!mediaAsset.RequiresProcessing())
         {
