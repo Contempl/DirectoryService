@@ -7,10 +7,10 @@ public record MediaOwner
 {
     private static readonly HashSet<string> AllowedContexts =
     [
-        "lesson",
         "user",
-        "course",
+        "location",
         "department",
+        "position",
     ];
     
     public string Context { get; }
@@ -42,8 +42,8 @@ public record MediaOwner
         return new MediaOwner(contextToLowered, entityId);
     }
 
-    public static Result<MediaOwner, Error> ForLesson(Guid lessonId) => Create("lesson", lessonId);
-    public static Result<MediaOwner, Error> ForCourse(Guid courseId) => Create("course", courseId);
     public static Result<MediaOwner, Error> ForUser(Guid userId) => Create("user", userId);
+    public static Result<MediaOwner, Error> ForLocation(Guid locationId) => Create("location", locationId);
     public static Result<MediaOwner, Error> ForDepartment(Guid departmentId) => Create("department", departmentId);
+    public static Result<MediaOwner, Error> ForPosition(Guid positionId) => Create("position", positionId);
 }
