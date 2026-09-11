@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload } from "lucide-react";
-import { VideoUploadDialog } from "@/features/video-upload/ui/video-upload-dialog";
-import { Button } from "@/shared/components/ui/button";
+import { FileUpload } from "@/features/file-upload/ui/file-upload";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 
@@ -40,16 +38,14 @@ export default function UploadPage() {
         )}
       </div>
 
-      <VideoUploadDialog
+      <FileUpload
+        disabled={!hasValidContextId}
+        assetType="video"
         context="location"
         contextId={contextId}
-        onSuccess={setUploadedAssetId}
-        trigger={
-          <Button disabled={!hasValidContextId}>
-            <Upload className="mr-2 h-4 w-4" />
-            Select video
-          </Button>
-        }
+        acceptedTypes={["video/mp4", "video/quicktime", "video/x-msvideo"]}
+        maxSizeBytes={5 * 1024 * 1024 * 1024}
+        onSuccess={(asset) => setUploadedAssetId(asset.assetId)}
       />
 
       {uploadedAssetId && (
