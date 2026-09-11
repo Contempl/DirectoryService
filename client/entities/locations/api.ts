@@ -56,6 +56,10 @@ export type BulkUpdateLocationsActivityResult = {
   errors: BulkLocationError[];
 };
 
+export type SetLocationPhotoRequest = {
+  assetId: string;
+};
+
 
 export const locationsApi = {
   getLocations: async (query?: GetLocationsRequest) => {
@@ -92,6 +96,29 @@ export const locationsApi = {
   restoreLocation: async (id: string) => {
     const response = await apiClient.put<string>(`/locations/${id}/restore`);
     return response.data;
+  },
+
+  attachPhoto: async (locationId: string, request: SetLocationPhotoRequest) => {
+    const response = await apiClient.post<Envelope<string>>(
+      `/locations/${locationId}/photo`,
+      request,
+    );
+    return response.data.result;
+  },
+
+  replacePhoto: async (locationId: string, request: SetLocationPhotoRequest) => {
+    const response = await apiClient.put<Envelope<string>>(
+      `/locations/${locationId}/photo`,
+      request,
+    );
+    return response.data.result;
+  },
+
+  deletePhoto: async (locationId: string) => {
+    const response = await apiClient.delete<Envelope<string>>(
+      `/locations/${locationId}/photo`,
+    );
+    return response.data.result;
   },
 
   updateLocationsActivity: async (request: BulkUpdateLocationsActivityRequest) => {
