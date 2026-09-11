@@ -1,29 +1,60 @@
 import axios from "axios";
 import type { Envelope } from "@/shared/api/envelope";
-import { EnvelopeError } from "@/shared/api/errors";
 import type {
   CancelMultipartUploadRequest,
+  CancelMultipartUploadResponse,
   CompleteMultipartUploadRequest,
   CompleteMultipartUploadResponse,
   StartMultipartUploadRequest,
   StartMultipartUploadResponse,
+  MediaAssetInfo,
+  VideoProcessingStatus,
 } from "./types";
 
 const fileServiceClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_FILE_SERVICE_URL || "http://localhost:5555",
+  baseURL: process.env.NEXT_PUBLIC_FILE_SERVICE_URL || "http://localhost:5555/api",
+  timeout: 15_000,
   headers: { "Content-Type": "application/json" },
 });
 
+type FileServiceEnvelope<T = unknown> = Omit<Envelope<T>, "error"> & {
+  errorsList: Array<{
+    code: string;
+    message: string;
+    type: string | number;
+    invalidField?: string | null;
+  }> | null;
+};
+
+function getEnvelopeMessage(envelope: FileServiceEnvelope): string | null {
+  return envelope.errorsList?.[0]?.message ?? null;
+}
+
+function unwrap<T>(envelope: FileServiceEnvelope<T>): T {
+  const message = getEnvelopeMessage(envelope);
+  if (envelope.isError || message) {
+    throw new Error(message ?? "File Service returned an error.");
+  }
+
+  if (envelope.result === null) {
+    throw new Error("File Service returned no result.");
+  }
+
+  return envelope.result;
+}
+
 fileServiceClient.interceptors.response.use(
   (response) => {
-    const data = response.data as Envelope;
-    if (data.isError && data.error) throw new EnvelopeError(data.error);
+    const data = response.data as FileServiceEnvelope;
+    const message = getEnvelopeMessage(data);
+    if (data.isError || message) throw new Error(message ?? "File Service returned an error.");
     return response;
   },
   (error) => {
     if (axios.isAxiosError(error) && error.response?.data) {
-      const envelope = error.response.data as Envelope;
-      if (envelope?.isError && envelope.error) throw new EnvelopeError(envelope.error);
+      const envelope = error.response.data as FileServiceEnvelope;
+      const message = getEnvelopeMessage(envelope);
+      if (envelope?.isError || message) throw new Error(message ?? "File Service request failed.");
     }
     return Promise.reject(error);
   }
@@ -33,24 +64,44 @@ export const mediaApi = {
   startMultipartUpload: async (
     request: StartMultipartUploadRequest
   ): Promise<StartMultipartUploadResponse> => {
-    const response = await fileServiceClient.post<Envelope<StartMultipartUploadResponse>>(
+    const response = await fileServiceClient.post<FileServiceEnvelope<StartMultipartUploadResponse>>(
       "/files/multipart/start",
       request
     );
-    return response.data.result!;
+    return unwrap(response.data);
   },
 
   completeMultipartUpload: async (
     request: CompleteMultipartUploadRequest
   ): Promise<CompleteMultipartUploadResponse> => {
-    const response = await fileServiceClient.post<Envelope<CompleteMultipartUploadResponse>>(
+    const response = await fileServiceClient.post<FileServiceEnvelope<CompleteMultipartUploadResponse>>(
       "/files/multipart/complete",
       request
     );
-    return response.data.result!;
+    return unwrap(response.data);
   },
 
-  cancelMultipartUpload: async (request: CancelMultipartUploadRequest): Promise<void> => {
-    await fileServiceClient.post("/files/multipart/cancel", request);
+  cancelMultipartUpload: async (
+    request: CancelMultipartUploadRequest
+  ): Promise<CancelMultipartUploadResponse> => {
+    const response = await fileServiceClient.post<FileServiceEnvelope<CancelMultipartUploadResponse>>(
+      "/files/multipart/cancel",
+      request
+    );
+    return unwrap(response.data);
+  },
+
+  getMediaAsset: async (mediaAssetId: string): Promise<MediaAssetInfo> => {
+    const response = await fileServiceClient.get<FileServiceEnvelope<MediaAssetInfo>>(
+      `/files/${mediaAssetId}`
+    );
+    return unwrap(response.data);
+  },
+
+  getVideoProcessingStatus: async (videoAssetId: string): Promise<VideoProcessingStatus> => {
+    const response = await fileServiceClient.get<FileServiceEnvelope<VideoProcessingStatus>>(
+      `/files/${videoAssetId}/processing-status`
+    );
+    return unwrap(response.data);
   },
 };

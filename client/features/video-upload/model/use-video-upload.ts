@@ -1,5 +1,5 @@
 import { mediaApi } from "@/entities/media/api";
-import { useUploadStore } from "./upload-store";
+import { UploadFailure, UploadStage, useUploadStore } from "./upload-store";
 
 type UseVideoUploadOptions = {
   context: string;
@@ -14,15 +14,17 @@ export function useVideoUpload({ context, contextId, onSuccess, onError }: UseVi
   const upload = async (file: File) => {
     if (!file.type.startsWith("video/")) {
       const err = new Error("Only video files are allowed");
-      store._setError(err.message);
+      store._setError({ stage: "initiate", message: err.message });
       onError?.(err);
       return;
     }
 
     let mediaAssetId: string | undefined;
     let uploadId: string | undefined;
+    let stage: UploadStage = "initiate";
 
     try {
+      store._setInitiating();
       const response = await mediaApi.startMultipartUpload({
         fileName: file.name,
         assetType: "video",
@@ -35,6 +37,7 @@ export function useVideoUpload({ context, contextId, onSuccess, onError }: UseVi
       mediaAssetId = response.mediaAssetId;
       uploadId = response.uploadId;
 
+      stage = "storage";
       store._setUploading(response.chunkUrls.length);
 
       const partETags: { partNumber: number; eTag: string }[] = [];
@@ -46,6 +49,7 @@ export function useVideoUpload({ context, contextId, onSuccess, onError }: UseVi
 
         const s3Response = await fetch(chunk.uploadUrl, {
           method: "PUT",
+          headers: chunk.headers,
           body: blob,
         });
 
@@ -53,24 +57,38 @@ export function useVideoUpload({ context, contextId, onSuccess, onError }: UseVi
           throw new Error(`Chunk ${chunk.partNumber} upload failed: ${s3Response.status}`);
         }
 
-        const etag = s3Response.headers.get("ETag")?.replace(/"/g, "") ?? "";
+        const etag = s3Response.headers.get("ETag")?.replace(/"/g, "");
+        if (!etag) {
+          throw new Error(`Storage did not return an ETag for part ${chunk.partNumber}.`);
+        }
         partETags.push({ partNumber: chunk.partNumber, eTag: etag });
 
         store._setChunkUploaded(chunk.partNumber);
       }
 
-      await mediaApi.completeMultipartUpload({ mediaAssetId, uploadId, partETags });
+      stage = "complete";
+      store._setCompleting();
+      const completed = await mediaApi.completeMultipartUpload({ mediaAssetId, uploadId, partETags });
 
-      store._setSuccess(mediaAssetId);
-      onSuccess?.(mediaAssetId);
+      store._setSuccess(completed.mediaAssetId);
+      onSuccess?.(completed.mediaAssetId);
     } catch (error) {
       const err = error instanceof Error ? error : new Error("Upload failed");
-      store._setError(err.message);
+      let failure: UploadFailure = { stage, message: err.message };
 
       if (mediaAssetId && uploadId) {
-        await mediaApi.cancelMultipartUpload({ mediaAssetId, uploadId }).catch(() => {});
+        try {
+          await mediaApi.cancelMultipartUpload({ mediaAssetId, uploadId });
+        } catch (cancelError) {
+          const cancelMessage = cancelError instanceof Error ? cancelError.message : "Cancel failed";
+          failure = {
+            stage: "cancel",
+            message: `${err.message} Cleanup also failed: ${cancelMessage}`,
+          };
+        }
       }
 
+      store._setError(failure);
       onError?.(err);
     }
   };

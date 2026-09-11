@@ -3,4 +3,5 @@ export const routes = {
   departments: "/departments",
   locations: "/locations",
   positions: "/positions",
+  upload: "/upload",
 };

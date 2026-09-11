@@ -74,12 +74,24 @@ export function VideoUploadDialog({
             </div>
           )}
 
+          {status === "initiating" && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Preparing upload…
+            </p>
+          )}
+
           {status === "uploading" && (
             <UploadProgress
               progress={progress}
               uploadedChunks={uploadedChunks}
               totalChunks={totalChunks}
             />
+          )}
+
+          {status === "completing" && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Confirming upload with File Service…
+            </p>
           )}
 
           {status === "success" && (
@@ -92,7 +104,10 @@ export function VideoUploadDialog({
           {status === "error" && (
             <div className="flex flex-col items-center gap-3 py-4">
               <XCircle className="h-10 w-10 text-destructive" />
-              <p className="text-sm text-destructive text-center">{error}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {error?.stage} error
+              </p>
+              <p className="text-sm text-destructive text-center">{error?.message}</p>
               <Button variant="outline" size="sm" onClick={reset}>
                 Try again
               </Button>
