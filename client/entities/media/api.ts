@@ -62,31 +62,37 @@ fileServiceClient.interceptors.response.use(
 
 export const mediaApi = {
   startMultipartUpload: async (
-    request: StartMultipartUploadRequest
+    request: StartMultipartUploadRequest,
+    signal?: AbortSignal
   ): Promise<StartMultipartUploadResponse> => {
     const response = await fileServiceClient.post<FileServiceEnvelope<StartMultipartUploadResponse>>(
       "/files/multipart/start",
-      request
+      request,
+      { signal }
     );
     return unwrap(response.data);
   },
 
   completeMultipartUpload: async (
-    request: CompleteMultipartUploadRequest
+    request: CompleteMultipartUploadRequest,
+    signal?: AbortSignal
   ): Promise<CompleteMultipartUploadResponse> => {
     const response = await fileServiceClient.post<FileServiceEnvelope<CompleteMultipartUploadResponse>>(
       "/files/multipart/complete",
-      request
+      request,
+      { signal }
     );
     return unwrap(response.data);
   },
 
   cancelMultipartUpload: async (
-    request: CancelMultipartUploadRequest
+    request: CancelMultipartUploadRequest,
+    signal?: AbortSignal
   ): Promise<CancelMultipartUploadResponse> => {
     const response = await fileServiceClient.post<FileServiceEnvelope<CancelMultipartUploadResponse>>(
       "/files/multipart/cancel",
-      request
+      request,
+      { signal }
     );
     return unwrap(response.data);
   },
