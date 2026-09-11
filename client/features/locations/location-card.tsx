@@ -15,6 +15,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { useDeleteLocation } from "./model/use-delete-location";
 import { useRestoreLocation } from "./model/use-restore-location";
 import { Checkbox } from "@/shared/components/ui/checkbox";
+import { LocationPhotoAttachment } from "./location-photo-attachment";
 
 interface Props {
   location: LocationDto;
@@ -48,6 +49,7 @@ export default function LocationCard({
         />
       </div>
       <h3 className="pr-24 text-lg font-semibold text-gray-800">{location.name}</h3>
+      <LocationPhotoAttachment location={location} disabled={archived} />
       <p className="text-sm text-gray-600">
         {location.address.city}, {location.address.street}
       </p>
