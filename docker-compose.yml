@@ -14,6 +14,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
       - DevAuth__Enabled=true
+      - JwtOptions__Secret=${JWT_SECRET}
       - RabbitMq__Host=rabbitmq
       - FileServiceOptions__Url=http://file-service-ds:5353
       - CachingOptions__RedisConnectionString=redis:6379
@@ -82,6 +83,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:5353
+      - JwtOptions__Secret=${JWT_SECRET}
       - RabbitMq__Host=rabbitmq
   
   postgres_fs:
