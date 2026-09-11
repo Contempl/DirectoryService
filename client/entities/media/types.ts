@@ -10,6 +10,7 @@ export type StartMultipartUploadRequest = {
 export type ChunkUploadUrl = {
   partNumber: number;
   uploadUrl: string;
+  headers?: Record<string, string>;
 };
 
 export type StartMultipartUploadResponse = {
@@ -37,4 +38,35 @@ export type CompleteMultipartUploadResponse = {
 export type CancelMultipartUploadRequest = {
   mediaAssetId: string;
   uploadId: string;
+};
+
+export type CancelMultipartUploadResponse = {
+  success: boolean;
+};
+
+export type MediaFileInfo = {
+  fileName: string;
+  contentType: string;
+  size: number;
+};
+
+export type MediaAssetInfo = {
+  id: string;
+  status: string;
+  assetType: string;
+  createdAt: string;
+  updatedAt: string;
+  fileInfo: MediaFileInfo;
+  downloadUrl: string | null;
+};
+
+export type VideoProcessingStatus = {
+  videoAssetId: string;
+  status: string;
+  currentStep: string | null;
+  progressPercentage: number;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  isTerminal: boolean;
 };

@@ -2,7 +2,7 @@
 
 import { routes } from "@/shared/routes";
 import { usePathname } from "next/navigation";
-import { Home, MonitorCog, Briefcase, Waypoints } from "lucide-react"; 
+import { Home, MonitorCog, Briefcase, Waypoints, Upload } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,7 @@ const menuItems = [
   { href: routes.departments, label: "Departments", icon: MonitorCog },
   { href: routes.locations, label: "Locations", icon: Waypoints },
   { href: routes.positions, label: "Positions", icon: Briefcase },
+  { href: routes.upload, label: "Upload", icon: Upload },
 ];
 
 export function AppSidebar() {
