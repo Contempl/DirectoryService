@@ -11,8 +11,11 @@ import type {
   VideoProcessingStatus,
 } from "./types";
 
+const FILE_SERVICE_BASE_URL = process.env.NEXT_PUBLIC_FILE_SERVICE_URL
+  ?? (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:5555/api");
+
 const fileServiceClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_FILE_SERVICE_URL || "http://localhost:5555/api",
+  baseURL: FILE_SERVICE_BASE_URL,
   timeout: 15_000,
   headers: { "Content-Type": "application/json" },
 });

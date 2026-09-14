@@ -12,7 +12,8 @@ public static class ApiExtensions
     {
         app.MapOpenApi();
 
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() ||
+            app.Configuration.GetValue<bool>("DatabaseMigration:Enabled"))
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<FileServiceDbContext>();

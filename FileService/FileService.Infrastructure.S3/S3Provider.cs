@@ -12,16 +12,22 @@ using Shared.Kernel;
 
 namespace FileService.Infrastructure;
 
-public class S3Provider : IS3Provider
+internal sealed class S3Provider : IS3Provider
 {
     private readonly IAmazonS3 _s3Client;
+    private readonly S3PresigningClient _presigningClient;
     private readonly S3Options _s3Options;
     private readonly ILogger<S3Provider> _logger;
     private readonly SemaphoreSlim _requestsSemaphore;
 
-    public S3Provider(IAmazonS3 s3Client, IOptions<S3Options> s3Options, ILogger<S3Provider> logger)
+    public S3Provider(
+        IAmazonS3 s3Client,
+        S3PresigningClient presigningClient,
+        IOptions<S3Options> s3Options,
+        ILogger<S3Provider> logger)
     {
         _s3Client = s3Client;
+        _presigningClient = presigningClient;
         _s3Options = s3Options.Value;
         _requestsSemaphore = new SemaphoreSlim(_s3Options.MaxConcurrentRequests, _s3Options.MaxConcurrentRequests);
         _logger = logger;
@@ -88,10 +94,10 @@ public class S3Provider : IS3Provider
                 PartNumber = partNumber,
                 UploadId = uploadId,
                 Expires = DateTime.UtcNow.AddMinutes(_s3Options.UploadUrlExpirationMinutes),
-                Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
+                Protocol = _presigningClient.Protocol,
             };
 
-            var url = await _s3Client.GetPreSignedURLAsync(request);
+            var url = await _presigningClient.Client.GetPreSignedURLAsync(request);
             return url;
         }
         catch (Exception ex)
@@ -124,10 +130,10 @@ public class S3Provider : IS3Provider
                         PartNumber = partNumber,
                         UploadId = uploadId,
                         Expires = expires,
-                        Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
+                        Protocol = _presigningClient.Protocol,
                     };
 
-                    var url = await _s3Client.GetPreSignedURLAsync(request);
+                    var url = await _presigningClient.Client.GetPreSignedURLAsync(request);
                     return new ChunkUploadUrl { PartNumber = partNumber, UploadUrl = url };
                 }
                 finally
@@ -230,10 +236,10 @@ public class S3Provider : IS3Provider
                 Key = key,
                 Verb = HttpVerb.GET,
                 Expires = DateTime.Now.AddHours(_s3Options.DownloadUrlExpirationHours),
-                Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
+                Protocol = _presigningClient.Protocol,
             };
 
-            var response = await _s3Client.GetPreSignedURLAsync(request);
+            var response = await _presigningClient.Client.GetPreSignedURLAsync(request);
             return response;
         }
         catch (Exception ex)
@@ -297,6 +303,30 @@ public class S3Provider : IS3Provider
                 Key = key.Value,
                 Verb = HttpVerb.GET,
                 Expires = DateTime.UtcNow.AddHours(_s3Options.DownloadUrlExpirationHours),
+                Protocol = _presigningClient.Protocol,
+            };
+
+            return await _presigningClient.Client.GetPreSignedURLAsync(request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error downloading file");
+            return S3ErrorMapper.ToError(ex);
+        }
+    }
+
+    public async Task<Result<string, Error>> GenerateInternalDownloadUrlAsync(
+        StorageKey key,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = key.Location,
+                Key = key.Value,
+                Verb = HttpVerb.GET,
+                Expires = DateTime.UtcNow.AddHours(_s3Options.DownloadUrlExpirationHours),
                 Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
             };
 
@@ -304,7 +334,7 @@ public class S3Provider : IS3Provider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error downloading file");
+            _logger.LogError(ex, "Error generating internal download URL for {Key}", key.Value);
             return S3ErrorMapper.ToError(ex);
         }
     }
@@ -349,10 +379,10 @@ public class S3Provider : IS3Provider
                         Key = storageKey.Value,
                         Verb = HttpVerb.GET,
                         Expires = DateTime.Now.AddHours(_s3Options.DownloadUrlExpirationHours),
-                        Protocol = _s3Options.WithSsl ? Protocol.HTTPS : Protocol.HTTP,
+                        Protocol = _presigningClient.Protocol,
                     };
 
-                    return await _s3Client.GetPreSignedURLAsync(request);
+                    return await _presigningClient.Client.GetPreSignedURLAsync(request);
                 }
                 finally
                 {

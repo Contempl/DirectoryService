@@ -1,64 +1,254 @@
 services:
-  
+  frontend:
+    container_name: directory-frontend
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  nginx:
+    container_name: directory-gateway
+    image: nginx:alpine
+    ports:
+      - "${NGINX_PORT}:80"
+      - "${MINIO_API_PORT}:9000"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      directory-service:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+      minio_fs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   directory-service:
     container_name: directory-service
     build:
       context: .
       dockerfile: DirectoryService/Dockerfile
-      args:
-        - NUGET_USERNAME=${NUGET_USERNAME}
-        - NUGET_PASSWORD=${NUGET_PASSWORD}
-    ports:
-      - "5353:5353"
+      secrets:
+        - nuget_username
+        - nuget_password
+    expose:
+      - "5353"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ASPNETCORE_URLS=http://+:5353
-      - DevAuth__Enabled=true
-      - JwtOptions__Secret=${JWT_SECRET}
-      - RabbitMq__Host=rabbitmq
-      - FileServiceOptions__Url=http://file-service-ds:5353
-      - CachingOptions__RedisConnectionString=redis:6379
-      - CachingOptions__RedisEnabled=true
-      - ConnectionStrings__Database=Server=postgres_ds;Port=5432;Username=postgres;Password=postgres;Database=directory_service_db
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:5353
+      DatabaseMigration__Enabled: "true"
+      DevAuth__Enabled: ${DEV_AUTH_ENABLED}
+      JwtOptions__Issuer: ${JWT_ISSUER}
+      JwtOptions__Audience: ${JWT_AUDIENCE}
+      JwtOptions__Secret: ${JWT_SECRET}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      FileServiceOptions__Url: http://file-service:5353
+      CachingOptions__RedisConnectionString: redis:6379
+      CachingOptions__RedisEnabled: "true"
+      Serilog__WriteTo__1__Args__serverUrl: http://seq_ds:5341
+      ConnectionStrings__Database: Server=postgres_ds;Port=5432;Username=${DS_DB_USER};Password=${DS_DB_PASSWORD};Database=${DS_DB_NAME}
     depends_on:
+      postgres_ds:
+        condition: service_healthy
       redis:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5353 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
 
   postgres_ds:
     container_name: postgres-ds
     image: postgres:17
-    restart: always
     environment:
-      POSTGRES_DB: directory_service_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
+      POSTGRES_DB: ${DS_DB_NAME}
+      POSTGRES_USER: ${DS_DB_USER}
+      POSTGRES_PASSWORD: ${DS_DB_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-        
-  seq_ds:
-    image: datalust/seq:latest
-    container_name: seq
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DS_DB_USER} -d ${DS_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped
+
+  auth-service:
+    container_name: auth-service-backend
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+      secrets:
+        - nuget_username
+        - nuget_password
+    expose:
+      - "5353"
     environment:
-      - ACCEPT_EULA=Y
-    ports:
-      - "5341:5341" 
-      - "8081:80"   
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:5353
+      DatabaseMigration__Enabled: "true"
+      ConnectionStrings__Database: Server=postgres_as;Port=5432;Username=${AS_DB_USER};Password=${AS_DB_PASSWORD};Database=${AS_DB_NAME}
+      JwtOptions__Issuer: ${JWT_ISSUER}
+      JwtOptions__Audience: ${JWT_AUDIENCE}
+      JwtOptions__Secret: ${JWT_SECRET}
+      AdminOptions__Username: ${AdminOptions__Username}
+      AdminOptions__FirstName: ${AdminOptions__FirstName}
+      AdminOptions__LastName: ${AdminOptions__LastName}
+      AdminOptions__Email: ${AdminOptions__Email}
+      AdminOptions__Password: ${AdminOptions__Password}
+      Serilog__WriteTo__1__Args__serverUrl: http://seq_ds:5341
+    depends_on:
+      postgres_as:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5353 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  postgres_as:
+    container_name: postgres-as
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${AS_DB_NAME}
+      POSTGRES_USER: ${AS_DB_USER}
+      POSTGRES_PASSWORD: ${AS_DB_PASSWORD}
     volumes:
-      - seq_data:/data    
-      
+      - postgres-data-as:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AS_DB_USER} -d ${AS_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  file-service:
+    container_name: file-service-ds
+    build:
+      context: .
+      dockerfile: FileService/Dockerfile
+      secrets:
+        - nuget_username
+        - nuget_password
+    expose:
+      - "5353"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:5353
+      DatabaseMigration__Enabled: "true"
+      DevAuth__Enabled: ${DEV_AUTH_ENABLED}
+      JwtOptions__Issuer: ${JWT_ISSUER}
+      JwtOptions__Audience: ${JWT_AUDIENCE}
+      JwtOptions__Secret: ${JWT_SECRET}
+      ConnectionStrings__Database: Server=postgres_fs;Port=5432;Username=${FS_DB_USER};Password=${FS_DB_PASSWORD};Database=${FS_DB_NAME}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      CacheOptions__RedisConnectionString: redis:6379
+      Serilog__WriteTo__1__Args__serverUrl: http://seq_ds:5341
+      S3Options__Endpoint: http://minio:9000
+      S3Options__PublicEndpoint: ${MINIO_PUBLIC_ENDPOINT}
+      S3Options__AccessKey: ${MINIO_ROOT_USER}
+      S3Options__SecretKey: ${MINIO_ROOT_PASSWORD}
+      S3Options__WithSsl: "false"
+    depends_on:
+      postgres_fs:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio_fs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5353 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  postgres_fs:
+    container_name: postgres-fs
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${FS_DB_NAME}
+      POSTGRES_USER: ${FS_DB_USER}
+      POSTGRES_PASSWORD: ${FS_DB_PASSWORD}
+    volumes:
+      - postgres-data-fs:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FS_DB_USER} -d ${FS_DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  minio_fs:
+    container_name: minio-fs
+    image: minio/minio:latest
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "${MINIO_CONSOLE_PORT}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server --console-address ":9001" /data
+    volumes:
+      - minio-data:/data
+    networks:
+      default:
+        aliases:
+          - minio
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
   redis:
     container_name: redis
     image: redis:alpine
     command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
-    restart: 
-      always
+    expose:
+      - "6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -66,103 +256,54 @@ services:
       retries: 5
     volumes:
       - redis-data:/data
-    
-  file-service:
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    container_name: file-service-ds
-    build:
-      context: .
-      dockerfile: FileService/Dockerfile
-      args:
-        - NUGET_USERNAME=${NUGET_USERNAME}
-        - NUGET_PASSWORD=${NUGET_PASSWORD}
-    ports:
-      - "5555:5353"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ASPNETCORE_URLS=http://+:5353
-      - JwtOptions__Secret=${JWT_SECRET}
-      - RabbitMq__Host=rabbitmq
-  
-  postgres_fs:
-    container_name: postgres-fs
-    image: postgres:17
-    restart: always
-    environment:
-      POSTGRES_DB: fileservice_service_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5439:5432"
-    volumes:
-      - postgres-data-fs:/var/lib/postgresql/data
-  
-  minio_fs: 
-    container_name: minio_fs
-    image: minio/minio:latest
-    networks:
-      default:
-        aliases:
-          - minio
-    ports:
-      - "9000:9000"
-      - "9002:9001"
-    environment: 
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server --console-address ":9001" /data
-    restart: always
-
-  auth-service:
-    container_name: auth-service-backend
-    build:
-      context: ./AuthService
-      dockerfile: Dockerfile
-      args:
-        - NUGET_USERNAME=${NUGET_USERNAME}
-        - NUGET_PASSWORD=${NUGET_PASSWORD}
-    ports: 
-      - "5656:5353"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ASPNETCORE_URLS=http://+:5353
-  
-  postgres_as:
-    container_name: postgres_as
-    image: postgres:17
-    restart: always
-    environment:
-      POSTGRES_DB: authservice_service_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5440:5432"
-    volumes:
-      - postgres-data-as:/var/lib/postgressql/data    
+    restart: unless-stopped
 
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:management
+    expose:
+      - "5672"
+      - "15672"
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: fileservice
-      RABBITMQ_DEFAULT_PASS: fileservice
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-  
-volumes: 
+    restart: unless-stopped
+
+  seq_ds:
+    container_name: seq
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    expose:
+      - "5341"
+      - "80"
+    ports:
+      - "${SEQ_UI_PORT}:80"
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+
+volumes:
   postgres-data:
-  seq_data:
   postgres-data-fs:
   postgres-data-as:
+  minio-data:
   redis-data:
   rabbitmq-data:
+  seq_data:
+
+secrets:
+  nuget_username:
+    environment: NUGET_USERNAME
+  nuget_password:
+    environment: NUGET_PASSWORD

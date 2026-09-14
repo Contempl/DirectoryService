@@ -9,6 +9,7 @@ using Framework.Response;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks();
 
 
 if (builder.Environment.IsDevelopment())
@@ -28,6 +29,8 @@ builder.Services.AddHostedService<SeedDataService>();
 builder.Services.AddCors();
 
 var app = builder.Build();
+
+app.MapHealthChecks("/health");
 
 if (app.Environment.IsDevelopment())
 {

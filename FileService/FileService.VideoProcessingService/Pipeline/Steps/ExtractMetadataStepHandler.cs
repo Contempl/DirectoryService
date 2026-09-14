@@ -35,7 +35,7 @@ public sealed class ExtractMetadataStepHandler : IProcessingStepHandler
             "Extracting metadata for VideoAssetId: {VideoAssetId}",
             context.VideoAsset.Id);
 
-        var inputFileUrlResult = await _s3Provider.DownloadFileAsync(
+        var inputFileUrlResult = await _s3Provider.GenerateInternalDownloadUrlAsync(
             context.VideoAsset.UploadKey,
             cancellationToken);
 

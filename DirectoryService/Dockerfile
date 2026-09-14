@@ -5,14 +5,14 @@ EXPOSE 5353
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
-ARG NUGET_USERNAME
-ARG NUGET_PASSWORD
 WORKDIR /src
 
-RUN dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
+RUN --mount=type=secret,id=nuget_username \
+    --mount=type=secret,id=nuget_password \
+    dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
     -n github \
-    --username $NUGET_USERNAME \
-    --password $NUGET_PASSWORD \
+    --username "$(cat /run/secrets/nuget_username)" \
+    --password "$(cat /run/secrets/nuget_password)" \
     --store-password-in-clear-text
 
 COPY ["DirectoryService/src/DirectoryService.Presentation/DirectoryService.Presentation.csproj", "DirectoryService/src/DirectoryService.Presentation/"]
