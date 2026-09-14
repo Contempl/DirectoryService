@@ -19,6 +19,10 @@ public interface IS3Provider
 
     Task<Result<string, Error>> DownloadFileAsync(StorageKey key, CancellationToken cancellationToken = default);
 
+    Task<Result<string, Error>> GenerateInternalDownloadUrlAsync(
+        StorageKey key,
+        CancellationToken cancellationToken = default);
+
     Task<UnitResult<Error>> DeleteFileAsync(StorageKey key, CancellationToken cancellationToken = default);
 
     Task<Result<IReadOnlyList<string>, Error>> GenerateDownloadUrlsAsync(IEnumerable<StorageKey> keys, CancellationToken cancellationToken = default);

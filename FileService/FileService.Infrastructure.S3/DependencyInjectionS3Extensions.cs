@@ -23,6 +23,7 @@ public static class DependencyInjectionS3Extensions
 
             return new AmazonS3Client(s3Options.AccessKey, s3Options.SecretKey, config);
         });
+        services.AddSingleton<S3PresigningClient>();
 
         services.AddScoped<IS3Provider, S3Provider>();
 
