@@ -31,6 +31,8 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseDatabaseMigrations();
+
 // FS-14: Общая проверка готовности messaging-инфраструктуры.
 app.MapHealthChecks("/health");
 

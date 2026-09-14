@@ -8,7 +8,8 @@ public static class AddMigrations
 {
     public static IApplicationBuilder UseMigrations(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() ||
+            app.Configuration.GetValue<bool>("DatabaseMigration:Enabled"))
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
