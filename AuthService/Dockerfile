@@ -5,18 +5,21 @@ EXPOSE 5353
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
-ARG NUGET_USERNAME
-ARG NUGET_PASSWORD
 WORKDIR /src
 
-RUN dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
+RUN --mount=type=secret,id=nuget_username \
+    --mount=type=secret,id=nuget_password \
+    dotnet nuget add source https://nuget.pkg.github.com/contempl/index.json \
     -n github \
-    --username $NUGET_USERNAME \
-    --password $NUGET_PASSWORD \
+    --username "$(cat /run/secrets/nuget_username)" \
+    --password "$(cat /run/secrets/nuget_password)" \
     --store-password-in-clear-text 
 
-
-COPY AuthService.Web/*.csproj ./AuthService.Web/
+COPY AuthService.Web/AuthService.Web.csproj AuthService.Web/
+COPY AuthService.Application/AuthService.Application.csproj AuthService.Application/
+COPY AuthService.Contracts/AuthService.Contracts.csproj AuthService.Contracts/
+COPY AuthService.Domain/AuthService.Domain.csproj AuthService.Domain/
+COPY AuthService.Infrastructure/AuthService.Infrastructure.csproj AuthService.Infrastructure/
 RUN dotnet restore "AuthService.Web/AuthService.Web.csproj"
 COPY . .
 WORKDIR "/src/AuthService.Web"
