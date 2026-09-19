@@ -7,6 +7,7 @@ import type {
   CompleteMultipartUploadResponse,
   StartMultipartUploadRequest,
   StartMultipartUploadResponse,
+  SimpleUploadRequest,
   MediaAssetInfo,
   VideoProcessingStatus,
 } from "./types";
@@ -17,7 +18,6 @@ const FILE_SERVICE_BASE_URL = process.env.NEXT_PUBLIC_FILE_SERVICE_URL
 const fileServiceClient = axios.create({
   baseURL: FILE_SERVICE_BASE_URL,
   timeout: 15_000,
-  headers: { "Content-Type": "application/json" },
 });
 
 type FileServiceEnvelope<T = unknown> = Omit<Envelope<T>, "error"> & {
@@ -64,6 +64,50 @@ fileServiceClient.interceptors.response.use(
 );
 
 export const mediaApi = {
+  uploadPart: async (
+    uploadUrl: string,
+    body: Blob,
+    headers: Record<string, string> | undefined,
+    onProgress: (uploadedBytes: number) => void,
+    signal?: AbortSignal
+  ): Promise<string> => {
+    const response = await axios.put(uploadUrl, body, {
+      headers,
+      signal,
+      timeout: 0,
+      onUploadProgress: (event) => onProgress(event.loaded),
+    });
+
+    const eTag = response.headers.etag as string | undefined;
+    if (!eTag) throw new Error("Storage did not return an ETag for the uploaded part.");
+
+    return eTag.replace(/"/g, "");
+  },
+
+  uploadFile: async (
+    request: SimpleUploadRequest,
+    onProgress?: (uploadedBytes: number) => void,
+    signal?: AbortSignal
+  ): Promise<string> => {
+    const formData = new FormData();
+    formData.append("formFile", request.file);
+    formData.append("assetType", request.assetType);
+    formData.append("context", request.context);
+    formData.append("contextId", request.contextId);
+
+    const response = await fileServiceClient.post<FileServiceEnvelope<string>>(
+      "/files/upload",
+      formData,
+      {
+        signal,
+        timeout: 0,
+        onUploadProgress: (event) => onProgress?.(event.loaded),
+      }
+    );
+
+    return unwrap(response.data);
+  },
+
   startMultipartUpload: async (
     request: StartMultipartUploadRequest,
     signal?: AbortSignal

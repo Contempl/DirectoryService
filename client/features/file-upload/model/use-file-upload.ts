@@ -16,6 +16,19 @@ export type UploadErrorKind = "validation" | "initiate" | "storage" | "complete"
 export type UploadFailure = {
   kind: UploadErrorKind;
   message: string;
+  partNumber?: number;
+};
+
+export type UploadStrategy = "auto" | "simple" | "multipart";
+
+export const DEFAULT_MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
+export const DEFAULT_MULTIPART_CONCURRENCY = 3;
+export const DEFAULT_PART_MAX_ATTEMPTS = 3;
+
+export type PartRetryState = {
+  partNumber: number;
+  attempt: number;
+  maxAttempts: number;
 };
 
 export type UploadedAsset = {
@@ -29,11 +42,27 @@ type UseFileUploadOptions = {
   contextId: string;
   acceptedTypes?: string[];
   maxSizeBytes?: number;
+  strategy?: UploadStrategy;
+  multipartThresholdBytes?: number;
+  multipartConcurrency?: number;
+  partMaxAttempts?: number;
   onStatusChange?: (status: UploadStatus) => void;
   onSuccess?: (asset: UploadedAsset) => void;
   onError?: (failure: UploadFailure) => void;
   onCancel?: () => void;
 };
+
+export function selectUploadStrategy(
+  file: File,
+  assetType: string,
+  strategy: UploadStrategy = "auto",
+  multipartThresholdBytes = DEFAULT_MULTIPART_THRESHOLD_BYTES
+): Exclude<UploadStrategy, "auto"> {
+  if (strategy !== "auto") return strategy;
+
+  const isVideo = assetType.toLowerCase() === "video" || file.type.startsWith("video/");
+  return isVideo || file.size >= multipartThresholdBytes ? "multipart" : "simple";
+}
 
 function acceptsFile(file: File, acceptedTypes: string[]): boolean {
   return acceptedTypes.some((acceptedType) => {
@@ -50,6 +79,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<UploadFailure | null>(null);
   const [asset, setAsset] = useState<UploadedAsset | null>(null);
+  const [partRetry, setPartRetry] = useState<PartRetryState | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const uploadIdentityRef = useRef<{ mediaAssetId: string; uploadId: string } | null>(null);
   const cancellationRequestedRef = useRef(false);
@@ -60,6 +90,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
   }, [options]);
 
   const fail = useCallback((failure: UploadFailure) => {
+    setPartRetry(null);
     setError(failure);
     changeStatus("error");
     options.onError?.(failure);
@@ -73,6 +104,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
     setProgress(0);
     setError(null);
     setAsset(null);
+    setPartRetry(null);
     changeStatus("idle");
   }, [changeStatus]);
 
@@ -112,12 +144,45 @@ export function useFileUpload(options: UseFileUploadOptions) {
     cancellationRequestedRef.current = false;
     setError(null);
     setAsset(null);
+    setPartRetry(null);
     setProgress(0);
     changeStatus("uploading");
 
     let failureKind: UploadErrorKind = "initiate";
 
     try {
+      const strategy = selectUploadStrategy(
+        file,
+        options.assetType,
+        options.strategy,
+        options.multipartThresholdBytes
+      );
+
+      if (strategy === "simple") {
+        failureKind = "storage";
+        const assetId = await mediaApi.uploadFile(
+          {
+            file,
+            assetType: options.assetType,
+            context: options.context,
+            contextId: options.contextId,
+          },
+          (uploadedBytes) => {
+            const percentage = Math.round((uploadedBytes / file.size) * 100);
+            setProgress(Math.min(percentage, 100));
+          },
+          controller.signal
+        );
+
+        const uploadedAsset: UploadedAsset = { assetId, status: "uploaded" };
+        abortControllerRef.current = null;
+        setAsset(uploadedAsset);
+        setProgress(100);
+        changeStatus("success");
+        options.onSuccess?.(uploadedAsset);
+        return;
+      }
+
       const started = await mediaApi.startMultipartUpload({
         fileName: file.name,
         assetType: options.assetType,
@@ -134,28 +199,88 @@ export function useFileUpload(options: UseFileUploadOptions) {
 
       failureKind = "storage";
       const partETags: Array<{ partNumber: number; eTag: string }> = [];
+      const uploadedBytesByPart = new Map<number, number>();
+      const requestedConcurrency = options.multipartConcurrency ?? DEFAULT_MULTIPART_CONCURRENCY;
+      const normalizedConcurrency = Number.isFinite(requestedConcurrency)
+        ? Math.max(1, Math.floor(requestedConcurrency))
+        : DEFAULT_MULTIPART_CONCURRENCY;
+      const concurrency = Math.max(
+        1,
+        Math.min(normalizedConcurrency, started.chunkUrls.length)
+      );
+      let nextChunkIndex = 0;
+      let partUploadError: unknown = null;
+      const requestedMaxAttempts = options.partMaxAttempts ?? DEFAULT_PART_MAX_ATTEMPTS;
+      const maxAttempts = Number.isFinite(requestedMaxAttempts)
+        ? Math.max(1, Math.floor(requestedMaxAttempts))
+        : DEFAULT_PART_MAX_ATTEMPTS;
 
-      for (let index = 0; index < started.chunkUrls.length; index += 1) {
-        const chunk = started.chunkUrls[index];
-        const start = (chunk.partNumber - 1) * started.chunkSize;
-        const blob = file.slice(start, Math.min(start + started.chunkSize, file.size));
-        const response = await fetch(chunk.uploadUrl, {
-          method: "PUT",
-          headers: chunk.headers,
-          body: blob,
-          signal: controller.signal,
-        });
+      const updateMultipartProgress = (partNumber: number, uploadedBytes: number, partSize: number) => {
+        uploadedBytesByPart.set(partNumber, Math.min(uploadedBytes, partSize));
+        const totalUploadedBytes = Array.from(uploadedBytesByPart.values())
+          .reduce((total, value) => total + value, 0);
+        setProgress(Math.min(Math.round((totalUploadedBytes / file.size) * 100), 100));
+      };
 
-        if (!response.ok) {
-          throw new Error(`Storage rejected part ${chunk.partNumber} with status ${response.status}.`);
+      const uploadNextParts = async () => {
+        while (!partUploadError && nextChunkIndex < started.chunkUrls.length) {
+          const chunk = started.chunkUrls[nextChunkIndex];
+          nextChunkIndex += 1;
+
+          const start = (chunk.partNumber - 1) * started.chunkSize;
+          const blob = file.slice(start, Math.min(start + started.chunkSize, file.size));
+
+          let uploadedPart = false;
+          let lastPartError: unknown = null;
+
+          for (let attempt = 1; attempt <= maxAttempts && !controller.signal.aborted; attempt += 1) {
+            if (attempt > 1) {
+              setPartRetry({ partNumber: chunk.partNumber, attempt, maxAttempts });
+              updateMultipartProgress(chunk.partNumber, 0, blob.size);
+            }
+
+            try {
+              const eTag = await mediaApi.uploadPart(
+                chunk.uploadUrl,
+                blob,
+                chunk.headers,
+                (uploadedBytes) => updateMultipartProgress(chunk.partNumber, uploadedBytes, blob.size),
+                controller.signal
+              );
+              partETags.push({ partNumber: chunk.partNumber, eTag });
+              setPartRetry((current) => current?.partNumber === chunk.partNumber ? null : current);
+              uploadedPart = true;
+              break;
+            } catch (caughtError) {
+              lastPartError = caughtError;
+            }
+          }
+
+          if (!uploadedPart) {
+            const reason = lastPartError instanceof Error ? lastPartError.message : "Unknown storage error.";
+            const error = new Error(
+              `Part ${chunk.partNumber} failed after ${maxAttempts} attempt${maxAttempts === 1 ? "" : "s"}. ${reason}`
+            );
+            Object.assign(error, { partNumber: chunk.partNumber });
+
+            if (!partUploadError) {
+              partUploadError = error;
+              controller.abort();
+            }
+          }
         }
+      };
 
-        const eTag = response.headers.get("ETag")?.replace(/"/g, "");
-        if (!eTag) throw new Error(`Storage did not return an ETag for part ${chunk.partNumber}.`);
+      await Promise.all(Array.from({ length: concurrency }, () => uploadNextParts()));
 
-        partETags.push({ partNumber: chunk.partNumber, eTag });
-        setProgress(Math.round(((index + 1) / started.chunkUrls.length) * 100));
+      if (partUploadError) throw partUploadError;
+      setPartRetry(null);
+      if (partETags.length !== started.chunkUrls.length) {
+        throw new Error(
+          `Uploaded ${partETags.length} of ${started.chunkUrls.length} required parts.`
+        );
       }
+      partETags.sort((left, right) => left.partNumber - right.partNumber);
 
       failureKind = "complete";
       changeStatus("completing");
@@ -190,7 +315,14 @@ export function useFileUpload(options: UseFileUploadOptions) {
         }
       }
 
-      fail({ kind: failureKind, message });
+      const failedPartNumber = caughtError instanceof Error
+        ? (caughtError as Error & { partNumber?: number }).partNumber
+        : undefined;
+      fail({
+        kind: failedPartNumber === undefined ? failureKind : "storage",
+        message,
+        partNumber: failedPartNumber,
+      });
     } finally {
       abortControllerRef.current = null;
     }
@@ -208,6 +340,7 @@ export function useFileUpload(options: UseFileUploadOptions) {
       uploadIdentityRef.current = null;
       setProgress(0);
       setError(null);
+      setPartRetry(null);
       changeStatus("cancelled");
       options.onCancel?.();
     } catch (caughtError) {
@@ -217,5 +350,5 @@ export function useFileUpload(options: UseFileUploadOptions) {
     }
   }, [changeStatus, fail, options, status]);
 
-  return { upload, cancel, reset, status, progress, error, asset };
+  return { upload, cancel, reset, status, progress, error, asset, partRetry };
 }

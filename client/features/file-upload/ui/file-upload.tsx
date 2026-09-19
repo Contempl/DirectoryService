@@ -7,6 +7,7 @@ import { cn } from "@/shared/lib/utils";
 import {
   UploadedAsset,
   UploadFailure,
+  UploadStrategy,
   UploadStatus,
   useFileUpload,
 } from "../model/use-file-upload";
@@ -17,6 +18,10 @@ export type FileUploadProps = {
   contextId: string;
   acceptedTypes?: string[];
   maxSizeBytes?: number;
+  strategy?: UploadStrategy;
+  multipartThresholdBytes?: number;
+  multipartConcurrency?: number;
+  partMaxAttempts?: number;
   displayMode?: "dropzone" | "compact";
   disabled?: boolean;
   onStatusChange?: (status: UploadStatus) => void;
@@ -39,7 +44,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const uploader = useFileUpload({
     ...options,
     acceptedTypes,
@@ -50,13 +55,13 @@ export function FileUpload({
 
   const selectFile = (file?: File) => {
     if (!file || disabled || isActive) return;
-    setFileName(file.name);
+    setSelectedFile(file);
     void uploader.upload(file);
   };
 
   const reset = () => {
     uploader.reset();
-    setFileName(null);
+    setSelectedFile(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -127,11 +132,16 @@ export function FileUpload({
       {(uploader.status === "uploading" || uploader.status === "completing") && (
         <div className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="truncate">{fileName}</span>
+            <span className="truncate">{selectedFile?.name}</span>
             <span className="text-muted-foreground">
               {uploader.status === "completing" ? "Completing…" : `${uploader.progress}%`}
             </span>
           </div>
+          {uploader.partRetry && (
+            <p className="text-xs text-muted-foreground">
+              Retrying part {uploader.partRetry.partNumber}, attempt {uploader.partRetry.attempt} of {uploader.partRetry.maxAttempts}…
+            </p>
+          )}
           <div className="h-2 overflow-hidden rounded-full bg-secondary">
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-300"
@@ -150,7 +160,7 @@ export function FileUpload({
           <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">Upload complete</p>
-            <p className="truncate text-sm text-muted-foreground">{fileName}</p>
+            <p className="truncate text-sm text-muted-foreground">{selectedFile?.name}</p>
             <p className="break-all text-xs text-muted-foreground">{uploader.asset?.assetId}</p>
           </div>
           <Button type="button" variant="ghost" size="sm" onClick={reset}>Upload another</Button>
@@ -163,8 +173,13 @@ export function FileUpload({
             <p className="font-medium">Upload cancelled</p>
             <p className="text-sm text-muted-foreground">No file was attached.</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={reset}>
-            <RotateCcw className="mr-2 h-4 w-4" /> Retry
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => selectedFile ? void uploader.upload(selectedFile) : reset()}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" /> Retry upload
           </Button>
         </div>
       )}
@@ -176,7 +191,14 @@ export function FileUpload({
             <p className="font-medium">{uploader.error?.kind === "validation" ? "File is not valid" : "Upload failed"}</p>
             <p className="text-sm text-destructive">{uploader.error?.message}</p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={reset}>Try again</Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => selectedFile ? void uploader.upload(selectedFile) : reset()}
+          >
+            Retry upload
+          </Button>
         </div>
       )}
     </div>
