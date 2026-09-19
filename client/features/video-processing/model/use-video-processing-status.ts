@@ -34,7 +34,11 @@ export function useVideoProcessingStatus(videoAssetId: string | null) {
     videoAssetId: string;
     status: "open" | "reconnecting";
   } | null>(null);
-  const isPolling = Boolean(videoAssetId && pollingVideoAssetId === videoAssetId);
+  const isEventSourceSupported = typeof EventSource !== "undefined";
+  const isPolling = Boolean(
+    videoAssetId
+      && (!isEventSourceSupported || pollingVideoAssetId === videoAssetId)
+  );
 
   const statusQuery = useQuery({
     queryKey: videoProcessingStatusQueryKey(videoAssetId ?? "missing"),
