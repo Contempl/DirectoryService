@@ -15,6 +15,11 @@ import type {
 const FILE_SERVICE_BASE_URL = process.env.NEXT_PUBLIC_FILE_SERVICE_URL
   ?? (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:5555/api");
 
+function buildFileServiceUrl(path: string): string {
+  const baseUrl = FILE_SERVICE_BASE_URL.replace(/\/$/, "");
+  return `${baseUrl}${path}`;
+}
+
 const fileServiceClient = axios.create({
   baseURL: FILE_SERVICE_BASE_URL,
   timeout: 15_000,
@@ -157,4 +162,7 @@ export const mediaApi = {
     );
     return unwrap(response.data);
   },
+
+  getVideoProcessingStatusStreamUrl: (videoAssetId: string): string =>
+    buildFileServiceUrl(`/files/${videoAssetId}/processing-status/stream`),
 };

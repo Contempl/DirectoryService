@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/components/ui/dialog";
-import { FileUpload } from "@/features/file-upload/ui/file-upload";
+import { VideoUploadFlow } from "./video-upload-flow";
 
 type VideoUploadDialogProps = {
   context: string;
@@ -30,13 +30,10 @@ export function VideoUploadDialog({
           <DialogTitle>Upload Video</DialogTitle>
         </DialogHeader>
 
-        <FileUpload
-          assetType="video"
+        <VideoUploadFlow
           context={context}
           contextId={contextId}
-          acceptedTypes={["video/*"]}
-          maxSizeBytes={5 * 1024 * 1024 * 1024}
-          onSuccess={(asset) => onSuccess?.(asset.assetId)}
+          onUploadSuccess={onSuccess}
         />
       </DialogContent>
     </Dialog>
