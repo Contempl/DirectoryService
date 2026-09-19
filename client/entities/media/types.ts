@@ -44,6 +44,13 @@ export type CancelMultipartUploadResponse = {
   success: boolean;
 };
 
+export type SimpleUploadRequest = {
+  file: File;
+  assetType: string;
+  context: string;
+  contextId: string;
+};
+
 export type MediaFileInfo = {
   fileName: string;
   contentType: string;
