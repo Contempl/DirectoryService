@@ -29,6 +29,8 @@ public abstract class MediaAsset
 
     public StorageKey UploadKey => RequiresProcessing() ? RawKey : FinalKey;
 
+    public StorageKey DownloadKey => RequiresProcessing() ? FinalKey : RawKey;
+
     
 
     protected  MediaAsset()

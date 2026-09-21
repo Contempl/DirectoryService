@@ -58,7 +58,7 @@ public sealed class GetMediaAssetsInfoHandler
         {
             var urlResult = await _cache.GetDownloadUrlAsync(
                 asset.Id,
-                token => _s3Provider.DownloadFileAsync(asset.RawKey, token),
+                token => _s3Provider.DownloadFileAsync(asset.DownloadKey, token),
                 cancellationToken);
 
             return (asset.Id, Url: urlResult.IsSuccess ? urlResult.Value : null);
