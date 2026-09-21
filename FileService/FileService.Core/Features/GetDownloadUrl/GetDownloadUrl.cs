@@ -56,7 +56,7 @@ public sealed class GetDownloadUrlHandler
 
         var urlResult = await _cache.GetDownloadUrlAsync(
             asset.Id,
-            token => _s3Provider.DownloadFileAsync(asset.RawKey, token),
+            token => _s3Provider.DownloadFileAsync(asset.DownloadKey, token),
             cancellationToken);
         if (urlResult.IsFailure)
             return urlResult.Error;

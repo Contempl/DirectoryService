@@ -8,6 +8,7 @@ import type {
   StartMultipartUploadRequest,
   StartMultipartUploadResponse,
   SimpleUploadRequest,
+  GetDownloadUrlResponse,
   MediaAssetInfo,
   VideoProcessingStatus,
 } from "./types";
@@ -69,6 +70,19 @@ fileServiceClient.interceptors.response.use(
 );
 
 export const mediaApi = {
+  getDownloadUrl: async (
+    mediaAssetId: string,
+    signal?: AbortSignal
+  ): Promise<string> => {
+    const response = await fileServiceClient.post<FileServiceEnvelope<GetDownloadUrlResponse>>(
+      "/files/url",
+      { mediaAssetId },
+      { signal }
+    );
+
+    return unwrap(response.data).downloadUrl;
+  },
+
   uploadPart: async (
     uploadUrl: string,
     body: Blob,

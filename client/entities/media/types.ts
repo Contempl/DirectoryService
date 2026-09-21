@@ -44,6 +44,10 @@ export type CancelMultipartUploadResponse = {
   success: boolean;
 };
 
+export type GetDownloadUrlResponse = {
+  downloadUrl: string;
+};
+
 export type SimpleUploadRequest = {
   file: File;
   assetType: string;

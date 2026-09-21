@@ -12,6 +12,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { cn } from "@/shared/lib/utils";
+import { VideoPlayback } from "@/features/video-player/ui/video-playback";
 import { useVideoProcessingStatus } from "../model/use-video-processing-status";
 
 type VideoProcessingStatusProps = {
@@ -142,6 +143,8 @@ export function VideoProcessingStatus({
           </div>
         </div>
       )}
+
+      {isReady && <VideoPlayback videoAssetId={videoAssetId} />}
 
       {isUnavailable && (
         <div className="space-y-3">
