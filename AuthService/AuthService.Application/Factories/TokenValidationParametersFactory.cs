@@ -16,7 +16,8 @@ public static class TokenValidationParametersFactory
             ValidIssuer = jwtOptions.Issuer,
             ValidateAudience = true,
             ValidAudience = jwtOptions.Audience,
-            ValidateLifetime = validateLifetime
+            ValidateLifetime = validateLifetime,
+            ClockSkew = TimeSpan.Zero
         };
     }
 }

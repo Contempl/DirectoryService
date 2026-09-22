@@ -28,6 +28,7 @@ using Core.Abstractions;
 using CSharpFunctionalExtensions;
 using FluentValidation;
 using Framework.Response;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -41,6 +42,22 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        var jwtOptionsSection = configuration.GetRequiredSection(nameof(JwtOptions));
+
+        services.AddOptions<JwtOptions>()
+            .Bind(jwtOptionsSection)
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Issuer),
+                $"{nameof(JwtOptions)}:{nameof(JwtOptions.Issuer)} is required.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Audience),
+                $"{nameof(JwtOptions)}:{nameof(JwtOptions.Audience)} is required.")
+            .Validate(options => Encoding.UTF8.GetByteCount(options.Secret) >= 32,
+                $"{nameof(JwtOptions)}:{nameof(JwtOptions.Secret)} must contain at least 32 bytes.")
+            .Validate(options => options.AccessTokenLifetimeMinutes is > 0 and <= 30,
+                $"{nameof(JwtOptions)}:{nameof(JwtOptions.AccessTokenLifetimeMinutes)} must be between 1 and 30 minutes.")
+            .Validate(options => options.RefreshTokenLifetime > 0,
+                $"{nameof(JwtOptions)}:{nameof(JwtOptions.RefreshTokenLifetime)} must be greater than zero.")
+            .ValidateOnStart();
+
         services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -96,7 +113,8 @@ public static class DependencyInjection
         services.AddEndpoints(typeof(RegisterEndpoint).Assembly);
 
 
-        var jwtOptions = configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>();
+        var jwtOptions = jwtOptionsSection.Get<JwtOptions>()
+            ?? throw new InvalidOperationException($"Configuration section '{nameof(JwtOptions)}' is invalid.");
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -122,10 +140,6 @@ public static class DependencyInjection
 
         services.Configure<AdminOptions>(
             configuration.GetSection(nameof(AdminOptions))
-        );
-
-        services.Configure<JwtOptions>(
-            configuration.GetSection(nameof(JwtOptions))
         );
 
         services.AddSingleton<IJwtOptions>(sp =>

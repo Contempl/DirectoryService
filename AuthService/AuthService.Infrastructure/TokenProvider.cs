@@ -34,6 +34,10 @@ public class TokenProvider : ITokenProvider
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Name, string.Concat(user.FirstName, " ", user.LastName)),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(
+                JwtRegisteredClaimNames.Iat,
+                EpochTime.GetIntDate(DateTime.UtcNow).ToString(),
+                ClaimValueTypes.Integer64),
         };
         
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
