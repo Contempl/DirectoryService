@@ -1,11 +1,6 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using AuthService.Application.Database;
 using AuthService.Contracts.Result;
-using AuthService.Domain.Entities;
-using Core.Abstractions;
 using CSharpFunctionalExtensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Shared.Kernel;
 
@@ -13,34 +8,48 @@ namespace AuthService.Application.Features.Logout;
 
 public class LogoutHandler
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
+    private readonly ITokenProvider _tokenProvider;
+    private readonly ITransactionManager _transactionManager;
     private readonly ILogger<LogoutHandler> _logger;
 
     public LogoutHandler(
         IRefreshTokensRepository refreshTokensRepository,
         ILogger<LogoutHandler> logger,
-        IHttpContextAccessor httpContextAccessor)
+        ITokenProvider tokenProvider,
+        ITransactionManager transactionManager)
     {
         _refreshTokensRepository = refreshTokensRepository;
         _logger = logger;
-        _httpContextAccessor = httpContextAccessor;
+        _tokenProvider = tokenProvider;
+        _transactionManager = transactionManager;
     }
 
-    public async Task<Result<SuccessfulResult, Errors>> HandleAsync(CancellationToken cancellationToken)
+    public async Task<Result<SuccessfulResult, Errors>> HandleAsync(string rawRefreshToken, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = Guid.Parse(_httpContextAccessor.HttpContext!.User
-                .FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var tokenHash = _tokenProvider.HashRefreshToken(rawRefreshToken);
 
-            await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(userId, cancellationToken);
-        }
-        catch (Exception ex)
+        var tokenResult = await _refreshTokensRepository.GetByHashAsync(
+            tokenHash,
+            cancellationToken);
+        
+        if (tokenResult.IsFailure)
         {
-            _logger.LogError("Failed to log out.");
-            return GeneralErrors.Failure().ToErrors();
+            _logger.LogInformation("Refresh session is already absent.");
+            return new SuccessfulResult();
         }
+        
+        var family = await _refreshTokensRepository.GetByFamilyIdAsync(
+            tokenResult.Value.FamilyId,
+            cancellationToken);
+
+        foreach (var token in family.Where(token => !token.IsRevoked))
+            token.Revoke();
+
+        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        if (saveResult.IsFailure)
+            return saveResult.Error.ToErrors();
 
         _logger.LogInformation("Tokens revoked successfully.");
         

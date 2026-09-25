@@ -1,29 +1,24 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
-using AuthService.Application.Factories;
-using AuthService.Application.Features.Login;
 using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
 using Core.Abstractions;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Shared.Kernel;
 
 namespace AuthService.Application.Features.RefreshToken;
 
-public class RefreshTokenHandler : ICommandHandler<LoginResponse, RefreshTokenRequest>
+public class RefreshTokenHandler : ICommandHandler<RefreshResult, RefreshTokenRequest>
 {
     private readonly ITransactionManager _transactionManager;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
     private readonly ITokenProvider _tokenProvider;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IJwtOptions _jwtOptions;
     private readonly ILogger<RefreshTokenHandler> _logger;
+    private readonly IJwtOptions _jwtOptions;
 
     public RefreshTokenHandler(
         IRefreshTokensRepository refreshTokensRepository,
@@ -41,95 +36,123 @@ public class RefreshTokenHandler : ICommandHandler<LoginResponse, RefreshTokenRe
         _logger = logger;
     }
 
-    public async Task<Result<LoginResponse, Errors>> HandleAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<Result<RefreshResult, Errors>> HandleAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var beginTransactionAsync = await _transactionManager.BeginTransactionAsync(cancellationToken);
-        if (beginTransactionAsync.IsFailure)
+        var transactionResult =
+            await _transactionManager.BeginTransactionAsync(cancellationToken);
+
+        if (transactionResult.IsFailure)
+            return transactionResult.Error.ToErrors();
+
+        using var transaction = transactionResult.Value;
+        
+        var tokenHash = _tokenProvider.HashRefreshToken(
+            request.RawRefreshToken);
+
+        var tokenResult = await _refreshTokensRepository.GetByHashAsync(
+            tokenHash,
+            cancellationToken);
+
+        if (tokenResult.IsFailure)
         {
-            _logger.LogInformation("Failed to begin transaction,");
+            _logger.LogInformation("Refresh token was not found.");
             return GeneralErrors.Failure().ToErrors();
         }
-        
-        var tokenValidationParameters = TokenValidationParametersFactory.Create(_jwtOptions, validateLifetime: false);
 
-        var principal = new JwtSecurityTokenHandler()
-            .ValidateToken(request.AccessToken, tokenValidationParameters, out _);
-        
-        var subClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
-            return GeneralErrors.ValueIsRequired(nameof(userId)).ToErrors(); 
-
-        using var transactionScope = beginTransactionAsync.Value;
-
-        try
+        var refreshToken = tokenResult.Value;
+       
+        if (refreshToken.IsRevoked)
         {
-            var fetchToken = await _refreshTokensRepository
-                .GetByTokenAsync(request.RefreshToken, userId, cancellationToken);
-        
-            if (fetchToken.IsFailure)
-            {
-                _logger.LogInformation("Could not fetch refresh token");
-                return fetchToken.Error.ToErrors();
-            }
-        
-            var refreshToken = fetchToken.Value;
-        
-            var user = await _userManager.FindByIdAsync(refreshToken.UserId.ToString());
-            if (user is null)
-            {
-                _logger.LogInformation("Could not find user with id {UserId}", refreshToken.UserId.ToString());
-                return GeneralErrors.NotFound(name: nameof(ApplicationUser)).ToErrors();
-            }
+            var family = await _refreshTokensRepository.GetByFamilyIdAsync(
+                refreshToken.FamilyId,
+                cancellationToken);
 
-            if (refreshToken.IsRevoked)
-            {
-                _logger.LogInformation("Refresh token was revoked. Removing all refresh tokens for this user.");
-                await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id, cancellationToken);
-                return GeneralErrors.Failure().ToErrors();
-            }
-            
-            if (refreshToken.ExpiryDate < DateTime.UtcNow)
-                return GeneralErrors.ValueIsInvalid(nameof(RefreshToken)).ToErrors();
-            
-            var roles =  await _userManager.GetRolesAsync(user);
-            var permissions = RolePermissions.GetPermissions(roles);
-            
-            var newJwtToken = _tokenProvider.GenerateJwtToken(user, roles.ToList(), permissions);
+            foreach (var familyToken in family.Where(token => !token.IsRevoked))
+                familyToken.Revoke();
 
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(newJwtToken);
-            var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+            var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
 
-            var newRefToken = _tokenProvider.GenerateRefreshToken(user.Id, jti);
-            
-            if (newRefToken.IsFailure)
-                return newRefToken.Error.ToErrors();
+            if (saveResult.IsFailure)
+                return saveResult.Error.ToErrors();
 
-            var newRefreshToken = newRefToken.Value;
-        
-            refreshToken.Revoke(newRefreshToken.Token);
-        
-            await _refreshTokensRepository.AddAsync(newRefreshToken, cancellationToken);
+            var commitResult = transaction.Commit();
 
-            var commitResult = transactionScope.Commit();
             if (commitResult.IsFailure)
-            {
-                transactionScope.Rollback();
-                _logger.LogInformation("Failed to commit  transaction.");
-            
                 return commitResult.Error.ToErrors();
-            }
 
-            var response = new LoginResponse(
-                newJwtToken, newRefreshToken.Token, _jwtOptions.AccessTokenLifetimeMinutes);
-            
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Error occured during transaction: {ex}", ex);
-            transactionScope.Rollback();
+            _logger.LogWarning(
+                "Refresh token reuse detected for family {FamilyId}.",
+                refreshToken.FamilyId);
+
             return GeneralErrors.Failure().ToErrors();
         }
+        
+        if (refreshToken.ExpiryDate <= DateTime.UtcNow)
+            return GeneralErrors.ValueIsInvalid(
+                nameof(RefreshToken)).ToErrors();
+        
+        var user = await _userManager.FindByIdAsync(
+            refreshToken.UserId.ToString());
+
+        if (user is null || !user.IsActive)
+        {
+            _logger.LogInformation(
+                "User {UserId} for refresh session was not found or inactive.",
+                refreshToken.UserId);
+
+            return GeneralErrors.NotFound().ToErrors();
+        }
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var permissions = RolePermissions.GetPermissions(roles);
+
+        var newAccessToken = _tokenProvider.GenerateJwtToken(
+            user,
+            roles.ToList(),
+            permissions);
+
+        var jwt = new JwtSecurityTokenHandler()
+            .ReadJwtToken(newAccessToken);
+
+        var jti = jwt.Claims
+            .First(claim => claim.Type == JwtRegisteredClaimNames.Jti)
+            .Value;
+        
+        var rotatedResult =
+            _tokenProvider.GenerateRotatedRefreshToken(
+                user.Id,
+                jti,
+                refreshToken.FamilyId);
+
+        if (rotatedResult.IsFailure)
+            return rotatedResult.Error.ToErrors();
+
+        var rotated = rotatedResult.Value;
+        
+        refreshToken.Revoke(rotated.Entity.TokenHash);
+
+        var addResult = await _refreshTokensRepository.AddAsync(
+            rotated.Entity,
+            cancellationToken);
+
+        if (addResult.IsFailure)
+            return addResult.Error.ToErrors();
+
+        var rotationSaveResult = await _transactionManager.SaveChangesAsync(
+            cancellationToken);
+
+        if (rotationSaveResult.IsFailure)
+            return rotationSaveResult.Error.ToErrors();
+
+        var rotationCommitResult = transaction.Commit();
+
+        if (rotationCommitResult.IsFailure)
+            return rotationCommitResult.Error.ToErrors();
+
+        return new RefreshResult(
+            newAccessToken,
+            _jwtOptions.AccessTokenLifetimeMinutes,
+            rotated.RawToken,
+            rotated.Entity.ExpiryDate);
     }
 }

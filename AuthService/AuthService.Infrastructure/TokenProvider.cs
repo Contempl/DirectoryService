@@ -57,22 +57,61 @@ public class TokenProvider : ITokenProvider
         
         return token;
     }
-    
-    public Result<RefreshToken, Error> GenerateRefreshToken(Guid userId, string jwtTokenId)
-    {
-        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
+    public Result<GeneratedRefreshToken, Error> GenerateInitialRefreshToken(Guid userId, string jwtId)
+    {
+        var tokenPair = GenerateTokenPair();
+        
         var expiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenLifetime);
         
-        var refreshTokenResult =  RefreshToken.Create(token, userId, jwtTokenId, expiryDate);
+        var refreshTokenResult = RefreshToken.CreateInitial(tokenPair.TokenHash, userId, jwtId, expiryDate);
+        
         if (refreshTokenResult.IsFailure)
         {
-            _logger.LogInformation("failed to create refresh token.");
+            _logger.LogInformation(
+                "Failed to create initial refresh token.");
+
             return refreshTokenResult.Error;
         }
         
-        var refreshToken = refreshTokenResult.Value;
+        return new GeneratedRefreshToken(tokenPair.RawToken, refreshTokenResult.Value);
+    }
 
-        return refreshToken;
+    public Result<GeneratedRefreshToken, Error> GenerateRotatedRefreshToken(Guid userId, string jwtId, Guid familyId)
+    {
+        var tokenPair = GenerateTokenPair();
+        
+        var expiryDate = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenLifetime);
+        
+        var refreshTokenResult = RefreshToken.CreateRotated(tokenPair.TokenHash, userId, jwtId, expiryDate, familyId);
+        
+        if (refreshTokenResult.IsFailure)
+        {
+            _logger.LogInformation(
+                "Failed to create rotated refresh token.");
+
+            return refreshTokenResult.Error;
+        }
+        
+        return new GeneratedRefreshToken(tokenPair.RawToken, refreshTokenResult.Value);
+    }
+
+    public string HashRefreshToken(string rawToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(rawToken);
+
+        return Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)))
+            .ToLowerInvariant();
+    }
+
+    private (string RawToken, string TokenHash) GenerateTokenPair()
+    {
+        var rawToken = Base64UrlEncoder.Encode(
+            RandomNumberGenerator.GetBytes(64));
+
+        var tokenHash = HashRefreshToken(rawToken);
+
+        return (rawToken, tokenHash);
     }
 }

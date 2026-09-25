@@ -1,7 +1,6 @@
 ﻿using AuthService.Application.Auth;
 using AuthService.Application.Database;
 using AuthService.Domain.Entities;
-using Core.Validation;
 using CSharpFunctionalExtensions;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -67,7 +66,7 @@ public class ChangePasswordHandler
             return GeneralErrors.Failure();
         }
 
-        var transactionScope = beginTransaction.Value;
+        using var transactionScope = beginTransaction.Value;
 
         var changePasswordResult = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!changePasswordResult.Succeeded)
@@ -77,7 +76,18 @@ public class ChangePasswordHandler
             return GeneralErrors.Failure();
         }
         
-        await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(_userScopedData.UserId, cancellationToken);
+        var revokeResult =
+            await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(
+                _userScopedData.UserId,
+                cancellationToken);
+
+        if (revokeResult.IsFailure)
+            return revokeResult.Error;
+        
+        var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+
+        if (saveResult.IsFailure)
+            return saveResult.Error;
 
         var commitResult = transactionScope.Commit();
         if (commitResult.IsFailure)

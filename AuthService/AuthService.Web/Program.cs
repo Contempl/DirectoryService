@@ -5,11 +5,18 @@ using AuthService.Core.Identity;
 using AuthService.Core.Middleware;
 using Framework.Middleware;
 using Framework.Response;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 
 if (builder.Environment.IsDevelopment())
@@ -29,6 +36,8 @@ builder.Services.AddHostedService<SeedDataService>();
 builder.Services.AddCors();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 app.MapHealthChecks("/health");
 

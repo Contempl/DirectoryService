@@ -52,8 +52,19 @@ public class DeleteUserHandler
                 _logger.LogInformation("Failed to deactivate user.");
                 return deleteResult.Error;
             }
-        
-            await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(userId, cancellationToken);
+            
+            var revokeResult =
+                await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(
+                    userId,
+                    cancellationToken);
+
+            if (revokeResult.IsFailure)
+                return revokeResult.Error;
+            
+            var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+
+            if (saveResult.IsFailure)
+                return saveResult.Error;
 
             var commitResult = transactionScope.Commit();
             if (commitResult.IsFailure)

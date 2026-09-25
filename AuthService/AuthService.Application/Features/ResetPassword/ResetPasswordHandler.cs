@@ -74,6 +74,11 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
                 _logger.LogInformation("Revoke Tokens failed.");
                 return revokeTokensResult.Error.ToErrors();
             }
+            
+            var saveResult = await _transactionManager.SaveChangesAsync(cancellationToken);
+
+            if (saveResult.IsFailure)
+                return saveResult.Error.ToErrors();
 
             var commitResult = transactionScope.Commit();
             if (commitResult.IsFailure)

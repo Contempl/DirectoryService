@@ -70,6 +70,7 @@ public class DeleteRevokedTokensService : BackgroundService
 
             dbContext.RefreshTokens.RemoveRange(refreshTokensToDelete);
 
+            await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
         catch (Exception ex)

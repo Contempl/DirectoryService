@@ -16,9 +16,21 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .HasColumnName("id")
             .IsRequired();
 
-        builder.Property(r => r.Token)
-            .HasMaxLength(200)
-            .HasColumnName("token");
+        builder.Property(r => r.TokenHash)
+            .HasMaxLength(64)
+            .HasColumnName("token_hash")
+            .IsRequired();
+        
+        builder.HasIndex(r => r.TokenHash)
+            .IsUnique()
+            .HasDatabaseName("ix_refresh_tokens_token_hash");
+        
+        builder.Property(r => r.FamilyId)
+            .HasColumnName("family_id")
+            .IsRequired();
+        
+        builder.HasIndex(r => r.FamilyId)
+            .HasDatabaseName("ix_refresh_tokens_family_id");
         
         builder.Property(u => u.CreatedAt)
             .HasColumnName("created_at");
@@ -36,12 +48,15 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .HasMaxLength(150)
             .HasColumnName("jwt_id");
 
-        builder.Property(x => x.ReplacedByToken)
-            .HasMaxLength(200)
-            .HasColumnName("replacing_token");
+        builder.Property(x => x.ReplacedByTokenHash)
+            .HasMaxLength(64)
+            .HasColumnName("replaced_by_token_hash");
 
         builder.Property(r => r.UserId)
             .HasColumnName("user_id");
+        
+        builder.Property<uint>("xmin")
+            .IsRowVersion();
         
         builder.HasOne<ApplicationUser>()
             .WithMany()
