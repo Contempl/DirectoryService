@@ -87,7 +87,7 @@ export default function LocationsList() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">
-          Locations ({data?.totalCount})
+          Locations{data ? ` (${data.totalCount})` : ""}
         </h2>
 
         {isPending && (

@@ -43,7 +43,7 @@ export default function PositionsList() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">
-          Positions ({data?.totalCount})
+          Positions{data ? ` (${data.totalCount})` : ""}
         </h2>
         {isPending && <span className="text-sm text-gray-500">Загрузка...</span>}
       </div>
