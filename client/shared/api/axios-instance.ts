@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Envelope } from "./envelope";
 import { EnvelopeError } from "./errors";
+import { attachAuthInterceptors } from "@/features/auth/api/attach-auth-interceptors";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
     ?? (process.env.NODE_ENV === "production"
@@ -14,6 +15,8 @@ export const apiClient = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+attachAuthInterceptors(apiClient);
 
 apiClient.interceptors.response.use(
     (response) => {

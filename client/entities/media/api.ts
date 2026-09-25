@@ -1,4 +1,5 @@
 import axios from "axios";
+import { attachAuthInterceptors } from "@/features/auth/api/attach-auth-interceptors";
 import type { Envelope } from "@/shared/api/envelope";
 import type {
   CancelMultipartUploadRequest,
@@ -25,6 +26,8 @@ const fileServiceClient = axios.create({
   baseURL: FILE_SERVICE_BASE_URL,
   timeout: 15_000,
 });
+
+attachAuthInterceptors(fileServiceClient);
 
 type FileServiceEnvelope<T = unknown> = Omit<Envelope<T>, "error"> & {
   errorsList: Array<{
