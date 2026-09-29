@@ -1,5 +1,7 @@
+using Core.Auth;
 using DirectoryService.Application.DependencyInjection;
 using DirectoryService.Infrastructure.DI;
+using DirectoryService.Presentation.Authorization;
 using DirectoryService.Presentation.Configuration;
 using Framework.Middleware;
 using Serilog;
@@ -13,6 +15,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddSingleton<IRolePermissionResolver, DirectoryRolePermissionResolver>();
 
 builder.Host.UseSerilog((context, configuration) => 
     configuration.ReadFrom.Configuration(context.Configuration));

@@ -1,4 +1,6 @@
 using Core.Abstractions;
+using Core.Auth;
+using FileService.Authorization;
 using FileService.Core;
 using FileService.Core.Features;
 using FileService.Core.Features.AbordMultipartUpload;
@@ -95,6 +97,7 @@ public static class DependencyInjection
         services.AddS3(configuration);
         
         services.AddJwtAuthentication(configuration);
+        services.AddSingleton<IRolePermissionResolver, FileRolePermissionResolver>();
 
         services.AddScoped<IValidator<UploadFileCommand>, UploadFileValidator>();
 
