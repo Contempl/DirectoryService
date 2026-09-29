@@ -11,7 +11,9 @@ public class UserScopedDataMiddleware(RequestDelegate next)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
-            var subClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var subClaim =
+                context.User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                context.User.FindFirstValue(ClaimTypes.NameIdentifier);
         
             if (subClaim is null || !Guid.TryParse(subClaim, out var userId))
             {
@@ -22,7 +24,15 @@ public class UserScopedDataMiddleware(RequestDelegate next)
             var email = context.User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty;
             var name = context.User.FindFirstValue(JwtRegisteredClaimNames.Name) ?? string.Empty;
             
-            var roles = context.User.FindAll(ClaimTypes.Role).Select(claim => claim.Value).ToArray();
+            var roleClaimType =
+                (context.User.Identity as ClaimsIdentity)?.RoleClaimType
+                ?? ClaimTypes.Role;
+
+            var roles = context.User
+                .FindAll(roleClaimType)
+                .Select(claim => claim.Value)
+                .ToArray();
+
             var permissions = permissionResolver.Resolve(roles);
 
             userScopedData.Authenticate(userId, email, name, roles, permissions);

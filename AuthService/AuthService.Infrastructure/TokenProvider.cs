@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using AuthService.Application;
+using Core.Auth;
 using AuthService.Core.Options;
 using AuthService.Domain.Entities;
 using CSharpFunctionalExtensions;
@@ -40,7 +41,7 @@ public class TokenProvider : ITokenProvider
                 ClaimValueTypes.Integer64),
         };
         
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        claims.AddRange(roles.Select(role => new Claim(JwtClaimTypes.Role, role)));
         
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key),
             SecurityAlgorithms.HmacSha256Signature);

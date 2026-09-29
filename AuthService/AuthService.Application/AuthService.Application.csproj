@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="directoryservice.core" Version="1.0.2" />
+      <PackageReference Include="directoryservice.core" Version="1.0.3" />
       <PackageReference Include="directoryservice.framework" Version="1.0.1" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     </ItemGroup>
