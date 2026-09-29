@@ -63,6 +63,10 @@ fileServiceClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 403) {
+      throw new Error("You do not have access to this File Service action.");
+    }
+
     if (axios.isAxiosError(error) && error.response?.data) {
       const envelope = error.response.data as FileServiceEnvelope;
       const message = getEnvelopeMessage(envelope);
