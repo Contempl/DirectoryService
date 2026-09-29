@@ -21,6 +21,6 @@ public class GetUsersEndpoint : IEndpoint
         {
             var request = new GetUsersQuery(Page, PageSize);
             return await handler.HandleAsync(request, cancellationToken);
-        }).RequirePermissions(Permissions.USERS_MANAGE);
+        }).RequirePermissions(Permissions.UsersView);
     }
 }

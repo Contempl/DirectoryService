@@ -3,6 +3,7 @@ using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Shared;
 using Core.Abstractions;
+using Core.Auth;
 using Core.Validation;
 using CSharpFunctionalExtensions;
 using FluentValidation;
@@ -74,7 +75,16 @@ public class RegisterHandler : ICommandHandler<Guid, RegisterRequest>
                 return userCreationResult.Errors.ToErrors();
             }
         
-            await _userManager.AddToRoleAsync(user, Roles.Participant);
+            var roleResult = await _userManager.AddToRoleAsync(user, SystemRoles.User);
+            if (!roleResult.Succeeded)
+            {
+                _logger.LogError(
+                    "Failed to assign the default role to user {UserId}: {Errors}",
+                    user.Id,
+                    string.Join(", ", roleResult.Errors.Select(error => error.Description)));
+
+                return roleResult.Errors.ToErrors();
+            }
 
             var emailConfirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 

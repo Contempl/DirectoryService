@@ -1,5 +1,5 @@
-using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
+using Core.Auth;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -20,10 +20,10 @@ public class RemoveRolesHandler
 
     public async Task<UnitResult<Error>> HandleAsync(Guid userId, string role, CancellationToken cancellationToken)
     {
-        var roles = Roles.AllRoles;
+        var roles = SystemRoles.All;
         if (!roles.Contains(role))
         {
-            _logger.LogInformation($"The role {role} was not found.");
+            _logger.LogInformation("The role {Role} was not found.", role);
             return GeneralErrors.ValueIsInvalid(nameof(role));
         }
         
@@ -33,7 +33,30 @@ public class RemoveRolesHandler
             _logger.LogInformation("Failed to fetch user.");
             return GeneralErrors.NotFound(name: nameof(user));
         }
+
+        if (!await _userManager.IsInRoleAsync(user, role))
+        {
+            return Error.Conflict(
+                "user.role.not_assigned",
+                $"The user does not have the {role} role.");
+        }
         
+        if (string.Equals(role, SystemRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            var admins = await _userManager.GetUsersInRoleAsync(
+                SystemRoles.Admin);
+
+            if (admins.Count == 1)
+            {
+                _logger.LogWarning(
+                    "Attempt to remove the Admin role from the last administrator.");
+
+                return Error.Conflict(
+                    "admin.last_role_removal",
+                    "The Admin role cannot be removed from the last administrator.");
+            }
+        }
+
         var result = await _userManager.RemoveFromRoleAsync(user, role);
         if (!result.Succeeded)
         {

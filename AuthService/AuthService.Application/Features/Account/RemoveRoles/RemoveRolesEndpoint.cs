@@ -11,13 +11,13 @@ public class RemoveRolesEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("users/{userId}/roles/{role}", async Task<EndpointResult> (
+        app.MapDelete("users/{userId:guid}/roles/{role}", async Task<EndpointResult> (
             [FromRoute] Guid userId,
             [FromRoute] string role,
             RemoveRolesHandler handler,
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(userId, role, cancellationToken);
-        }).RequirePermissions(Permissions.USERS_MANAGE);;
+        }).RequirePermissions(Permissions.UsersManage);
     }
 }

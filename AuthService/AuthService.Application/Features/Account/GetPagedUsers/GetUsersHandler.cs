@@ -22,9 +22,17 @@ public class GetUsersHandler
         if (request.PageSize < 1 || request.PageSize > 100)
         {
             _logger.LogInformation("PageSize must be between 1 and 100");
-            return GeneralErrors.ValueIsInvalid(nameof(request));
+            return GeneralErrors.ValueIsInvalid(nameof(request.PageSize));
         }
         
+        if (request.Page < 1)
+        {
+            _logger.LogInformation(
+                "Page number must be greater than zero.");
+
+            return GeneralErrors.ValueIsInvalid(nameof(request.Page));
+        }
+
         var users = await _userRepository.GetUsersAsync(request.Page, request.PageSize, cancellationToken);
 
         return users;

@@ -14,5 +14,6 @@ public record PagedResult<T>
         TotalCount = totalCount;
         PageNumber = pageNumber;
         PageSize = pageSize;
+        TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
     }
 }

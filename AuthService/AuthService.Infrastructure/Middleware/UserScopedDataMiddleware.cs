@@ -1,17 +1,15 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using AuthService.Application.Auth;
+using Core.Auth;
 using Microsoft.AspNetCore.Http;
+using UserScopedData = AuthService.Application.Auth.UserScopedData;
 
 namespace AuthService.Core.Middleware;
 
 public class UserScopedDataMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, UserScopedData userScopedData)
+    public async Task InvokeAsync(HttpContext context, UserScopedData userScopedData, IRolePermissionResolver permissionResolver)
     {
-        Console.WriteLine($"IsAuthenticated: {context.User.Identity?.IsAuthenticated}");
-        Console.WriteLine($"Claims: {string.Join(", ", context.User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
-        
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var subClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -25,8 +23,12 @@ public class UserScopedDataMiddleware(RequestDelegate next)
             var email = context.User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty;
             var name = context.User.FindFirstValue(JwtRegisteredClaimNames.Name) ?? string.Empty;
             
-            var roles = context.User.FindAll(ClaimTypes.Role).Select(c => c.Value);
-            var permissions = context.User.FindAll("permission").Select(c => c.Value);
+            var roles = context.User
+                .FindAll(ClaimTypes.Role)
+                .Select(claim => claim.Value)
+                .ToArray();
+
+            var permissions = permissionResolver.Resolve(roles);
 
             userScopedData.Authenticate(userId, email, name, roles, permissions);
         }

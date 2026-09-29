@@ -24,7 +24,7 @@ public class TokenProvider : ITokenProvider
         _logger = logger;
     }
 
-    public string GenerateJwtToken(ApplicationUser user, List<string> roles, HashSet<string> permissions)
+    public string GenerateJwtToken(ApplicationUser user,  IReadOnlyCollection<string> roles)
     {
         var key = Encoding.UTF8.GetBytes(_jwtOptions.Secret);
         
@@ -41,7 +41,6 @@ public class TokenProvider : ITokenProvider
         };
         
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
-        claims.AddRange(permissions.Select(p => new Claim("permission", p)));
         
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key),
             SecurityAlgorithms.HmacSha256Signature);

@@ -1,7 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
-using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
 using Core.Abstractions;
 using CSharpFunctionalExtensions;
@@ -104,12 +103,8 @@ public class RefreshTokenHandler : ICommandHandler<RefreshResult, RefreshTokenRe
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var permissions = RolePermissions.GetPermissions(roles);
 
-        var newAccessToken = _tokenProvider.GenerateJwtToken(
-            user,
-            roles.ToList(),
-            permissions);
+        var newAccessToken = _tokenProvider.GenerateJwtToken(user, roles.ToList());
 
         var jwt = new JwtSecurityTokenHandler()
             .ReadJwtToken(newAccessToken);

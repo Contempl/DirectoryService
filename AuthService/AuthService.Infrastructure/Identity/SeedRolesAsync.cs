@@ -1,8 +1,7 @@
 ﻿using System.Security.Claims;
 using AuthService.Core.Options;
-using AuthService.Domain.Authorization;
-using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
+using Core.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,26 +47,27 @@ public class SeedDataService : IHostedService
         
         _logger.LogInformation("Started seeding roles...");
         
-        foreach (var roleName in Roles.AllRoles)
+        foreach (var roleName in SystemRoles.All)
         {
             if (await roleManager.RoleExistsAsync(roleName))
                 continue;
 
-            var role = new IdentityRole<Guid>(roleName);
-            await roleManager.CreateAsync(role);
+            var role = new IdentityRole<Guid>(roleName) { Id = Guid.CreateVersion7() };
+            var createRoleResult = await roleManager.CreateAsync(role);
 
-            var permissions = RolePermissions.GetPermissions([roleName]);
-            foreach (var permission in permissions)
+            if (!createRoleResult.Succeeded)
             {
-                await roleManager.AddClaimAsync(role, new Claim("permission", permission));
+                var errors = string.Join(", ", createRoleResult.Errors.Select(error => error.Description));
+                throw new InvalidOperationException($"Failed to create role {roleName}: {errors}");
             }
+
             _logger.LogInformation("Created role: {Role}", roleName);
         }
     }
     
     private async Task SeedAdminAsync(UserManager<ApplicationUser> userManager)
     {
-        var existingAdmins = await userManager.GetUsersInRoleAsync(Roles.Admin);
+        var existingAdmins = await userManager.GetUsersInRoleAsync(SystemRoles.Admin);
         if (existingAdmins.Any())
         {
             _logger.LogInformation("Admin user already exists, skipping.");
@@ -99,7 +99,13 @@ public class SeedDataService : IHostedService
             throw new InvalidOperationException($"Failed to create admin: {errors}");
         }
 
-        await userManager.AddToRoleAsync(admin, Roles.Admin);
+        var addRoleResult = await userManager.AddToRoleAsync(admin, SystemRoles.Admin);
+        if (!addRoleResult.Succeeded)
+        {
+            var errors = string.Join(", ", addRoleResult.Errors.Select(error => error.Description));
+            throw new InvalidOperationException($"Failed to assign Admin role: {errors}");
+        }
+
         _logger.LogInformation("Admin user created: {Email}", admin.Email);
     }
     

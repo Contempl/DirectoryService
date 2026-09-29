@@ -1,6 +1,4 @@
-﻿using AuthService.Domain.Constants;
-using AuthService.Domain.Entities;
-using AuthService.Domain.Shared;
+﻿using AuthService.Domain.Entities;
 using CSharpFunctionalExtensions;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -48,11 +46,29 @@ public class AssignRoleHandler
         if (!roleExists)
         {
             _logger.LogInformation("Role not found");
-            return GeneralErrors.NotFound(name: nameof(Roles));
+            return GeneralErrors.NotFound(name: nameof(request.Role));
+        }
+        
+        if (await _userManager.IsInRoleAsync(user, request.Role))
+        {
+            return Error.Conflict(
+                "user.role.already_assigned",
+                $"The user already has the {request.Role} role.");
         }
 
-        await _userManager.AddToRoleAsync(user, request.Role);
-        
+        var result = await _userManager.AddToRoleAsync(user, request.Role);
+
+        if (!result.Succeeded)
+        {
+            _logger.LogError(
+                "Failed to assign role {Role} to user {UserId}: {Errors}",
+                request.Role,
+                userId,
+                string.Join(", ", result.Errors.Select(error => error.Description)));
+
+            return GeneralErrors.Failure();
+        }
+
         return UnitResult.Success<Error>();
     }
 }

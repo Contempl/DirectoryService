@@ -1,6 +1,5 @@
 ﻿using AuthService.Application;
 using AuthService.Application.Abstractions;
-using AuthService.Application.Auth;
 using AuthService.Application.Database;
 using AuthService.Application.Factories;
 using AuthService.Application.Features.Account.AddRoles;
@@ -29,12 +28,15 @@ using CSharpFunctionalExtensions;
 using FluentValidation;
 using Framework.Response;
 using System.Text;
+using AuthService.Domain.Authorization;
+using Core.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Shared.Kernel;
+using UserScopedData = AuthService.Application.Auth.UserScopedData;
 
 namespace AuthService.Configuration;
 
@@ -81,6 +83,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
 
         services.AddScoped<UserScopedData>();
+        services.AddSingleton<IRolePermissionResolver, AuthRolePermissionResolver>();
         services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 

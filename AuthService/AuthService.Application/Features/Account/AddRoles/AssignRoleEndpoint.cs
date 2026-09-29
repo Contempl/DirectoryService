@@ -11,13 +11,13 @@ public class AssignRoleEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("users/{userId}/roles", async Task<EndpointResult> (
+        app.MapPost("users/{userId:guid}/roles", async Task<EndpointResult> (
             [FromRoute] Guid userId,
             [FromServices] AssignRoleHandler handler,
             AssignRoleRequest request,
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(userId, request, cancellationToken);
-        }).RequirePermissions(Permissions.USERS_MANAGE);
+        }).RequirePermissions(Permissions.UsersManage);
     }
 }

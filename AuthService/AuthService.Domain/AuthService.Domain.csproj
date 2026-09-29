@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="directoryservice.core" Version="1.0.0" />
+      <PackageReference Include="directoryservice.core" Version="1.0.2" />
       <PackageReference Include="directoryservice.framework" Version="1.0.0" />
-      <PackageReference Include="directoryservice.sharedkernel" Version="1.0.0" />
+      <PackageReference Include="directoryservice.sharedkernel" Version="1.0.1" />
     </ItemGroup>
 
 </Project>

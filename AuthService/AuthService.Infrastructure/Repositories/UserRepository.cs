@@ -41,12 +41,20 @@ public class UserRepository : IUserRepository
         var userDtoQuery = query.Select(u => new UserDto
         {
             Id = u.Id,
-            Email = u.Email,
+            Email = u.Email ?? string.Empty,
             FirstName = u.FirstName,
             LastName = u.LastName,
-            IsActive = u.IsActive
+            IsActive = u.IsActive,
+
+            Roles = (
+            from userRole in _dbContext.UserRoles
+            join role in _dbContext.Roles
+            on userRole.RoleId equals role.Id
+            where userRole.UserId == u.Id
+            select role.Name!
+            ).ToList()
         });
         
-        return await userDtoQuery.ToPagedResultAsync(pageNumber, pageSize);
+        return await userDtoQuery.ToPagedResultAsync(pageNumber, pageSize, cancellationToken);
     }
 }

@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using AuthService.Application.Abstractions;
 using AuthService.Application.Database;
-using AuthService.Domain.Authorization;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Shared;
 using Core.Abstractions;
@@ -69,9 +68,8 @@ public class LoginHandler : ICommandHandler<LoginResult, LoginRequest>
         await _userManager.ResetAccessFailedCountAsync(user);
 
         var roles = await _userManager.GetRolesAsync(user);
-        var permissions = RolePermissions.GetPermissions(roles);
 
-        var jwtToken = _tokenProvider.GenerateJwtToken(user, roles.ToList(), permissions);
+        var jwtToken = _tokenProvider.GenerateJwtToken(user, roles.ToList());
         
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(jwtToken);

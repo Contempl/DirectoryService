@@ -17,6 +17,6 @@ public class DeleteUserEndpoint : IEndpoint
             CancellationToken cancellationToken) =>
         {
             return await handler.HandleAsync(userId, cancellationToken);
-        }).RequirePermissions(Permissions.USERS_MANAGE);
+        }).RequirePermissions(Permissions.UsersManage);
     }
 }
