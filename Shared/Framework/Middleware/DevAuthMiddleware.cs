@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using Framework.Constants;
+using Core.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
@@ -17,12 +17,8 @@ public class DevAuthMiddleware(RequestDelegate next, IConfiguration configuratio
             {
                 new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
                 new(ClaimTypes.Email, "dev@localhost"),
-                new(ClaimTypes.Role, Roles.Admin),
-                new("permission", Permissions.SYSTEM_ADMIN),
+                new(ClaimTypes.Role, SystemRoles.Admin),
             };
-            
-            foreach (var permission in Permissions.AllPermissions)
-                claims.Add(new Claim("permission", permission));
 
             context.User = new ClaimsPrincipal(
                 new ClaimsIdentity(claims, "DevAuth"));
