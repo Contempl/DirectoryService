@@ -4,4 +4,5 @@ export const routes = {
   locations: "/locations",
   positions: "/positions",
   upload: "/upload",
+  users: "/users",
 };

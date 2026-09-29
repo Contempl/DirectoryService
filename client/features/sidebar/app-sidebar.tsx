@@ -2,7 +2,7 @@
 
 import { routes } from "@/shared/routes";
 import { usePathname } from "next/navigation";
-import { Home, MonitorCog, Briefcase, Waypoints, Upload } from "lucide-react";
+import { Home, MonitorCog, Briefcase, Waypoints, Upload, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
   SidebarTrigger,
 } from "@/shared/components/ui/sidebar";
 import Link from "next/link";
+import { RoleGate } from "../auth/ui/role-gate";
 
 const menuItems = [
   { href: routes.home, label: "Home", icon: Home },
@@ -23,6 +24,8 @@ const menuItems = [
   { href: routes.positions, label: "Positions", icon: Briefcase },
   { href: routes.upload, label: "Upload", icon: Upload },
 ];
+
+const adminMenuItem = { href: routes.users, label: "Users", icon: Users };
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -62,6 +65,23 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+              <RoleGate roles={["Admin"]}>
+                <SidebarMenuItem key={adminMenuItem.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === adminMenuItem.href}
+                    tooltip={adminMenuItem.label}
+                    className="hover:bg-gray-700 transition-colors data-[state=expanded]:justify-start data-[state=collapsed]:justify-center"
+                  >
+                    <Link href={adminMenuItem.href} className="flex items-center gap-3 w-full">
+                      <adminMenuItem.icon className="h-5 w-5 shrink-0" />
+                      <span className="ml-3 text-sm font-medium group-data-[collapsible=icon]:hidden">
+                        {adminMenuItem.label}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </RoleGate>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
