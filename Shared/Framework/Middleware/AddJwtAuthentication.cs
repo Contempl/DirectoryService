@@ -39,7 +39,9 @@ public static class Extensions
             })
             .AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = TokenValidationParametersFactory.Create(jwtOptions);
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters =
+                    TokenValidationParametersFactory.Create(jwtOptions);
             });
 
         services.AddAuthorization();

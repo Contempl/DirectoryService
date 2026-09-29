@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Core.Auth;
 using Framework.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,7 +19,9 @@ public static class TokenValidationParametersFactory
             ValidateAudience = true,
             ValidAudience = jwtOptions.Audience,
             ValidateLifetime = validateLifetime,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
+            NameClaimType = JwtRegisteredClaimNames.Name,
+            RoleClaimType = JwtClaimTypes.Role,
         };
     }
 }
