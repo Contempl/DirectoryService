@@ -44,7 +44,7 @@ public class TokenProvider : ITokenProvider
         claims.AddRange(roles.Select(role => new Claim(JwtClaimTypes.Role, role)));
         
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key),
-            SecurityAlgorithms.HmacSha256Signature);
+            SecurityAlgorithms.HmacSha256);
 
         var jwtSecurityToken = new JwtSecurityToken(
             _jwtOptions.Issuer,
