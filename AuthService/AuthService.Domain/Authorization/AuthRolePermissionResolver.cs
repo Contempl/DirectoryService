@@ -17,7 +17,11 @@ public sealed class AuthRolePermissionResolver : IRolePermissionResolver
             {
                 Permissions.ModerationView
             },
-            [SystemRoles.Admin] = new HashSet<string>(Permissions.All)
+            [SystemRoles.Admin] = new HashSet<string>(Permissions.All),
+            [SystemRoles.ServiceAccount] = new HashSet<string>
+            {
+                Permissions.UsersView
+            }
         };
 
     public IReadOnlySet<string> Resolve(IEnumerable<string> roles)

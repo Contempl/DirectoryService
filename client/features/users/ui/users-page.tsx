@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { toast } from "sonner";
-import { RoleGate } from "@/features/auth/ui/role-gate";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -15,7 +14,12 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { Spinner } from "@/shared/components/ui/spinner";
-import { systemRoles, usersApi, type SystemRole } from "../api/users-api";
+import {
+  isUsersAccessDenied,
+  systemRoles,
+  usersApi,
+  type SystemRole,
+} from "../api/users-api";
 
 const pageSize = 10;
 
@@ -46,11 +50,7 @@ export function UsersPage() {
   });
 
   return (
-    <RoleGate
-      roles={["Admin"]}
-      fallback={<p className="text-destructive">You do not have access to this page.</p>}
-    >
-      <section className="space-y-6">
+    <section className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Users</h1>
           <p className="text-sm text-muted-foreground">
@@ -60,6 +60,13 @@ export function UsersPage() {
 
         {usersQuery.isPending ? (
           <Spinner />
+        ) : isUsersAccessDenied(usersQuery.error) ? (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6">
+            <h2 className="font-semibold text-destructive">Access denied</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your account does not have permission to view the user directory.
+            </p>
+          </div>
         ) : usersQuery.isError ? (
           <p className="text-destructive">
             {usersQuery.error instanceof Error
@@ -142,7 +149,7 @@ export function UsersPage() {
                   Previous
                 </Button>
                 <span className="text-sm">
-                  Page {usersQuery.data.pageNumber} of {Math.max(usersQuery.data.totalPages, 1)}
+                  Page {usersQuery.data.page} of {Math.max(usersQuery.data.totalPages, 1)}
                 </span>
                 <Button
                   variant="outline"
@@ -155,7 +162,6 @@ export function UsersPage() {
             </div>
           </>
         )}
-      </section>
-    </RoleGate>
+    </section>
   );
 }

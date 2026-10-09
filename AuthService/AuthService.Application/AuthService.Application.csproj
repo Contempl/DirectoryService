@@ -12,8 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="directoryservice.core" Version="1.0.3" />
-      <PackageReference Include="directoryservice.framework" Version="1.0.1" />
+      <PackageReference Include="directoryservice.core" Version="1.0.4" />
+      <PackageReference Include="directoryservice.framework" Version="1.0.8" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
     </ItemGroup>
 
