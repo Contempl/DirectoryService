@@ -1,5 +1,6 @@
 using CSharpFunctionalExtensions;
 using DirectoryService.Application.Abstractions;
+using DirectoryService.Application.Auth;
 using DirectoryService.Application.Departments.Commands.Create;
 using DirectoryService.Application.Departments.Commands.Delete;
 using DirectoryService.Application.Departments.Commands.ToggleActivity;
@@ -27,6 +28,7 @@ using DirectoryService.Application.Positions.GetById;
 using DirectoryService.Application.Positions.Queries;
 using DirectoryService.Application.Positions.Update;
 using DirectoryService.Application.Search.GlobalSearch;
+using DirectoryService.Contracts.Auth;
 using DirectoryService.Contracts.Departments;
 using DirectoryService.Contracts.Locations;
 using DirectoryService.Contracts.Positions;
@@ -92,6 +94,16 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetDepartmentDescendantIdsQuery, Result<List<Guid>, Errors>>, GetDepartmentDescendantIdsHandler>();
         services.AddScoped<IQueryHandler<GetPositionsQuery, PagedResult<PositionDto>>, GetPositionsHandler>();
         services.AddScoped<IQueryHandler<Guid, Result<PositionDto, Error>>, GetPositionHandler>();
+        services.AddScoped<
+            IQueryHandler<
+                GetCurrentUserReportQuery,
+                Result<CurrentUserReportDto, Error>>,
+            GetCurrentUserReportHandler>();
+        services.AddScoped<
+            IQueryHandler<
+                GetAuthUsersQuery,
+                Result<PagedResult<AuthUserSummary>, Error>>,
+            GetAuthUsersHandler>();
         services.AddScoped<IQueryHandler<SearchQuery, Result<List<SearchResultDto>, Errors>>, GlobalSearchHandler>();
     }
 }
