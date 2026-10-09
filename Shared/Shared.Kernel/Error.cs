@@ -33,6 +33,16 @@ public record Error
     public static Error Conflict(string? code, string message) =>
         new(code ?? "value.is.conflict", message, ErrorType.CONFLICT);
 
+    public static Error Unauthorized(
+        string message = "Authentication is required",
+        string? code = null) =>
+        new(code ?? "authentication.required", message, ErrorType.UNAUTHORIZED);
+
+    public static Error Forbidden(
+        string message = "Access is forbidden",
+        string? code = null) =>
+        new(code ?? "access.forbidden", message, ErrorType.FORBIDDEN);
+
     public Errors ToErrors() => new([this]);
 }
 
@@ -42,4 +52,6 @@ public enum ErrorType
     NOT_FOUND,
     FAILURE,
     CONFLICT,
+    UNAUTHORIZED,
+    FORBIDDEN,
 }
