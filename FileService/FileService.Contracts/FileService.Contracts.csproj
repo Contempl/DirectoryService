@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DirectoryService.SharedKernel" Version="1.0.1" />
+      <PackageReference Include="DirectoryService.SharedKernel" Version="1.0.2" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.14" />
       <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.14" />
