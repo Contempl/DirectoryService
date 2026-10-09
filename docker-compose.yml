@@ -66,6 +66,8 @@ services:
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
       FileServiceOptions__Url: http://file-service:5353
+      AuthServiceOptions__BaseAddress: http://auth-service:5353
+      AuthUsersSynchronizationOptions__Enabled: "true"
       CachingOptions__RedisConnectionString: redis:6379
       CachingOptions__RedisEnabled: "true"
       Serilog__WriteTo__1__Args__serverUrl: http://seq_ds:5341
@@ -76,6 +78,8 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      auth-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/5353 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
