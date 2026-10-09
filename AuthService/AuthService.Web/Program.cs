@@ -64,7 +64,7 @@ app.UseMigrations();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
-app.UseMiddleware<UserScopedDataMiddleware>();
+app.UseMiddleware<AuthService.Core.Middleware.UserScopedDataMiddleware>();
 app.UseAuthorization();
 
 var apiGroup = app.MapGroup("/api").WithOpenApi();
