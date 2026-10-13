@@ -1,5 +1,8 @@
 using AuthService.Application.Extensions;
+using AuthService.Contracts.Result;
+using AuthService.Domain.Entities;
 using Framework.Response;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,33 +18,18 @@ public class LoginEndpoint : IEndpoint
         app.MapPost("/auth/login", async Task<IResult> (
             [FromBody]LoginRequest request,
             [FromServices] LoginHandler handler,
-            HttpContext httpContext,
-            [FromServices] IHostEnvironment environment,
+            [FromServices] SignInManager<ApplicationUser> signInManager,
             CancellationToken cancellationToken) =>
         {
             var result =  await handler.HandleAsync(request, cancellationToken);
             if (result.IsFailure)
                 return Results.BadRequest(result.Error);
 
-            var login = result.Value;
+            await signInManager.SignInAsync(
+                result.Value.User,
+                isPersistent: false);
 
-            httpContext.Response.Cookies.Append(
-                "refresh_token",
-                login.RawRefreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = environment.IsProduction() || httpContext.Request.IsHttps,
-                    SameSite = SameSiteMode.Lax,
-                    Path = "/api/auth",
-                    Expires = login.RefreshTokenExpiresAt,
-                    IsEssential = true
-                });
-
-            return Results.Ok(
-                new LoginResponse(
-                    login.AccessToken,
-                    login.ExpiresIn));
+            return Results.Ok(new SuccessfulResult());
         }).AllowAnonymousEndpoint();
     }
 }

@@ -1,6 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using AuthService.Application.Abstractions;
-using AuthService.Application.Database;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Shared;
 using Core.Abstractions;
@@ -13,27 +10,15 @@ namespace AuthService.Application.Features.Login;
 
 public class LoginHandler : ICommandHandler<LoginResult, LoginRequest>
 {
-    private readonly IJwtOptions _jwtOptions;
-    private readonly ITokenProvider _tokenProvider;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IRefreshTokensRepository _refreshTokensRepository;
     private readonly ILogger<LoginHandler> _logger;
-    private readonly ITransactionManager _transactionManager;
 
     public LoginHandler(
         UserManager<ApplicationUser> userManager,
-        IRefreshTokensRepository refreshTokensRepository,
-        ILogger<LoginHandler> logger,
-        ITokenProvider tokenProvider,
-        IJwtOptions jwtOptions, 
-        ITransactionManager transactionManager)
+        ILogger<LoginHandler> logger)
     {
         _userManager = userManager;
-        _refreshTokensRepository = refreshTokensRepository;
         _logger = logger;
-        _tokenProvider = tokenProvider;
-        _jwtOptions = jwtOptions;
-        _transactionManager = transactionManager;
     }
 
     public async Task<Result<LoginResult, Errors>> HandleAsync(LoginRequest request,
@@ -67,54 +52,8 @@ public class LoginHandler : ICommandHandler<LoginResult, LoginRequest>
         
         await _userManager.ResetAccessFailedCountAsync(user);
 
-        var roles = await _userManager.GetRolesAsync(user);
-
-        var jwtToken = _tokenProvider.GenerateJwtToken(user, roles.ToList());
-        
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(jwtToken);
-        var jti = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
-
-        var refreshTokenResult = _tokenProvider.GenerateInitialRefreshToken(user.Id, jti);
-        if (refreshTokenResult.IsFailure)
-        {
-            _logger.LogInformation("failed to generate refresh token.");
-            return refreshTokenResult.Error.ToErrors();
-        }
-
-        var generatedRefreshToken = refreshTokenResult.Value;
-        var refreshTokenEntity = generatedRefreshToken.Entity;
-        var rawRefreshToken = generatedRefreshToken.RawToken;
-        
-        var addResult = await _refreshTokensRepository.AddAsync(
-            refreshTokenEntity,
-            cancellationToken);
-
-        if (addResult.IsFailure)
-        {
-            _logger.LogError("Failed to track refresh token.");
-            return addResult.Error.ToErrors();
-        }
-
-        var saveResult = await _transactionManager.SaveChangesAsync(
-            cancellationToken);
-
-        if (saveResult.IsFailure)
-        {
-            _logger.LogError("Failed to save refresh token.");
-            return saveResult.Error.ToErrors();
-        }
-
-        return new LoginResult(
-            jwtToken,
-            _jwtOptions.AccessTokenLifetimeMinutes,
-            rawRefreshToken,
-            refreshTokenEntity.ExpiryDate);
+        return new LoginResult(user);
     }
 }
 
-public record LoginResult(
-    string AccessToken,
-    int ExpiresIn,
-    string RawRefreshToken,
-    DateTime RefreshTokenExpiresAt);
+public record LoginResult(ApplicationUser User);

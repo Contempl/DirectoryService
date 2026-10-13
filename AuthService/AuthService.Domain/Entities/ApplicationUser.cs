@@ -18,8 +18,6 @@ public class ApplicationUser : IdentityUser<Guid>
 
     public bool IsActive { get; private set; } = true;
     
-    public ICollection<RefreshToken> RefreshTokens  { get; private set; } = new List<RefreshToken>();
-
     private ApplicationUser() { }
 
     private ApplicationUser(string firstName, string lastName)

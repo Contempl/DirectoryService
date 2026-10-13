@@ -13,21 +13,21 @@ public class ChangePasswordHandler
 {
     private readonly ITransactionManager _transactionManager;
     private readonly IValidator<ChangePasswordRequest> _validator;
-    private readonly IRefreshTokensRepository _refreshTokensRepository;
+    private readonly IAuthorizationSessionRevoker _sessionRevoker;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly UserScopedData _userScopedData;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
         ITransactionManager transactionManager,
-        IRefreshTokensRepository refreshTokensRepository,
+        IAuthorizationSessionRevoker sessionRevoker,
         UserManager<ApplicationUser> userManager,
         ILogger<ChangePasswordHandler> logger,
         UserScopedData userScopedData, 
         IValidator<ChangePasswordRequest> validator)
     {
         _transactionManager = transactionManager;
-        _refreshTokensRepository = refreshTokensRepository;
+        _sessionRevoker = sessionRevoker;
         _userManager = userManager;
         _userScopedData = userScopedData;
         _validator = validator;
@@ -77,7 +77,7 @@ public class ChangePasswordHandler
         }
         
         var revokeResult =
-            await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(
+            await _sessionRevoker.RevokeAllAsync(
                 _userScopedData.UserId,
                 cancellationToken);
 

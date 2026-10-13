@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>AuthService</RootNamespace>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>directoryservice-authservice-development</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,10 +16,11 @@
         <PackageReference Include="Serilog.Extensions" Version="9.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.19">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="OpenIddict.AspNetCore" Version="7.7.1" />
     </ItemGroup>
 
     <ItemGroup>
