@@ -96,7 +96,7 @@ public static class DependencyInjection
 
         services.AddS3(configuration);
         
-        services.AddJwtAuthentication(configuration);
+        services.AddIdentityProviderAuthentication(configuration);
         services.AddSingleton<IRolePermissionResolver, FileRolePermissionResolver>();
 
         services.AddScoped<IValidator<UploadFileCommand>, UploadFileValidator>();
