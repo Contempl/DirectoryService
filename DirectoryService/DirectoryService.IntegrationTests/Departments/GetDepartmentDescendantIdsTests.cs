@@ -9,7 +9,7 @@ namespace DirectoryService.IntegrationTests.Departments;
 
 public class GetDepartmentDescendantIdsTests : DepartmentsBaseTests
 {
-    public GetDepartmentDescendantIdsTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public GetDepartmentDescendantIdsTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

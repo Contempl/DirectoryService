@@ -8,7 +8,7 @@ namespace DirectoryService.IntegrationTests.Locations;
 
 public class CreateLocationTests : DirectoryBaseTests
 {
-    public CreateLocationTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public CreateLocationTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

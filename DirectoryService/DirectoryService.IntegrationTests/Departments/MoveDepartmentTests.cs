@@ -8,7 +8,7 @@ namespace DirectoryService.IntegrationTests.Departments;
 
 public class MoveDepartmentTests : DepartmentsBaseTests
 {
-    public MoveDepartmentTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public MoveDepartmentTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

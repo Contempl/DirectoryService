@@ -8,7 +8,7 @@ namespace DirectoryService.IntegrationTests.Departments;
 
 public class ToggleDepartmentActivityTests : DepartmentsBaseTests
 {
-    public ToggleDepartmentActivityTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public ToggleDepartmentActivityTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

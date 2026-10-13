@@ -1,21 +1,15 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Core.Auth;
+using System.Text.Json;
 using DirectoryService.Infrastructure.Options;
-using Framework.Options;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DirectoryService.Infrastructure.Auth;
 
 internal sealed class ServiceTokenProvider(
-    IOptions<JwtOptions> jwtOptions,
+    IHttpClientFactory httpClientFactory,
     IOptions<ServiceTokenOptions> serviceTokenOptions,
     TimeProvider timeProvider)
     : IServiceTokenProvider
 {
-    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly ServiceTokenOptions _serviceTokenOptions =
         serviceTokenOptions.Value;
 
@@ -45,9 +39,9 @@ internal sealed class ServiceTokenProvider(
                 return _cachedToken!;
             }
 
-            _expiresAt = now.AddMinutes(
-                _serviceTokenOptions.LifetimeMinutes);
-            _cachedToken = GenerateToken(now, _expiresAt);
+            var token = await RequestTokenAsync(cancellationToken);
+            _expiresAt = now.AddSeconds(token.ExpiresIn);
+            _cachedToken = token.AccessToken;
 
             return _cachedToken;
         }
@@ -70,41 +64,48 @@ internal sealed class ServiceTokenProvider(
         return now < refreshAt;
     }
 
-    private string GenerateToken(
-        DateTimeOffset issuedAt,
-        DateTimeOffset expiresAt)
+    private async Task<TokenResponse> RequestTokenAsync(
+        CancellationToken cancellationToken)
     {
-        var claims = new List<Claim>
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/connect/token")
         {
-            new(
-                JwtRegisteredClaimNames.Sub,
-                _serviceTokenOptions.SubjectId.ToString()),
-            new(
-                JwtRegisteredClaimNames.Name,
-                _serviceTokenOptions.ServiceName),
-            new(
-                JwtRegisteredClaimNames.Jti,
-                Guid.NewGuid().ToString()),
-            new(
-                JwtRegisteredClaimNames.Iat,
-                EpochTime.GetIntDate(issuedAt.UtcDateTime).ToString(),
-                ClaimValueTypes.Integer64),
-            new(JwtClaimTypes.Role, SystemRoles.ServiceAccount)
+            Content = new FormUrlEncodedContent(
+            [
+                new("grant_type", "client_credentials"),
+                new("client_id", _serviceTokenOptions.ClientId),
+                new("client_secret", _serviceTokenOptions.ClientSecret),
+                new("scope", _serviceTokenOptions.Scope)
+            ])
         };
 
-        var signingKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_jwtOptions.Secret));
-        var signingCredentials = new SigningCredentials(
-            signingKey,
-            SecurityAlgorithms.HmacSha256);
+        var client = httpClientFactory.CreateClient(
+            AuthServiceTokenClientName);
+        using var response = await client.SendAsync(
+            request,
+            cancellationToken);
 
-        var token = new JwtSecurityToken(
-            _jwtOptions.Issuer,
-            _jwtOptions.Audience,
-            claims,
-            expires: expiresAt.UtcDateTime,
-            signingCredentials: signingCredentials);
+        response.EnsureSuccessStatusCode();
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        await using var stream = await response.Content.ReadAsStreamAsync(
+            cancellationToken);
+        var token = await JsonSerializer.DeserializeAsync<TokenResponse>(
+            stream,
+            cancellationToken: cancellationToken);
+
+        return token is { AccessToken.Length: > 0, ExpiresIn: > 0 }
+            ? token
+            : throw new InvalidOperationException(
+                "AuthService returned an invalid client credentials response.");
     }
+
+    public const string AuthServiceTokenClientName =
+        "AuthServiceTokenClient";
+
+    private sealed record TokenResponse(
+        [property: System.Text.Json.Serialization.JsonPropertyName("access_token")]
+        string AccessToken,
+        [property: System.Text.Json.Serialization.JsonPropertyName("expires_in")]
+        int ExpiresIn);
 }
