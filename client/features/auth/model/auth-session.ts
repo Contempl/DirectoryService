@@ -1,36 +1,58 @@
+import { getSession, signIn, signOut } from "next-auth/react";
 import { authApi, type LoginRequest } from "../api/auth-api";
-import { clearSession, setAccessToken } from "./auth-store";
+import { clearSession, setSession } from "./auth-store";
 
-let refreshPromise: Promise<string> | null = null;
+let sessionPromise: Promise<string | null> | null = null;
 
-export async function loginSession(request: LoginRequest): Promise<void> {
-  const { accessToken } = await authApi.login(request);
-  setAccessToken(accessToken);
-}
+export function getCurrentAccessToken(): Promise<string | null> {
+  if (sessionPromise) return sessionPromise;
 
-export function refreshAccessToken(): Promise<string> {
-  if (refreshPromise) return refreshPromise;
+  sessionPromise = getSession()
+    .then((session) => {
+      if (!session?.accessToken) {
+        clearSession();
+        return null;
+      }
 
-  refreshPromise = authApi.refresh()
-    .then(({ accessToken }) => {
-      setAccessToken(accessToken);
-      return accessToken;
-    })
-    .catch((error: unknown) => {
-      clearSession();
-      throw error;
+      setSession(session.accessToken, session.roles, session.user?.name ?? null);
+      return session.accessToken;
     })
     .finally(() => {
-      refreshPromise = null;
+      sessionPromise = null;
     });
 
-  return refreshPromise;
+  return sessionPromise;
+}
+
+export async function loginSession(
+  request: LoginRequest,
+  returnUrl?: string | null,
+): Promise<void> {
+  await authApi.login(request);
+
+  if (returnUrl) {
+    try {
+      const target = new URL(returnUrl, window.location.origin);
+      if (
+        target.origin === window.location.origin &&
+        target.pathname === "/connect/authorize"
+      ) {
+        window.location.assign(target.href);
+        return;
+      }
+    } catch {
+      // Ignore malformed or untrusted return URLs and start a fresh OIDC flow.
+    }
+  }
+
+  await signIn("directory", { callbackUrl: "/" });
+}
+
+export async function continueSession(): Promise<void> {
+  await signIn("directory", { callbackUrl: "/" });
 }
 
 export async function logoutSession(): Promise<void> {
-  try {
-    await authApi.logout();
-  } finally {
-    clearSession();
-  }
+  clearSession();
+  await signOut({ callbackUrl: "/login" });
 }

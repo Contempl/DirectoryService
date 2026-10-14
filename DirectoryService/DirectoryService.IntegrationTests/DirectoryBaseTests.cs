@@ -3,13 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DirectoryService.IntegrationTests;
 
-public class DirectoryBaseTests : IClassFixture<DirectoryServiceTestWebFactory>, IAsyncLifetime
+public class DirectoryBaseTests : IClassFixture<DirectoryServiceHandlerTestFixture>, IAsyncLifetime
 {
     private readonly Func<Task> _resetDatabase;
     protected FakeFileCommunicationService FileService { get; }
     protected IServiceProvider Services { get; set; }
 
-    protected DirectoryBaseTests(DirectoryServiceTestWebFactory factory)
+    protected DirectoryBaseTests(DirectoryServiceHandlerTestFixture factory)
     {
         Services = factory.Services;
         _resetDatabase = factory.ResetDatabaseAsync;

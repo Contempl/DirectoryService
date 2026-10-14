@@ -8,6 +8,12 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: 3000
+      AUTH_URL: http://localhost/api/client-auth
+      AUTH_SECRET: ${AUTH_SECRET}
+      OIDC_ISSUER: ${OIDC_ISSUER}
+      OIDC_INTERNAL_URL: http://auth-service:5353
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET}
     expose:
       - "3000"
     healthcheck:
@@ -58,10 +64,14 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:5353
       DatabaseMigration__Enabled: "true"
-      DevAuth__Enabled: ${DEV_AUTH_ENABLED}
-      JwtOptions__Issuer: ${JWT_ISSUER}
-      JwtOptions__Audience: ${JWT_AUDIENCE}
-      JwtOptions__Secret: ${JWT_SECRET}
+      DevAuth__Enabled: "false"
+      IdentityProvider__Authority: ${OIDC_ISSUER}
+      IdentityProvider__MetadataAddress: http://auth-service:5353/.well-known/openid-configuration
+      IdentityProvider__Audience: ${OIDC_API_SCOPE}
+      IdentityProvider__RequireHttpsMetadata: "false"
+      ServiceTokenOptions__ClientId: ${OIDC_DIRECTORY_CLIENT_ID}
+      ServiceTokenOptions__ClientSecret: ${OIDC_DIRECTORY_CLIENT_SECRET}
+      ServiceTokenOptions__Scope: ${OIDC_API_SCOPE}
       RabbitMq__Host: rabbitmq
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
@@ -121,9 +131,14 @@ services:
       ASPNETCORE_URLS: http://+:5353
       DatabaseMigration__Enabled: "true"
       ConnectionStrings__Database: Server=postgres_as;Port=5432;Username=${AS_DB_USER};Password=${AS_DB_PASSWORD};Database=${AS_DB_NAME}
-      JwtOptions__Issuer: ${JWT_ISSUER}
-      JwtOptions__Audience: ${JWT_AUDIENCE}
-      JwtOptions__Secret: ${JWT_SECRET}
+      AuthorizationServer__Issuer: ${OIDC_ISSUER}
+      AuthorizationServer__LoginPageUrl: ${OIDC_LOGIN_PAGE_URL}
+      AuthorizationServer__ApiScope: ${OIDC_API_SCOPE}
+      OpenIddictClients__Frontend__ClientId: ${OIDC_WEB_CLIENT_ID}
+      OpenIddictClients__Frontend__ClientSecret: ${OIDC_WEB_CLIENT_SECRET}
+      OpenIddictClients__Frontend__RedirectUri: ${OIDC_WEB_REDIRECT_URI}
+      OpenIddictClients__DirectoryService__ClientId: ${OIDC_DIRECTORY_CLIENT_ID}
+      OpenIddictClients__DirectoryService__ClientSecret: ${OIDC_DIRECTORY_CLIENT_SECRET}
       AdminOptions__Username: ${AdminOptions__Username}
       AdminOptions__FirstName: ${AdminOptions__FirstName}
       AdminOptions__LastName: ${AdminOptions__LastName}
@@ -172,10 +187,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:5353
       DatabaseMigration__Enabled: "true"
-      DevAuth__Enabled: ${DEV_AUTH_ENABLED}
-      JwtOptions__Issuer: ${JWT_ISSUER}
-      JwtOptions__Audience: ${JWT_AUDIENCE}
-      JwtOptions__Secret: ${JWT_SECRET}
+      DevAuth__Enabled: "false"
+      IdentityProvider__Authority: ${OIDC_ISSUER}
+      IdentityProvider__MetadataAddress: http://auth-service:5353/.well-known/openid-configuration
+      IdentityProvider__Audience: ${OIDC_API_SCOPE}
+      IdentityProvider__RequireHttpsMetadata: "false"
       ConnectionStrings__Database: Server=postgres_fs;Port=5432;Username=${FS_DB_USER};Password=${FS_DB_PASSWORD};Database=${FS_DB_NAME}
       RabbitMq__Host: rabbitmq
       RabbitMq__UserName: ${RABBITMQ_USER}

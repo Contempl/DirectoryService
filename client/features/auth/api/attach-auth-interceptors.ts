@@ -3,7 +3,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { getAccessToken, getAuthStatus } from "../model/auth-store";
-import { refreshAccessToken } from "../model/auth-session";
+import { getCurrentAccessToken } from "../model/auth-session";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _authRetry?: boolean;
@@ -40,7 +40,10 @@ export function attachAuthInterceptors(client: AxiosInstance) {
       request._authRetry = true;
 
       try {
-        const accessToken = await refreshAccessToken();
+        const accessToken = await getCurrentAccessToken();
+        if (!accessToken || request.headers.Authorization === `Bearer ${accessToken}`) {
+          return Promise.reject(error);
+        }
         request.headers.Authorization = `Bearer ${accessToken}`;
         return client(request);
       } catch {

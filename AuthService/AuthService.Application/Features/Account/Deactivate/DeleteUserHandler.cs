@@ -9,18 +9,18 @@ namespace AuthService.Application.Features.Account.Deactivate;
 
 public class DeleteUserHandler
 {
-    private readonly IRefreshTokensRepository _refreshTokensRepository;
+    private readonly IAuthorizationSessionRevoker _sessionRevoker;
     private readonly ITransactionManager _transactionManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<DeleteUserHandler> _logger;
 
     public DeleteUserHandler(
-        IRefreshTokensRepository refreshTokensRepository,
+        IAuthorizationSessionRevoker sessionRevoker,
         ITransactionManager transactionManager,
         UserManager<ApplicationUser> userManager,
         ILogger<DeleteUserHandler> logger)
     {
-        _refreshTokensRepository = refreshTokensRepository;
+        _sessionRevoker = sessionRevoker;
         _transactionManager = transactionManager;
         _userManager = userManager;
         _logger = logger;
@@ -54,7 +54,7 @@ public class DeleteUserHandler
             }
             
             var revokeResult =
-                await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(
+                await _sessionRevoker.RevokeAllAsync(
                     userId,
                     cancellationToken);
 

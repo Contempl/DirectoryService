@@ -17,20 +17,20 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IValidator<ResetPasswordRequest> _validator;
     private readonly ITransactionManager _transactionManager;
-    private readonly IRefreshTokensRepository _refreshTokensRepository;
+    private readonly IAuthorizationSessionRevoker _sessionRevoker;
     private readonly ILogger<ResetPasswordHandler> _logger;
 
     public ResetPasswordHandler(
         UserManager<ApplicationUser> userManager,
         IValidator<ResetPasswordRequest> validator,
         ILogger<ResetPasswordHandler> logger, 
-        IRefreshTokensRepository refreshTokensRepository,
+        IAuthorizationSessionRevoker sessionRevoker,
         ITransactionManager transactionManager)
     {
         _userManager = userManager;
         _validator = validator;
         _logger = logger;
-        _refreshTokensRepository = refreshTokensRepository;
+        _sessionRevoker = sessionRevoker;
         _transactionManager = transactionManager;
     }
 
@@ -68,7 +68,9 @@ public class ResetPasswordHandler : ICommandHandler<PasswordResetCompleted, Rese
                 return result.Errors.ToErrors();
             }
         
-            var revokeTokensResult = await _refreshTokensRepository.RevokeAllRefreshTokensFromUser(user.Id, cancellationToken);
+            var revokeTokensResult = await _sessionRevoker.RevokeAllAsync(
+                user.Id,
+                cancellationToken);
             if (revokeTokensResult.IsFailure)
             {
                 _logger.LogInformation("Revoke Tokens failed.");

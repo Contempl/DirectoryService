@@ -60,19 +60,17 @@ public static class DependencyInjection
             .Bind(configuration.GetRequiredSection(
                 ServiceTokenOptions.SectionName))
             .Validate(
-                options => options.SubjectId != Guid.Empty,
-                $"{ServiceTokenOptions.SectionName}:SubjectId is required.")
+                options => !string.IsNullOrWhiteSpace(options.ClientId),
+                $"{ServiceTokenOptions.SectionName}:ClientId is required.")
             .Validate(
-                options => !string.IsNullOrWhiteSpace(options.ServiceName),
-                $"{ServiceTokenOptions.SectionName}:ServiceName is required.")
+                options => !string.IsNullOrWhiteSpace(options.ClientSecret),
+                $"{ServiceTokenOptions.SectionName}:ClientSecret is required.")
             .Validate(
-                options => options.LifetimeMinutes is > 0 and <= 15,
-                $"{ServiceTokenOptions.SectionName}:LifetimeMinutes must be between 1 and 15 minutes.")
+                options => !string.IsNullOrWhiteSpace(options.Scope),
+                $"{ServiceTokenOptions.SectionName}:Scope is required.")
             .Validate(
-                options => options.RefreshBeforeExpirationSeconds >= 0 &&
-                           options.RefreshBeforeExpirationSeconds <
-                           options.LifetimeMinutes * 60,
-                $"{ServiceTokenOptions.SectionName}:RefreshBeforeExpirationSeconds must be shorter than the token lifetime.")
+                options => options.RefreshBeforeExpirationSeconds >= 0,
+                $"{ServiceTokenOptions.SectionName}:RefreshBeforeExpirationSeconds cannot be negative.")
             .ValidateOnStart();
 
         services.AddOptions<AuthUsersSynchronizationOptions>()
@@ -90,6 +88,16 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddSingleton(TimeProvider.System);
+        services.AddHttpClient(
+            ServiceTokenProvider.AuthServiceTokenClientName,
+            client =>
+            {
+                client.BaseAddress = new Uri(
+                    authServiceOptions.BaseAddress,
+                    UriKind.Absolute);
+                client.Timeout = TimeSpan.FromSeconds(
+                    authServiceOptions.TimeoutSeconds);
+            });
         services.AddSingleton<IServiceTokenProvider, ServiceTokenProvider>();
         services.AddTransient<AuthServiceAuthorizationHandler>();
 

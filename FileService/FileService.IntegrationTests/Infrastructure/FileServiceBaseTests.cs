@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Amazon.S3;
@@ -27,7 +26,8 @@ public abstract class FileServiceBaseTests : IAsyncLifetime
     {
         _factory = factory;
         Client = factory.CreateClient();
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateTestToken());
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", factory.CreateTestAccessToken());
     }
 
     protected HttpClient Client { get; }
@@ -139,40 +139,4 @@ public abstract class FileServiceBaseTests : IAsyncLifetime
             new CompleteUploadRequest(mediaAssetId, uploadId, partETags));
         return await ReadOkEnvelopeAsync<CompleteUploadResponse>(response);
     }
-
-    private static string CreateTestToken()
-    {
-        var header = Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(new
-        {
-            alg = "HS256",
-            typ = "JWT"
-        }));
-
-        var now = DateTimeOffset.UtcNow;
-        var payload = Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, object>
-        {
-            ["iss"] = "file-service-integration-tests",
-            ["aud"] = "file-service-integration-tests",
-            ["exp"] = now.AddHours(1).ToUnixTimeSeconds(),
-            ["nbf"] = now.AddMinutes(-1).ToUnixTimeSeconds(),
-            ["sub"] = Guid.NewGuid().ToString(),
-            ["email"] = "tests@example.local",
-            ["name"] = "Integration Tests",
-            ["role"] = "admin",
-            ["permission"] = new[] { "files.manage", "system.admin" }
-        }));
-
-        var unsignedToken = $"{header}.{payload}";
-        var signature = Base64UrlEncode(HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes("superlongsecrettobeatleast32characters"),
-            Encoding.UTF8.GetBytes(unsignedToken)));
-
-        return $"{unsignedToken}.{signature}";
-    }
-
-    private static string Base64UrlEncode(byte[] bytes) =>
-        Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
 }

@@ -13,7 +13,7 @@ namespace DirectoryService.IntegrationTests.Departments;
 
 public class UpdateLocationTests : DepartmentsBaseTests
 {
-    public UpdateLocationTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public UpdateLocationTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

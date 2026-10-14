@@ -10,11 +10,6 @@ export type LoginRequest = {
   password: string;
 };
 
-type AccessTokenResponse = {
-  accessToken: string;
-  expiresIn: number;
-};
-
 const authClient = axios.create({
   baseURL: AUTH_API_BASE_URL,
   timeout: 10_000,
@@ -25,17 +20,7 @@ const authClient = axios.create({
 });
 
 export const authApi = {
-  login: async (request: LoginRequest): Promise<AccessTokenResponse> => {
-    const response = await authClient.post<AccessTokenResponse>("/login", request);
-    return response.data;
-  },
-
-  refresh: async (): Promise<AccessTokenResponse> => {
-    const response = await authClient.post<AccessTokenResponse>("/refresh");
-    return response.data;
-  },
-
-  logout: async (): Promise<void> => {
-    await authClient.post("/logout");
+  login: async (request: LoginRequest): Promise<void> => {
+    await authClient.post("/login", request);
   },
 };

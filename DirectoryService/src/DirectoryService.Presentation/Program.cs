@@ -14,7 +14,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddIdentityProviderAuthentication(builder.Configuration);
 builder.Services.AddSingleton<IRolePermissionResolver, DirectoryRolePermissionResolver>();
 
 builder.Host.UseSerilog((context, configuration) => 

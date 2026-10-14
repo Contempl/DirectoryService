@@ -11,7 +11,7 @@ namespace DirectoryService.IntegrationTests.Locations;
 
 public class BulkUpdateLocationsActivityTests : DirectoryBaseTests
 {
-    public BulkUpdateLocationsActivityTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public BulkUpdateLocationsActivityTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

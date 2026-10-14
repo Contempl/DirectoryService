@@ -9,8 +9,7 @@ internal sealed record AuthServiceEnvelope<T>
 internal sealed record AuthServiceProfileResponse
 {
     public IReadOnlyList<string> Roles { get; init; } = [];
-    public IReadOnlySet<string> Permissions { get; init; } =
-        new HashSet<string>();
+    public HashSet<string> Permissions { get; init; } = [];
 
     public bool EmailConfirmed { get; init; }
     public DateTime CreatedAt { get; init; }

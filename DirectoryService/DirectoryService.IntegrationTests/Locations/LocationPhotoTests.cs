@@ -17,7 +17,7 @@ namespace DirectoryService.IntegrationTests.Locations;
 
 public sealed class LocationPhotoTests : DirectoryBaseTests
 {
-    public LocationPhotoTests(DirectoryServiceTestWebFactory factory) : base(factory) { }
+    public LocationPhotoTests(DirectoryServiceHandlerTestFixture factory) : base(factory) { }
 
     [Fact]
     public async Task AttachPhoto_WithReadyPreview_PersistsLocalMetadata()

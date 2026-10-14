@@ -4,8 +4,8 @@ public sealed record ServiceTokenOptions
 {
     public const string SectionName = nameof(ServiceTokenOptions);
 
-    public Guid SubjectId { get; init; }
-    public string ServiceName { get; init; } = string.Empty;
-    public int LifetimeMinutes { get; init; }
+    public string ClientId { get; init; } = string.Empty;
+    public string ClientSecret { get; init; } = string.Empty;
+    public string Scope { get; init; } = string.Empty;
     public int RefreshBeforeExpirationSeconds { get; init; }
 }

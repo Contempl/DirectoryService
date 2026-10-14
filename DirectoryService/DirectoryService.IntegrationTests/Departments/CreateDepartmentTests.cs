@@ -9,7 +9,7 @@ namespace DirectoryService.IntegrationTests.Departments;
 public class CreateDepartmentTests : DepartmentsBaseTests
 {
     
-    public CreateDepartmentTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public CreateDepartmentTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     { }
     
     [Fact]

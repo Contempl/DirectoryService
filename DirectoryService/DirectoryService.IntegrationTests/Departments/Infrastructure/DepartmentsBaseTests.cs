@@ -5,7 +5,7 @@ namespace DirectoryService.IntegrationTests.Departments.Infrastructure;
 
 public class DepartmentsBaseTests : DirectoryBaseTests
 {
-    protected DepartmentsBaseTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    protected DepartmentsBaseTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 

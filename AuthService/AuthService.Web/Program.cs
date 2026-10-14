@@ -27,11 +27,12 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerConfiguration();
 
-builder.Services.AddConfiguration(builder.Configuration);
+builder.Services.AddConfiguration(builder.Configuration, builder.Environment);
 
 builder.Services.AddDatabaseWithLogging(builder.Configuration);
 
 builder.Services.AddHostedService<SeedDataService>();
+builder.Services.AddHostedService<OpenIddictSeedService>();
 
 builder.Services.AddCors();
 
@@ -67,7 +68,14 @@ app.UseAuthentication();
 app.UseMiddleware<AuthService.Core.Middleware.UserScopedDataMiddleware>();
 app.UseAuthorization();
 
+app.MapOpenIddictEndpoints();
+
 var apiGroup = app.MapGroup("/api").WithOpenApi();
 app.MapEndpoints(apiGroup);
 
 app.Run();
+
+namespace AuthService
+{
+    public partial class Program;
+}

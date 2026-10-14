@@ -1,16 +1,24 @@
 using System.Data.Common;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Core.Auth;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using FileService.Infrastructure.Postgres;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -25,6 +33,13 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
 
     private const string S3AccessKey = "minioadmin";
     private const string S3SecretKey = "minioadmin";
+    private const string RabbitMqUser = "file-service-tests";
+    private const string TestIssuer = "http://identity-provider.integration-tests/";
+    private const string TestAudience = "directory_api";
+    private const string TestSigningKeyId = "file-service-integration-tests";
+
+    private readonly string _rabbitMqPassword = Guid.NewGuid().ToString("N");
+    private readonly RSA _testSigningKey = RSA.Create(2048);
 
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:15")
@@ -42,25 +57,55 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
         .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(9000).ForPath("/minio/health/ready")))
         .Build();
 
+    private readonly IContainer _rabbitMqContainer;
+
     private Respawner _respawner = null!;
     private DbConnection _dbConnection = null!;
     private IAmazonS3 _s3Client = null!;
 
     public FileServiceTestWebFactory()
     {
-        Environment.SetEnvironmentVariable("JwtOptions__Issuer", "file-service-integration-tests");
-        Environment.SetEnvironmentVariable("JwtOptions__Audience", "file-service-integration-tests");
-        Environment.SetEnvironmentVariable("JwtOptions__Secret", "superlongsecrettobeatleast32characters");
-        Environment.SetEnvironmentVariable("JwtOptions__AccessTokenLifetimeMinutes", "15");
-        Environment.SetEnvironmentVariable("JwtOptions__RefreshTokenLifetime", "7");
+        _rabbitMqContainer = new ContainerBuilder("rabbitmq:management")
+            .WithEnvironment("RABBITMQ_DEFAULT_USER", RabbitMqUser)
+            .WithEnvironment("RABBITMQ_DEFAULT_PASS", _rabbitMqPassword)
+            .WithPortBinding(5672, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5672))
+            .Build();
     }
 
     public string S3Endpoint => $"http://{_s3Container.Hostname}:{_s3Container.GetMappedPublicPort(9000)}";
+
+    public string CreateTestAccessToken(string role = SystemRoles.Admin)
+    {
+        var signingKey = new RsaSecurityKey(_testSigningKey)
+        {
+            KeyId = TestSigningKeyId
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: TestIssuer,
+            audience: TestAudience,
+            claims:
+            [
+                new Claim("sub", Guid.NewGuid().ToString()),
+                new Claim("email", "tests@example.local"),
+                new Claim("name", "Integration Tests"),
+                new Claim("role", role)
+            ],
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            expires: DateTime.UtcNow.AddHours(1),
+            signingCredentials: new SigningCredentials(
+                signingKey,
+                SecurityAlgorithms.RsaSha256));
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
         await _s3Container.StartAsync();
+        await _rabbitMqContainer.StartAsync();
 
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FileServiceDbContext>();
@@ -86,11 +131,14 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
 
     public new async Task DisposeAsync()
     {
-        _s3Client.Dispose();
-        await _dbConnection.DisposeAsync();
+        _s3Client?.Dispose();
+        if (_dbConnection is not null)
+            await _dbConnection.DisposeAsync();
+        await _rabbitMqContainer.DisposeAsync();
         await _s3Container.DisposeAsync();
         await _dbContainer.DisposeAsync();
         await base.DisposeAsync();
+        _testSigningKey.Dispose();
     }
 
     public async Task ResetStateAsync()
@@ -108,12 +156,20 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
         // FS-14: Wolverine читает connection string во время построения host-а,
         // поэтому передаём Testcontainers-БД как host setting до запуска Program.cs.
         builder.UseSetting("ConnectionStrings:Database", _dbContainer.GetConnectionString());
+        builder.UseSetting("RabbitMq:Host", _rabbitMqContainer.Hostname);
+        builder.UseSetting("RabbitMq:Port", _rabbitMqContainer.GetMappedPublicPort(5672).ToString());
+        builder.UseSetting("RabbitMq:UserName", RabbitMqUser);
+        builder.UseSetting("RabbitMq:Password", _rabbitMqPassword);
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Database"] = _dbContainer.GetConnectionString(),
+                ["RabbitMq:Host"] = _rabbitMqContainer.Hostname,
+                ["RabbitMq:Port"] = _rabbitMqContainer.GetMappedPublicPort(5672).ToString(),
+                ["RabbitMq:UserName"] = RabbitMqUser,
+                ["RabbitMq:Password"] = _rabbitMqPassword,
                 ["S3Options:Endpoint"] = S3Endpoint,
                 ["S3Options:AccessKey"] = S3AccessKey,
                 ["S3Options:SecretKey"] = S3SecretKey,
@@ -127,12 +183,11 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
                 ["S3Options:RequiredBuckets:0"] = VideoBucket,
                 ["S3Options:RequiredBuckets:1"] = PreviewBucket,
                 ["S3Options:RequiredBuckets:2"] = DocumentsBucket,
-                ["JwtOptions:Issuer"] = "file-service-integration-tests",
-                ["JwtOptions:Audience"] = "file-service-integration-tests",
-                ["JwtOptions:Secret"] = "superlongsecrettobeatleast32characters",
-                ["JwtOptions:AccessTokenLifetimeMinutes"] = "15",
-                ["JwtOptions:RefreshTokenLifetime"] = "7",
-                ["DevAuth:Enabled"] = "true",
+                ["IdentityProvider:Authority"] = TestIssuer,
+                ["IdentityProvider:MetadataAddress"] = "http://identity-provider.integration-tests/.well-known/openid-configuration",
+                ["IdentityProvider:Audience"] = TestAudience,
+                ["IdentityProvider:RequireHttpsMetadata"] = "false",
+                ["DevAuth:Enabled"] = "false",
                 ["CacheOptions:RedisConnectionString"] = "unused-in-integration-tests",
                 ["CacheOptions:ExpirationTimeInMinutes"] = "35",
                 ["CacheOptions:LocalCacheExpiration"] = "5"
@@ -143,6 +198,22 @@ public class FileServiceTestWebFactory : WebApplicationFactory<Program>, IAsyncL
         {
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
+
+            var publicKey = new RsaSecurityKey(_testSigningKey.ExportParameters(false))
+            {
+                KeyId = TestSigningKeyId
+            };
+            var providerConfiguration = new OpenIdConnectConfiguration
+            {
+                Issuer = TestIssuer
+            };
+            providerConfiguration.SigningKeys.Add(publicKey);
+
+            services.PostConfigure<JwtBearerOptions>(
+                JwtBearerDefaults.AuthenticationScheme,
+                options => options.ConfigurationManager =
+                    new StaticConfigurationManager<OpenIdConnectConfiguration>(
+                        providerConfiguration));
         });
     }
 

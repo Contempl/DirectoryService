@@ -13,14 +13,11 @@ public class AuthDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Gui
     
     public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
     
-    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         
         modelBuilder.ApplyConfiguration(new ApplicationUserConfiguration());
-        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
 }
 

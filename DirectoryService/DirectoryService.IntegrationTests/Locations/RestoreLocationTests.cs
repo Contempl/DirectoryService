@@ -10,7 +10,7 @@ namespace DirectoryService.IntegrationTests.Locations;
 
 public class RestoreLocationTests : DirectoryBaseTests
 {
-    public RestoreLocationTests(DirectoryServiceTestWebFactory factory) : base(factory)
+    public RestoreLocationTests(DirectoryServiceHandlerTestFixture factory) : base(factory)
     {
     }
 
