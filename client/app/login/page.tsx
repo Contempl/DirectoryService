@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { AxiosError } from "axios";
-import { loginSession } from "@/features/auth/model/auth-session";
+import { continueSession, loginSession } from "@/features/auth/model/auth-session";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 
 export default function LoginPage() {
-  const router = useRouter();
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +29,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await loginSession({ email, password });
-      router.replace("/");
+      await loginSession({ email, password }, searchParams.get("returnUrl"));
     } catch (requestError: unknown) {
       setError(
         requestError instanceof AxiosError && requestError.response?.status === 400
@@ -30,6 +37,17 @@ export default function LoginPage() {
           : "Не удалось выполнить вход. Попробуйте ещё раз.",
       );
     } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleContinue() {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await continueSession();
+    } catch {
+      setError("Не удалось продолжить вход. Попробуйте ещё раз.");
       setIsSubmitting(false);
     }
   }
@@ -75,6 +93,15 @@ export default function LoginPage() {
 
         <Button className="w-full" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Входим…" : "Войти"}
+        </Button>
+        <Button
+          className="w-full"
+          type="button"
+          variant="outline"
+          disabled={isSubmitting}
+          onClick={() => void handleContinue()}
+        >
+          Продолжить без повторного ввода пароля
         </Button>
       </form>
     </main>

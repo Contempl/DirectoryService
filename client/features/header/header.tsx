@@ -1,24 +1,21 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { SidebarTrigger } from "@/shared/components/ui/sidebar";
 import { routes } from "@/shared/routes";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { GlobalSearch } from "../global-search/global-search";
 import { Button } from "@/shared/components/ui/button";
 import { logoutSession } from "../auth/model/auth-session";
+import { useAuthStore } from "../auth/model/auth-store";
 
 export default function Header() {
-  const router = useRouter();
+  const name = useAuthStore((state) => state.name);
+  const roles = useAuthStore((state) => state.roles);
 
   async function handleLogout() {
-    try {
-      await logoutSession();
-    } finally {
-      router.replace("/login");
-    }
+    await logoutSession();
   }
 
   return (
@@ -42,6 +39,10 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="hidden text-right text-sm sm:block">
+            <div>{name ?? "Пользователь"}</div>
+            <div className="text-muted-foreground">{roles.join(", ")}</div>
+          </div>
           <Button
             type="button"
             variant="ghost"
@@ -52,8 +53,7 @@ export default function Header() {
             <LogOut />
           </Button>
           <Avatar className="h-9 w-9 cursor-pointer hover:opacity-80 transition-opacity">
-            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-            <AvatarFallback>ST</AvatarFallback>
+            <AvatarFallback>{name?.slice(0, 2).toUpperCase() ?? "DS"}</AvatarFallback>
           </Avatar>
         </div>
       </div>
