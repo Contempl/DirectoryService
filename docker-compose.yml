@@ -8,6 +8,12 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: 3000
+      AUTH_URL: http://localhost/api/client-auth
+      AUTH_SECRET: ${AUTH_SECRET}
+      OIDC_ISSUER: ${OIDC_ISSUER}
+      OIDC_INTERNAL_URL: http://auth-service:5353
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET}
     expose:
       - "3000"
     healthcheck:
