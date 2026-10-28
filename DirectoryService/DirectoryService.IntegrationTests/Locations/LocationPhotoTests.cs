@@ -214,6 +214,32 @@ public sealed class LocationPhotoTests : DirectoryBaseTests
         Assert.Equal(asset.FileInfo.Size, location.Photo.Size);
     }
 
+    [Fact]
+    public async Task AttachPhoto_WhenPhotoAlreadyAttached_ReturnsConflictAndPreservesOriginal()
+    {
+        // Arrange
+        var locationId = await CreateLocation();
+        var asset = CreateAsset(status: "ready", assetType: "preview");
+        FileService.Add(asset);
+        var result = await Handle<ICommandHandler<Guid, AttachPhotoRequest>, Result<Guid, Errors>>(handler =>
+            handler.HandleAsync(new AttachPhotoRequest(locationId, asset.Id), CancellationToken.None));
+        var secondAsset = CreateAsset(status: "ready", assetType: "preview");
+        FileService.Add(secondAsset);
+
+        // Act
+        var secondPhotoResult = await Handle<ICommandHandler<Guid, AttachPhotoRequest>, Result<Guid, Errors>>(handler =>
+            handler.HandleAsync(new AttachPhotoRequest(locationId, secondAsset.Id), CancellationToken.None));
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.True(secondPhotoResult.IsFailure);
+        var res = await GetPhoto(locationId);
+        Assert.NotNull(res);
+        Assert.Equal(asset.Id, res.AssetId);
+        Assert.Contains(secondPhotoResult.Error,
+            error => error.Code == "location.photo.already_attached");
+    }
+
     private async Task<Guid> CreateLocation()
     {
         var location = Location.Create(
