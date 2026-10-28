@@ -19,7 +19,6 @@ public class CreateLocationTests : DirectoryBaseTests
         CancellationTokenSource source = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         CancellationToken ct = source.Token;
         var request = new CreateLocationDto("Museum", "Ryazan", "Pushkina", "8", null, "UTC");
-        await using var scope = Services.CreateAsyncScope();
 
         // Act
         var result = await ExecuteHandler((sut) =>
@@ -30,14 +29,13 @@ public class CreateLocationTests : DirectoryBaseTests
         });
 
         // Assert
+        Assert.True(result.IsSuccess);
         await ExecuteInDb(async dbContext =>
         {
             var location = await dbContext.Locations
                 .FirstAsync(d => d.Id == result.Value, ct);
 
-            Assert.NotNull(location);
             Assert.True(location.Id == result.Value);
-            Assert.True(result.IsSuccess);
             Assert.NotEqual(Guid.Empty, result.Value);
         });
     }
